@@ -1,5 +1,21 @@
 const socket = io();
 
+const connBanner = document.getElementById('connection-banner');
+socket.on('connect', () => {
+  connBanner.classList.remove('error');
+  connBanner.classList.add('hidden');
+});
+socket.on('disconnect', () => {
+  connBanner.textContent = 'Se perdió la conexión, reconectando...';
+  connBanner.classList.add('error');
+  connBanner.classList.remove('hidden');
+});
+socket.on('connect_error', () => {
+  connBanner.textContent = 'No se pudo conectar al servidor, reintentando...';
+  connBanner.classList.add('error');
+  connBanner.classList.remove('hidden');
+});
+
 let roomCode = null;
 let myId = null;
 let latestRound = { roundNumber: 0, currentTurnPlayerId: null };
