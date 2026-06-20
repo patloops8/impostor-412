@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>412 — El Impostor</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <!-- PANTALLA: unirse -->
+  <section id="screen-join" class="center-flex">
+    <p class="eyebrow">412 · El Impostor</p>
+    <h1 style="font-size:2.6rem;">Únete a la sala</h1>
+
+    <div class="card" style="width:100%; text-align:left;">
+      <label style="font-size:0.85rem; color:var(--text-dim);">Código de sala</label>
+      <input type="text" id="input-code" placeholder="EJ. 7K2P" maxlength="4" style="margin-top:6px; text-transform:uppercase;" />
+
+      <div style="height:14px;"></div>
+
+      <label style="font-size:0.85rem; color:var(--text-dim);">Tu nombre</label>
+      <input type="text" id="input-name" placeholder="¿Cómo te dicen?" maxlength="20" style="margin-top:6px;" />
+
+      <div style="height:18px;"></div>
+      <button class="btn-primary" id="btn-join" style="width:100%;">Entrar</button>
+      <p class="error-text hidden" id="join-error" style="margin-top:10px;"></p>
+    </div>
+  </section>
+
+  <!-- PANTALLA: esperando en lobby -->
+  <section id="screen-waiting" class="hidden center-flex">
+    <p class="eyebrow">Estás dentro</p>
+    <h1 style="font-size:2rem;">Esperando al host...</h1>
+    <p>Cuando el host inicie la partida vas a recibir tu rol aquí.</p>
+  </section>
+
+  <!-- PANTALLA: revelación de rol -->
+  <section id="screen-role" class="hidden center-flex">
+    <div class="role-card" id="role-card">
+      <p class="label" id="role-label">—</p>
+      <p class="concept" id="role-concept">—</p>
+    </div>
+    <p id="role-hint" style="margin-top:8px;"></p>
+    <button class="btn-primary" id="btn-role-continue">Listo, continuar</button>
+  </section>
+
+  <!-- PANTALLA: fase de pistas -->
+  <section id="screen-clue-phase" class="hidden">
+    <p class="eyebrow">Ronda <span id="my-round-number">1</span></p>
+
+    <div id="clue-my-turn" class="hidden card">
+      <h2 style="font-size:1.4rem;">¡Es tu turno!</h2>
+      <p style="margin:8px 0 14px;">Di una palabra relacionada en voz alta y escríbela aquí.</p>
+      <input type="text" id="input-clue" placeholder="Escribe tu pista..." />
+      <p class="error-text hidden" id="clue-error" style="margin-top:8px;"></p>
+      <button class="btn-primary" id="btn-submit-clue" style="width:100%; margin-top:14px;">Enviar pista</button>
+    </div>
+
+    <div id="clue-waiting" class="hidden center-flex" style="padding-top:20px;">
+      <p class="eyebrow">Turno de</p>
+      <h2 id="clue-turn-name-player" style="font-size:1.8rem;">—</h2>
+    </div>
+
+    <div class="divider"></div>
+    <h3 style="font-size:1rem; margin-bottom:10px;">Pistas dichas</h3>
+    <div class="clue-log" id="clue-log-player"></div>
+  </section>
+
+  <!-- PANTALLA: votación -->
+  <section id="screen-vote" class="hidden">
+    <p class="eyebrow">¿Quién es el impostor?</p>
+    <h2 style="font-size:1.5rem; margin-bottom:16px;">Elige a quién votar</h2>
+    <div class="vote-grid" id="vote-grid"></div>
+    <p id="vote-status" style="margin-top:16px; text-align:center;"></p>
+  </section>
+
+  <!-- PANTALLA: revelación -->
+  <section id="screen-reveal-player" class="hidden center-flex">
+    <div class="reveal-banner" id="reveal-banner-player">
+      <p class="eyebrow" id="reveal-eyebrow-player">Resultado</p>
+      <h1 style="font-size:2rem;" id="reveal-title-player">—</h1>
+      <p id="reveal-subtitle-player"></p>
+    </div>
+  </section>
+
+  <!-- PANTALLA: empate -->
+  <section id="screen-tie-player" class="hidden center-flex">
+    <p class="eyebrow">Empate de votos</p>
+    <h1 style="font-size:1.8rem;">Nadie sale esta ronda</h1>
+    <p>Nueva ronda de pistas en unos segundos...</p>
+  </section>
+
+  <!-- PANTALLA: fin de partida -->
+  <section id="screen-match-over-player" class="hidden center-flex">
+    <p class="eyebrow" id="final-eyebrow-player">Partida terminada</p>
+    <h1 style="font-size:1.8rem;" id="final-title-player">—</h1>
+    <p id="final-subtitle-player"></p>
+    <div class="card" style="width:100%; margin-top:10px;">
+      <p style="color:var(--text-dim); font-size:0.85rem;">Tu puntaje total</p>
+      <p style="font-family:var(--mono); font-size:2rem; color:var(--lime); margin-top:4px;" id="my-score">0</p>
+    </div>
+    <p>Esperando a que el host arranque la siguiente partida...</p>
+  </section>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/player/player.js"></script>
+</body>
+</html>

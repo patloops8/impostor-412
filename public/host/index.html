@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>412 — El Impostor (Pantalla)</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="wrap wrap-wide">
+
+  <!-- PANTALLA: crear sala -->
+  <section id="screen-create" class="center-flex">
+    <p class="eyebrow">412 · El Impostor</p>
+    <h1 style="font-size:3rem;">Pantalla del juego</h1>
+    <p>Esta es la pantalla compartida que todos van a ver. Los jugadores se unen desde su celular.</p>
+    <button class="btn-primary" id="btn-create-room">Crear sala</button>
+  </section>
+
+  <!-- PANTALLA: lobby -->
+  <section id="screen-lobby" class="hidden">
+    <p class="eyebrow">Entren con el código</p>
+    <div class="scoreboard-code" id="room-code">----</div>
+    <p style="text-align:center; margin-top:10px;">Abran <strong id="join-url"></strong> en su celular</p>
+
+    <div class="divider"></div>
+
+    <h2 style="font-size:1.4rem; margin-bottom:12px;">Jugadores conectados (<span id="player-count">0</span>)</h2>
+    <div class="player-grid" id="lobby-players"></div>
+
+    <div class="divider"></div>
+    <div class="center-flex" style="flex:none; gap:10px;">
+      <button class="btn-primary" id="btn-start-match" disabled>Iniciar partida</button>
+      <p id="start-hint">Necesitas al menos 3 jugadores</p>
+    </div>
+  </section>
+
+  <!-- PANTALLA: ronda de pistas -->
+  <section id="screen-clue" class="hidden">
+    <p class="eyebrow">Ronda <span id="clue-round-number">1</span> · Fase de pistas</p>
+    <h2 style="font-size:1.8rem; margin-bottom:16px;">Turno de <span id="clue-turn-name">—</span></h2>
+    <div class="player-grid" id="clue-player-grid"></div>
+
+    <div class="divider"></div>
+
+    <h3 style="font-size:1.1rem; margin-bottom:10px;">Pistas dichas</h3>
+    <div class="clue-log" id="clue-log"></div>
+  </section>
+
+  <!-- PANTALLA: votación -->
+  <section id="screen-voting" class="hidden center-flex">
+    <p class="eyebrow">Votación en curso</p>
+    <h1 style="font-size:2.2rem;">¿Quién es el impostor?</h1>
+    <p id="vote-progress">0 / 0 votos</p>
+  </section>
+
+  <!-- PANTALLA: revelación de eliminación -->
+  <section id="screen-reveal" class="hidden center-flex">
+    <div class="reveal-banner" id="reveal-banner">
+      <p class="eyebrow" id="reveal-eyebrow">Resultado</p>
+      <h1 style="font-size:2.4rem;" id="reveal-title">—</h1>
+      <p id="reveal-subtitle"></p>
+    </div>
+  </section>
+
+  <!-- PANTALLA: empate -->
+  <section id="screen-tie" class="hidden center-flex">
+    <p class="eyebrow">Empate de votos</p>
+    <h1 style="font-size:2.2rem;">Nadie sale esta ronda</h1>
+    <p id="tie-names"></p>
+    <p>Nueva ronda de pistas en unos segundos...</p>
+  </section>
+
+  <!-- PANTALLA: fin de partida -->
+  <section id="screen-match-over" class="hidden">
+    <div class="reveal-banner" id="final-banner">
+      <p class="eyebrow" id="final-eyebrow">Partida terminada</p>
+      <h1 style="font-size:2.2rem;" id="final-title">—</h1>
+      <p id="final-subtitle"></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3 style="margin-bottom:10px;">Marcador acumulado</h3>
+    <div class="card" id="final-scoreboard"></div>
+
+    <div class="center-flex" style="flex:none; margin-top:20px;">
+      <button class="btn-primary" id="btn-next-match">Nueva partida</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/host/host.js"></script>
+</body>
+</html>
