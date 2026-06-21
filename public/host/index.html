@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>412 — El Impostor (Pantalla)</title>
+<title>412 — Pantalla del juego</title>
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -12,13 +12,13 @@
 
   <!-- PANTALLA: crear sala -->
   <section id="screen-create" class="center-flex">
-    <p class="eyebrow">412 · El Impostor</p>
+    <p class="eyebrow">412</p>
     <h1 style="font-size:3rem;">Pantalla del juego</h1>
     <p>Esta es la pantalla compartida que todos van a ver. Los jugadores se unen desde su celular.</p>
     <button class="btn-primary" id="btn-create-room">Crear sala</button>
   </section>
 
-  <!-- PANTALLA: lobby -->
+  <!-- PANTALLA: lobby (jugadores + elegir juego + config) -->
   <section id="screen-lobby" class="hidden">
     <p class="eyebrow">Entren con el código</p>
     <div class="scoreboard-code" id="room-code">----</div>
@@ -31,54 +31,99 @@
 
     <div class="divider"></div>
 
-    <h2 style="font-size:1.4rem; margin-bottom:14px;">Configuración de la partida</h2>
-    <div class="card" style="margin-bottom:18px;">
-      <div class="config-row">
-        <label for="cfg-impostors">Número de impostores</label>
-        <select id="cfg-impostors"></select>
+    <!-- Elegir juego -->
+    <div id="game-picker">
+      <h2 style="font-size:1.4rem; margin-bottom:14px;">¿Qué van a jugar?</h2>
+      <div class="game-pick-grid">
+        <button class="game-pick-card" id="pick-impostor">
+          <span class="game-pick-title">El Impostor</span>
+          <span class="game-pick-desc">Uno no conoce el concepto. Descúbranlo con pistas.</span>
+        </button>
+        <button class="game-pick-card" id="pick-mentiroso">
+          <span class="game-pick-title">Mentiroso</span>
+          <span class="game-pick-desc">Suban la apuesta o acusen de mentiroso.</span>
+        </button>
       </div>
-      <div class="config-row">
-        <label for="cfg-mangas">Mangas a jugar (rondas de conceptos)</label>
-        <select id="cfg-mangas">
-          <option value="1">1</option>
-          <option value="3" selected>3</option>
-          <option value="5">5</option>
-          <option value="7">7</option>
-          <option value="10">10</option>
-        </select>
+    </div>
+
+    <!-- Config: El Impostor -->
+    <div id="config-impostor" class="hidden">
+      <div class="config-header">
+        <h2 style="font-size:1.3rem;">Configurar El Impostor</h2>
+        <button class="link-btn" id="btn-change-game-1">Cambiar juego</button>
       </div>
-      <div class="config-row" style="flex-direction:column; align-items:flex-start;">
-        <label>Categorías incluidas</label>
-        <div class="category-checks" id="category-checks"></div>
+      <div class="card" style="margin-bottom:18px;">
+        <div class="config-row">
+          <label for="cfg-impostors">Número de impostores</label>
+          <select id="cfg-impostors"></select>
+        </div>
+        <div class="config-row">
+          <label for="cfg-mangas">Mangas a jugar</label>
+          <select id="cfg-mangas">
+            <option value="1">1</option>
+            <option value="3" selected>3</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <div class="config-row" style="flex-direction:column; align-items:flex-start;">
+          <label>Categorías incluidas</label>
+          <div class="category-checks" id="category-checks"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config: Mentiroso -->
+    <div id="config-mentiroso" class="hidden">
+      <div class="config-header">
+        <h2 style="font-size:1.3rem;">Configurar Mentiroso</h2>
+        <button class="link-btn" id="btn-change-game-2">Cambiar juego</button>
+      </div>
+      <div class="card" style="margin-bottom:18px;">
+        <div class="config-row">
+          <label for="cfg-lie-rounds">Rondas (categorías) a jugar</label>
+          <select id="cfg-lie-rounds">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <div class="config-row">
+          <label for="cfg-lie-objective">Incluir categorías objetivas (con datos reales)</label>
+          <input type="checkbox" id="cfg-lie-objective" checked />
+        </div>
+        <div class="config-row">
+          <label for="cfg-lie-subjective">Incluir categorías subjetivas (las vota el grupo)</label>
+          <input type="checkbox" id="cfg-lie-subjective" checked />
+        </div>
       </div>
     </div>
 
     <div class="center-flex" style="flex:none; gap:10px;">
-      <button class="btn-primary" id="btn-start-match" disabled>Iniciar partida</button>
+      <button class="btn-primary hidden" id="btn-start-match" disabled>Iniciar partida</button>
       <p id="start-hint">Necesitas al menos 3 jugadores</p>
     </div>
   </section>
 
-  <!-- PANTALLA: ronda de pistas -->
+  <!-- ===================== EL IMPOSTOR ===================== -->
+
   <section id="screen-clue" class="hidden">
     <p class="eyebrow"><span id="clue-manga-label">Manga 1 de 3</span> · Ronda <span id="clue-round-number">1</span></p>
     <h2 style="font-size:1.8rem; margin-bottom:16px;">Turno de <span id="clue-turn-name">—</span></h2>
     <div class="player-grid" id="clue-player-grid"></div>
-
     <div class="divider"></div>
-
     <h3 style="font-size:1.1rem; margin-bottom:10px;">Pistas dichas</h3>
     <div class="clue-log" id="clue-log"></div>
   </section>
 
-  <!-- PANTALLA: votación -->
   <section id="screen-voting" class="hidden center-flex">
     <p class="eyebrow">Votación en curso</p>
     <h1 style="font-size:2.2rem;">¿Quién es el impostor?</h1>
     <p id="vote-progress">0 / 0 votos</p>
   </section>
 
-  <!-- PANTALLA: revelación de eliminación -->
   <section id="screen-reveal" class="hidden center-flex">
     <div class="reveal-banner" id="reveal-banner">
       <p class="eyebrow" id="reveal-eyebrow">Resultado</p>
@@ -87,7 +132,6 @@
     </div>
   </section>
 
-  <!-- PANTALLA: empate -->
   <section id="screen-tie" class="hidden center-flex">
     <p class="eyebrow">Empate de votos</p>
     <h1 style="font-size:2.2rem;">Nadie sale esta ronda</h1>
@@ -95,21 +139,63 @@
     <p>Nueva ronda de pistas en unos segundos...</p>
   </section>
 
-  <!-- PANTALLA: fin de manga / fin de partida -->
   <section id="screen-match-over" class="hidden">
     <div class="reveal-banner" id="final-banner">
       <p class="eyebrow" id="final-eyebrow">Manga terminada</p>
       <h1 style="font-size:2.2rem;" id="final-title">—</h1>
       <p id="final-subtitle"></p>
     </div>
-
     <div class="divider"></div>
-
     <h3 style="margin-bottom:10px;">Marcador acumulado</h3>
     <div class="card" id="final-scoreboard"></div>
-
     <div class="center-flex" style="flex:none; margin-top:20px;">
       <button class="btn-primary" id="btn-next-match">Siguiente manga</button>
+    </div>
+  </section>
+
+  <!-- ===================== MENTIROSO ===================== -->
+
+  <section id="screen-lie-claim" class="hidden">
+    <p class="eyebrow">Ronda <span id="lie-round-number">1</span> de <span id="lie-round-count">5</span></p>
+    <div class="card" style="margin-bottom:18px;">
+      <p class="label" style="font-family:var(--mono); font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">Categoría</p>
+      <p style="font-size:1.3rem; font-weight:800; margin-top:6px;" id="lie-category-prompt">—</p>
+    </div>
+    <div class="scoreboard-code" id="lie-current-claim" style="font-size:2.2rem;">0</div>
+    <p class="center-flex" style="flex:none; margin-top:16px; font-size:1.3rem;">Turno de <strong id="lie-turn-name">—</strong></p>
+    <div class="clue-log" id="lie-claim-log" style="margin-top:20px;"></div>
+  </section>
+
+  <section id="screen-lie-naming" class="hidden">
+    <p class="eyebrow">Mentiroso!</p>
+    <h2 style="font-size:1.6rem;"><span id="lie-accused-name">—</span> debe nombrar <span id="lie-target-number">0</span></h2>
+    <p style="margin:6px 0 16px;" id="lie-category-prompt-2"></p>
+    <p style="font-family:var(--mono); color:var(--lime); margin-bottom:10px;">
+      <span id="lie-named-count">0</span> / <span id="lie-target-number-2">0</span>
+    </p>
+    <div class="clue-log" id="lie-named-log"></div>
+  </section>
+
+  <section id="screen-lie-voting" class="hidden center-flex">
+    <p class="eyebrow">¿Es válido?</p>
+    <h1 style="font-size:2rem;" id="lie-vote-text">—</h1>
+    <p id="lie-vote-progress">0 / 0 votos</p>
+  </section>
+
+  <section id="screen-lie-round-over" class="hidden">
+    <div class="reveal-banner" id="lie-result-banner">
+      <p class="eyebrow" id="lie-result-eyebrow">Resultado</p>
+      <h1 style="font-size:2rem;" id="lie-result-title">—</h1>
+      <p id="lie-result-subtitle"></p>
+    </div>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:10px;" id="lie-reveal-heading">Respuestas dadas</h3>
+    <div class="clue-log" id="lie-result-list"></div>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:10px;">Marcador acumulado</h3>
+    <div class="card" id="lie-scoreboard"></div>
+    <div class="center-flex" style="flex:none; margin-top:20px;">
+      <button class="btn-primary" id="btn-next-lie-round">Siguiente ronda</button>
     </div>
   </section>
 

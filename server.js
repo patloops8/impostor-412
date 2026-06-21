@@ -16,6 +16,10 @@ const CONCEPTS = JSON.parse(
 );
 const ALL_CATEGORIES = [...new Set(CONCEPTS.map((c) => c.category))];
 
+const LIE_CATEGORIES = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8')
+);
+
 // ---------- Estado en memoria ----------
 /** rooms: Map<code, RoomState> */
 const rooms = new Map();
@@ -25,6 +29,7 @@ const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin caracteres co
 const CLUE_PHASE_END_DELAY_MS = 4500;
 const RESULT_DISPLAY_DELAY_MS = 3500;
 const TIE_DISPLAY_DELAY_MS = 4000;
+const MAX_CLAIM = 300;
 
 function generateRoomCode() {
   let code;
@@ -64,8 +69,11 @@ function newRoom(code, hostSocketId) {
     code,
     hostId: hostSocketId,
     players: new Map(), // socketId -> { id, name, score, alive, connected }
-    status: 'lobby', // lobby | clue | voting | reveal | manga_over
-    config: {
+    gameType: null, // null | 'impostor' | 'mentiroso'
+    status: 'lobby',
+
+    // --- El Impostor ---
+    impostorConfig: {
       impostorCount: 1,
       mangaCount: 3,
       categories: ALL_CATEGORIES.slice(),
@@ -80,6 +88,23 @@ function newRoom(code, hostSocketId) {
     cluePhaseEnding: false,
     votes: new Map(),
     roundNumber: 0,
+
+    // --- Mentiroso ---
+    mentirosoConfig: {
+      roundCount: 5,
+      includeObjective: true,
+      includeSubjective: true,
+    },
+    lie: {
+      roundNumber: 0,
+      turnStartIndex: 0,
+      category: null,
+      turnOrder: [],
+      currentTurnIndex: 0,
+      currentClaim: 0,
+      lastClaimerId: null,
+      challenge: null,
+    },
   };
 }
 
@@ -89,6 +114,10 @@ function alivePlayers(room) {
 
 function connectedAlivePlayers(room) {
   return alivePlayers(room).filter((p) => p.connected);
+}
+
+function connectedPlayers(room) {
+  return [...room.players.values()].filter((p) => p.connected);
 }
 
 function publicPlayerList(room) {
@@ -105,18 +134,24 @@ function emitRoomState(room) {
   io.to(room.code).emit('room:players_update', {
     players: publicPlayerList(room),
     status: room.status,
-    config: room.config,
+    gameType: room.gameType,
+    impostorConfig: room.impostorConfig,
+    mentirosoConfig: room.mentirosoConfig,
     maxImpostors: maxImpostorsFor(room.players.size),
   });
 }
 
+/* =========================================================
+   EL IMPOSTOR
+   ========================================================= */
+
 function startNewManga(room) {
-  const pool = CONCEPTS.filter((c) => room.config.categories.includes(c.category));
+  const pool = CONCEPTS.filter((c) => room.impostorConfig.categories.includes(c.category));
   const usablePool = pool.length > 0 ? pool : CONCEPTS;
   room.concept = usablePool[Math.floor(Math.random() * usablePool.length)];
 
   const ids = shuffle([...room.players.keys()]);
-  const impostorCount = Math.min(room.config.impostorCount, maxImpostorsFor(room.players.size));
+  const impostorCount = Math.min(room.impostorConfig.impostorCount, maxImpostorsFor(room.players.size));
   room.impostorIds = new Set(ids.slice(0, impostorCount));
   room.usedClues = [];
   room.roundNumber = 0;
@@ -138,7 +173,7 @@ function startNewManga(room) {
   emitRoomState(room);
   io.to(room.code).emit('manga:started', {
     mangaNumber: room.mangaNumber,
-    mangaCount: room.config.mangaCount,
+    mangaCount: room.impostorConfig.mangaCount,
     impostorCount: room.impostorIds.size,
   });
   startClueRound(room);
@@ -162,7 +197,6 @@ function startClueRound(room) {
 }
 
 function advanceClueTurnIfDisconnected(room) {
-  // Salta automáticamente turnos de jugadores desconectados para no trabar la partida
   while (
     room.status === 'clue' &&
     room.clueTurnIndex < room.clueOrder.length &&
@@ -180,7 +214,7 @@ function advanceClueTurnIfDisconnected(room) {
 }
 
 function finishCluePhase(room) {
-  if (room.cluePhaseEnding) return; // evita doble timer si se dispara dos veces
+  if (room.cluePhaseEnding) return;
   room.cluePhaseEnding = true;
   io.to(room.code).emit('round:clue_phase_ending');
   setTimeout(() => {
@@ -211,7 +245,6 @@ function resolveVotes(room) {
     .map(([id]) => id);
 
   if (topVoted.length !== 1) {
-    // Empate: nadie sale, nueva ronda de pistas
     io.to(room.code).emit('round:tie', {
       tiedPlayers: topVoted.map((id) => room.players.get(id)?.name),
     });
@@ -249,7 +282,6 @@ function resolveVotes(room) {
     return;
   }
 
-  // El juego sigue: cada impostor que sigue vivo gana un punto por sobrevivir esta ronda
   aliveImpostors.forEach((imp) => {
     imp.score += 1;
   });
@@ -267,36 +299,137 @@ function endManga(room, result, votersForFinalImpostor) {
     for (const p of room.players.values()) {
       if (room.impostorIds.has(p.id)) continue;
       p.score += 1;
-      if (votersForFinalImpostor.includes(p.id)) p.score += 1; // bonus detective
+      if (votersForFinalImpostor.includes(p.id)) p.score += 1;
     }
   } else if (result === 'impostors_win') {
     for (const id of room.impostorIds) {
       const p = room.players.get(id);
-      if (p && p.alive) p.score += 3; // bonus por imponerse en número
+      if (p && p.alive) p.score += 3;
     }
   }
 
-  const isLastManga = room.mangaNumber >= room.config.mangaCount;
+  const isLastManga = room.mangaNumber >= room.impostorConfig.mangaCount;
 
   io.to(room.code).emit('manga:over', {
     result,
     concept: room.concept,
     impostorNames,
     mangaNumber: room.mangaNumber,
-    mangaCount: room.config.mangaCount,
+    mangaCount: room.impostorConfig.mangaCount,
     isLastManga,
     scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
   });
 }
 
-// ---------- Socket.io ----------
+/* =========================================================
+   MENTIROSO
+   ========================================================= */
+
+function pickLieCategory(room) {
+  const pool = LIE_CATEGORIES.filter((c) => {
+    if (c.type === 'objetiva') return room.mentirosoConfig.includeObjective;
+    return room.mentirosoConfig.includeSubjective;
+  });
+  const usable = pool.length > 0 ? pool : LIE_CATEGORIES;
+  return usable[Math.floor(Math.random() * usable.length)];
+}
+
+function startLieSession(room) {
+  room.lie.roundNumber = 0;
+  room.lie.turnStartIndex = 0;
+  startLieRound(room);
+}
+
+function startLieRound(room) {
+  room.lie.roundNumber += 1;
+  room.lie.category = pickLieCategory(room);
+
+  const allIds = [...room.players.keys()];
+  const start = room.lie.turnStartIndex % allIds.length;
+  room.lie.turnOrder = [...allIds.slice(start), ...allIds.slice(0, start)];
+  room.lie.turnStartIndex = (room.lie.turnStartIndex + 1) % allIds.length;
+
+  room.lie.currentTurnIndex = 0;
+  room.lie.currentClaim = 0;
+  room.lie.lastClaimerId = null;
+  room.lie.challenge = null;
+  room.status = 'lie_claim';
+
+  emitRoomState(room);
+  io.to(room.code).emit('lie:round_started', {
+    roundNumber: room.lie.roundNumber,
+    roundCount: room.mentirosoConfig.roundCount,
+    category: room.lie.category,
+    currentTurnPlayerId: currentLieTurnPlayerId(room),
+  });
+}
+
+function currentLieTurnPlayerId(room) {
+  return room.lie.turnOrder[room.lie.currentTurnIndex] || null;
+}
+
+function advanceLieTurn(room) {
+  const order = room.lie.turnOrder;
+  if (order.length === 0) return;
+  let tries = 0;
+  do {
+    room.lie.currentTurnIndex = (room.lie.currentTurnIndex + 1) % order.length;
+    tries += 1;
+  } while (!room.players.get(order[room.lie.currentTurnIndex])?.connected && tries <= order.length);
+
+  io.to(room.code).emit('lie:turn_changed', {
+    currentTurnPlayerId: currentLieTurnPlayerId(room),
+  });
+}
+
+function resolveLieChallenge(room, success) {
+  const { accusedId, accuserId, target, namedSoFar } = room.lie.challenge;
+  const accused = room.players.get(accusedId);
+  const accuser = room.players.get(accuserId);
+
+  if (success) {
+    if (accused) accused.score += 1;
+    if (accuser) accuser.score -= 1;
+  } else {
+    if (accuser) accuser.score += 1;
+    if (accused) accused.score -= 1;
+  }
+
+  room.status = 'lie_round_over';
+  const isLastRound = room.lie.roundNumber >= room.mentirosoConfig.roundCount;
+
+  io.to(room.code).emit('lie:challenge_resolved', {
+    success,
+    accusedName: accused ? accused.name : '???',
+    accuserName: accuser ? accuser.name : '???',
+    category: room.lie.category,
+    target,
+    namedSoFar,
+    validAnswers: room.lie.category.type === 'objetiva' ? room.lie.category.validAnswers : null,
+    roundNumber: room.lie.roundNumber,
+    roundCount: room.mentirosoConfig.roundCount,
+    isLastRound,
+    scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
+  });
+}
+
+/* =========================================================
+   Socket.io
+   ========================================================= */
+
 io.on('connection', (socket) => {
   socket.on('host:create_room', (_payload, callback) => {
     const code = generateRoomCode();
     const room = newRoom(code, socket.id);
     rooms.set(code, room);
     socket.join(code);
-    callback({ ok: true, code, config: room.config, categories: ALL_CATEGORIES });
+    callback({
+      ok: true,
+      code,
+      impostorConfig: room.impostorConfig,
+      mentirosoConfig: room.mentirosoConfig,
+      categories: ALL_CATEGORIES,
+    });
   });
 
   socket.on('player:join_room', ({ code, name }, callback) => {
@@ -336,20 +469,45 @@ io.on('connection', (socket) => {
     emitRoomState(room);
   });
 
-  socket.on('host:update_config', ({ code, impostorCount, mangaCount, categories }) => {
+  socket.on('host:select_game', ({ code, gameType }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
+    if (gameType !== 'impostor' && gameType !== 'mentiroso') return;
+    room.gameType = gameType;
+    emitRoomState(room);
+  });
+
+  socket.on('host:update_impostor_config', ({ code, impostorCount, mangaCount, categories }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
 
     if (Number.isInteger(impostorCount)) {
       const max = maxImpostorsFor(room.players.size);
-      room.config.impostorCount = Math.min(Math.max(1, impostorCount), max);
+      room.impostorConfig.impostorCount = Math.min(Math.max(1, impostorCount), max);
     }
     if (Number.isInteger(mangaCount)) {
-      room.config.mangaCount = Math.min(Math.max(1, mangaCount), 20);
+      room.impostorConfig.mangaCount = Math.min(Math.max(1, mangaCount), 20);
     }
     if (Array.isArray(categories)) {
       const valid = categories.filter((c) => ALL_CATEGORIES.includes(c));
-      room.config.categories = valid.length > 0 ? valid : ALL_CATEGORIES.slice();
+      room.impostorConfig.categories = valid.length > 0 ? valid : ALL_CATEGORIES.slice();
+    }
+
+    emitRoomState(room);
+  });
+
+  socket.on('host:update_mentiroso_config', ({ code, roundCount, includeObjective, includeSubjective }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
+
+    if (Number.isInteger(roundCount)) {
+      room.mentirosoConfig.roundCount = Math.min(Math.max(1, roundCount), 20);
+    }
+    if (typeof includeObjective === 'boolean') room.mentirosoConfig.includeObjective = includeObjective;
+    if (typeof includeSubjective === 'boolean') room.mentirosoConfig.includeSubjective = includeSubjective;
+
+    if (!room.mentirosoConfig.includeObjective && !room.mentirosoConfig.includeSubjective) {
+      room.mentirosoConfig.includeSubjective = true; // al menos un tipo activo
     }
 
     emitRoomState(room);
@@ -359,17 +517,29 @@ io.on('connection', (socket) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
     if (room.players.size < MIN_PLAYERS) return;
+    if (!room.gameType) return;
 
-    room.mangaNumber = 1;
-    startNewManga(room);
+    if (room.gameType === 'impostor') {
+      room.mangaNumber = 1;
+      startNewManga(room);
+    } else if (room.gameType === 'mentiroso') {
+      startLieSession(room);
+    }
   });
 
   socket.on('host:next_manga', ({ code }) => {
     const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId) return;
-    if (room.mangaNumber >= room.config.mangaCount) return;
+    if (!room || socket.id !== room.hostId || room.gameType !== 'impostor') return;
+    if (room.mangaNumber >= room.impostorConfig.mangaCount) return;
     room.mangaNumber += 1;
     startNewManga(room);
+  });
+
+  socket.on('host:next_lie_round', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.gameType !== 'mentiroso') return;
+    if (room.lie.roundNumber >= room.mentirosoConfig.roundCount) return;
+    startLieRound(room);
   });
 
   socket.on('player:submit_clue', ({ code, word }) => {
@@ -417,16 +587,185 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ---------- Mentiroso ----------
+
+  socket.on('player:make_claim', ({ code, amount }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'lie_claim') return;
+    if (currentLieTurnPlayerId(room) !== socket.id) return;
+
+    const n = Number(amount);
+    if (!Number.isInteger(n) || n <= room.lie.currentClaim || n < 1 || n > MAX_CLAIM) {
+      socket.emit('lie:claim_rejected', {
+        reason: `Debes decir un número entero mayor a ${room.lie.currentClaim}.`,
+      });
+      return;
+    }
+
+    room.lie.currentClaim = n;
+    room.lie.lastClaimerId = socket.id;
+    const player = room.players.get(socket.id);
+
+    io.to(room.code).emit('lie:claim_made', {
+      playerId: socket.id,
+      name: player.name,
+      amount: n,
+    });
+
+    advanceLieTurn(room);
+  });
+
+  socket.on('player:accuse_liar', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'lie_claim') return;
+    if (currentLieTurnPlayerId(room) !== socket.id) return;
+    if (room.lie.currentClaim <= 0 || !room.lie.lastClaimerId) return;
+
+    const accuserId = socket.id;
+    const accusedId = room.lie.lastClaimerId;
+    room.lie.challenge = {
+      accusedId,
+      accuserId,
+      target: room.lie.currentClaim,
+      namedSoFar: [],
+      pendingItem: null,
+      votes: new Map(),
+    };
+    room.status = 'lie_naming';
+
+    io.to(room.code).emit('lie:accused', {
+      accuserId,
+      accuserName: room.players.get(accuserId)?.name,
+      accusedId,
+      accusedName: room.players.get(accusedId)?.name,
+      target: room.lie.currentClaim,
+      category: room.lie.category,
+    });
+  });
+
+  socket.on('player:name_item', ({ code, text }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'lie_naming') return;
+    const ch = room.lie.challenge;
+    if (!ch || socket.id !== ch.accusedId) return;
+
+    const clean = (text || '').trim();
+    if (!clean) return;
+    const norm = normalizeWord(clean);
+
+    if (ch.namedSoFar.some((it) => normalizeWord(it) === norm)) {
+      io.to(room.code).emit('lie:item_rejected', { text: clean, reason: 'repetido' });
+      resolveLieChallenge(room, false);
+      return;
+    }
+
+    if (room.lie.category.type === 'objetiva') {
+      const valid = room.lie.category.validAnswers.some((a) => normalizeWord(a) === norm);
+      if (!valid) {
+        io.to(room.code).emit('lie:item_rejected', { text: clean, reason: 'no_valido' });
+        resolveLieChallenge(room, false);
+        return;
+      }
+      acceptNamedItem(room, clean);
+      return;
+    }
+
+    // Categoría subjetiva: el grupo vota
+    ch.pendingItem = clean;
+    ch.votes = new Map();
+    room.status = 'lie_voting';
+
+    const eligibleVoters = connectedPlayers(room).filter(
+      (p) => p.id !== ch.accusedId && p.id !== ch.accuserId
+    );
+
+    io.to(room.code).emit('lie:vote_needed', {
+      text: clean,
+      votesNeeded: eligibleVoters.length,
+      eligibleVoterIds: eligibleVoters.map((p) => p.id),
+    });
+  });
+
+  socket.on('player:vote_item_validity', ({ code, valid }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'lie_voting') return;
+    const ch = room.lie.challenge;
+    if (!ch) return;
+    if (socket.id === ch.accusedId || socket.id === ch.accuserId) return;
+
+    ch.votes.set(socket.id, !!valid);
+
+    const eligibleVoters = connectedPlayers(room).filter(
+      (p) => p.id !== ch.accusedId && p.id !== ch.accuserId
+    );
+
+    io.to(room.code).emit('lie:vote_progress', {
+      votesIn: ch.votes.size,
+      votesNeeded: eligibleVoters.length,
+    });
+
+    if (ch.votes.size >= eligibleVoters.length && eligibleVoters.length > 0) {
+      let validCount = 0;
+      let invalidCount = 0;
+      for (const v of ch.votes.values()) {
+        if (v) validCount += 1;
+        else invalidCount += 1;
+      }
+      const accepted = validCount >= invalidCount; // empate = válido
+
+      room.status = 'lie_naming';
+      io.to(room.code).emit('lie:vote_result', {
+        text: ch.pendingItem,
+        accepted,
+        validCount,
+        invalidCount,
+      });
+
+      if (!accepted) {
+        resolveLieChallenge(room, false);
+        return;
+      }
+      acceptNamedItem(room, ch.pendingItem);
+    }
+  });
+
+  function acceptNamedItem(room, text) {
+    const ch = room.lie.challenge;
+    ch.namedSoFar.push(text);
+    ch.pendingItem = null;
+
+    io.to(room.code).emit('lie:item_accepted', {
+      text,
+      count: ch.namedSoFar.length,
+      target: ch.target,
+    });
+
+    if (ch.namedSoFar.length >= ch.target) {
+      resolveLieChallenge(room, true);
+    }
+  }
+
   socket.on('host:new_session', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
     room.status = 'lobby';
+    room.gameType = null;
     room.concept = null;
     room.impostorIds = new Set();
     room.usedClues = [];
     room.clueLog = [];
     room.roundNumber = 0;
     room.mangaNumber = 0;
+    room.lie = {
+      roundNumber: 0,
+      turnStartIndex: 0,
+      category: null,
+      turnOrder: [],
+      currentTurnIndex: 0,
+      currentClaim: 0,
+      lastClaimerId: null,
+      challenge: null,
+    };
     for (const p of room.players.values()) {
       p.alive = true;
       p.score = 0;
@@ -456,6 +795,9 @@ io.on('connection', (socket) => {
         ) {
           resolveVotes(room);
         }
+        if (room.status === 'lie_claim' && currentLieTurnPlayerId(room) === socket.id) {
+          advanceLieTurn(room);
+        }
       }
       emitRoomState(room);
     }
@@ -476,6 +818,6 @@ app.get('/', (_req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`412 - El Impostor corriendo en http://localhost:${PORT}`);
+  console.log(`412 corriendo en http://localhost:${PORT}`);
   console.log(`Host: http://localhost:${PORT}/host`);
 });

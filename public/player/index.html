@@ -105,6 +105,72 @@
     <p id="match-over-waiting-text">Esperando a que el host arranque la siguiente manga...</p>
   </section>
 
+  <!-- ===================== MENTIROSO ===================== -->
+
+  <section id="screen-lie-claim-player" class="hidden">
+    <p class="eyebrow">Ronda <span id="lie-p-round-number">1</span> de <span id="lie-p-round-count">5</span></p>
+    <div class="card" style="margin-bottom:16px;">
+      <p style="font-size:0.75rem; color:var(--text-dim); font-family:var(--mono); text-transform:uppercase;">Categoría</p>
+      <p style="font-size:1.15rem; font-weight:800; margin-top:6px;" id="lie-p-category">—</p>
+    </div>
+    <p style="text-align:center; font-family:var(--mono); font-size:0.85rem; color:var(--text-dim);">Apuesta actual</p>
+    <p style="text-align:center; font-family:var(--mono); font-size:2.4rem; color:var(--lime);" id="lie-p-current-claim">0</p>
+
+    <div id="lie-p-my-turn" class="hidden card" style="margin-top:16px;">
+      <h2 style="font-size:1.2rem;">¡Es tu turno!</h2>
+      <p style="margin:8px 0 14px;">Sube la apuesta o acusa de mentiroso a quien dijo la última.</p>
+      <input type="text" inputmode="numeric" id="input-claim" placeholder="Número mayor a la apuesta actual" />
+      <p class="error-text hidden" id="claim-error" style="margin-top:8px;"></p>
+      <button class="btn-primary" id="btn-submit-claim" style="width:100%; margin-top:12px;">Subir apuesta</button>
+      <button class="btn-secondary" id="btn-accuse-liar" style="width:100%; margin-top:10px;">¡Mentiroso!</button>
+    </div>
+
+    <div id="lie-p-waiting" class="hidden center-flex" style="padding-top:16px;">
+      <p class="eyebrow">Turno de</p>
+      <h2 id="lie-p-turn-name" style="font-size:1.6rem;">—</h2>
+    </div>
+  </section>
+
+  <section id="screen-lie-naming-player" class="hidden">
+    <p class="eyebrow">¡Mentiroso!</p>
+    <h2 style="font-size:1.3rem; margin-bottom:10px;" id="lie-p-naming-heading">—</h2>
+    <p style="font-family:var(--mono); color:var(--lime); margin-bottom:10px;">
+      <span id="lie-p-named-count">0</span> / <span id="lie-p-target">0</span>
+    </p>
+
+    <div id="lie-p-am-accused" class="hidden card">
+      <input type="text" id="input-name-item" placeholder="Escribe un nombre..." />
+      <p class="error-text hidden" id="name-item-error" style="margin-top:8px;"></p>
+      <button class="btn-primary" id="btn-submit-name-item" style="width:100%; margin-top:12px;">Enviar</button>
+    </div>
+
+    <div class="clue-log" id="lie-p-named-log" style="margin-top:14px;"></div>
+  </section>
+
+  <section id="screen-lie-voting-player" class="hidden">
+    <p class="eyebrow">¿Es válido?</p>
+    <h2 style="font-size:1.4rem; margin-bottom:18px;" id="lie-p-vote-text">—</h2>
+
+    <div id="lie-p-can-vote" class="hidden">
+      <div class="vote-grid">
+        <button class="vote-btn" id="btn-vote-valid">Válido ✓</button>
+        <button class="vote-btn" id="btn-vote-invalid">No válido ✗</button>
+      </div>
+    </div>
+    <p id="lie-p-vote-status" class="center-flex" style="flex:none; margin-top:16px;"></p>
+  </section>
+
+  <section id="screen-lie-round-over-player" class="hidden center-flex">
+    <p class="eyebrow" id="lie-p-result-eyebrow">Resultado</p>
+    <h1 style="font-size:1.7rem;" id="lie-p-result-title">—</h1>
+    <p id="lie-p-result-subtitle"></p>
+    <div class="card" style="width:100%; margin-top:10px;">
+      <p style="color:var(--text-dim); font-size:0.85rem;">Tu puntaje total</p>
+      <p style="font-family:var(--mono); font-size:2rem; color:var(--lime); margin-top:4px;" id="lie-p-my-score">0</p>
+    </div>
+    <p id="lie-p-waiting-text">Esperando a que el host arranque la siguiente ronda...</p>
+  </section>
+
 </div>
 
 <script src="/socket.io/socket.io.js"></script>

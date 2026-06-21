@@ -22,6 +22,8 @@ let latestRound = { roundNumber: 0, currentTurnPlayerId: null };
 let currentPlayersSnapshot = [];
 let selectedVoteTarget = null;
 let currentMangaInfo = { mangaNumber: 1, mangaCount: 1 };
+let lieCurrentTurnPlayerId = null;
+let lieCurrentClaim = 0;
 
 const screens = {
   join: document.getElementById('screen-join'),
@@ -32,6 +34,10 @@ const screens = {
   revealPlayer: document.getElementById('screen-reveal-player'),
   tiePlayer: document.getElementById('screen-tie-player'),
   matchOverPlayer: document.getElementById('screen-match-over-player'),
+  lieClaimPlayer: document.getElementById('screen-lie-claim-player'),
+  lieNamingPlayer: document.getElementById('screen-lie-naming-player'),
+  lieVotingPlayer: document.getElementById('screen-lie-voting-player'),
+  lieRoundOverPlayer: document.getElementById('screen-lie-round-over-player'),
 };
 
 function showScreen(name) {
@@ -75,16 +81,25 @@ function joinRoom() {
   });
 }
 
-socket.on('room:players_update', ({ players }) => {
+socket.on('room:players_update', ({ players, status }) => {
   currentPlayersSnapshot = players;
+  if (status === 'lobby' && myId) {
+    const wasShowingResult =
+      !screens.matchOverPlayer.classList.contains('hidden') ||
+      !screens.revealPlayer.classList.contains('hidden') ||
+      !screens.lieRoundOverPlayer.classList.contains('hidden');
+    if (wasShowingResult) showScreen('waiting');
+  }
 });
 
-// ---------- Inicio de manga ----------
+/* =========================================================
+   EL IMPOSTOR
+   ========================================================= */
+
 socket.on('manga:started', ({ mangaNumber, mangaCount }) => {
   currentMangaInfo = { mangaNumber, mangaCount };
 });
 
-// ---------- Rol ----------
 socket.on('match:your_role', ({ isImpostor, impostorCount, category, concept }) => {
   const card = document.getElementById('role-card');
   const label = document.getElementById('role-label');
@@ -117,11 +132,9 @@ document.getElementById('btn-role-continue').addEventListener('click', () => {
   showScreen('cluePhase');
 });
 
-// ---------- Fase de pistas ----------
 socket.on('round:started', ({ roundNumber, currentTurnPlayerId }) => {
   latestRound = { roundNumber, currentTurnPlayerId };
   document.getElementById('clue-log-player').innerHTML = '';
-  // Si ya estoy en la pantalla de rol (recién empezó la manga), se actualizará al dar "Continuar".
   if (!screens.role.classList.contains('hidden')) return;
   renderCluePhase();
   showScreen('cluePhase');
@@ -181,7 +194,6 @@ socket.on('round:clue_phase_ending', () => {
   document.getElementById('clue-turn-name-player').textContent = 'Pasando a votación...';
 });
 
-// ---------- Votación ----------
 socket.on('round:voting_started', ({ candidates }) => {
   selectedVoteTarget = null;
   const grid = document.getElementById('vote-grid');
@@ -200,7 +212,7 @@ socket.on('round:voting_started', ({ candidates }) => {
 });
 
 function castVote(targetId, btnEl) {
-  if (selectedVoteTarget) return; // ya votó
+  if (selectedVoteTarget) return;
   selectedVoteTarget = targetId;
   document.querySelectorAll('.vote-btn').forEach((b) => b.classList.remove('selected'));
   btnEl.classList.add('selected');
@@ -214,7 +226,6 @@ socket.on('round:vote_registered', ({ votesIn, votesNeeded }) => {
   }
 });
 
-// ---------- Revelación / empate ----------
 socket.on('round:elimination', ({ eliminatedName, wasImpostor }) => {
   const banner = document.getElementById('reveal-banner-player');
   banner.className = 'reveal-banner ' + (wasImpostor ? 'caught' : 'escaped');
@@ -230,7 +241,6 @@ socket.on('round:tie', () => {
   showScreen('tiePlayer');
 });
 
-// ---------- Fin de manga / sesión ----------
 socket.on('manga:over', ({ result, concept, impostorNames, mangaNumber, mangaCount, isLastManga, scores }) => {
   document.getElementById('final-eyebrow-player').textContent =
     (result === 'impostors_caught' ? 'Impostores atrapados' : 'Los impostores ganaron') +
@@ -250,14 +260,163 @@ socket.on('manga:over', ({ result, concept, impostorNames, mangaNumber, mangaCou
   showScreen('matchOverPlayer');
 });
 
-socket.on('room:players_update', ({ status }) => {
-  if (status === 'lobby' && myId && !screens.join.classList.contains('hidden')) return;
-  if (status === 'lobby' && myId) {
-    const wasShowingResult =
-      !screens.matchOverPlayer.classList.contains('hidden') ||
-      !screens.revealPlayer.classList.contains('hidden');
-    if (wasShowingResult) {
-      showScreen('waiting');
-    }
+/* =========================================================
+   MENTIROSO
+   ========================================================= */
+
+socket.on('lie:round_started', ({ roundNumber, roundCount, category, currentTurnPlayerId }) => {
+  document.getElementById('lie-p-round-number').textContent = roundNumber;
+  document.getElementById('lie-p-round-count').textContent = roundCount;
+  document.getElementById('lie-p-category').textContent = category.prompt;
+  document.getElementById('lie-p-current-claim').textContent = '0';
+  lieCurrentClaim = 0;
+  lieCurrentTurnPlayerId = currentTurnPlayerId;
+  renderLieClaimScreen();
+  showScreen('lieClaimPlayer');
+});
+
+socket.on('lie:turn_changed', ({ currentTurnPlayerId }) => {
+  lieCurrentTurnPlayerId = currentTurnPlayerId;
+  if (!screens.lieClaimPlayer.classList.contains('hidden')) renderLieClaimScreen();
+});
+
+socket.on('lie:claim_made', ({ amount }) => {
+  lieCurrentClaim = amount;
+  document.getElementById('lie-p-current-claim').textContent = amount;
+});
+
+function renderLieClaimScreen() {
+  const isMyTurn = lieCurrentTurnPlayerId === myId;
+  document.getElementById('lie-p-my-turn').classList.toggle('hidden', !isMyTurn);
+  document.getElementById('lie-p-waiting').classList.toggle('hidden', isMyTurn);
+
+  if (isMyTurn) {
+    document.getElementById('input-claim').value = '';
+    document.getElementById('claim-error').classList.add('hidden');
+    document.getElementById('btn-accuse-liar').disabled = lieCurrentClaim <= 0;
+  } else {
+    const turnPlayer = currentPlayersSnapshot.find((p) => p.id === lieCurrentTurnPlayerId);
+    document.getElementById('lie-p-turn-name').textContent = turnPlayer ? turnPlayer.name : '—';
   }
+}
+
+document.getElementById('btn-submit-claim').addEventListener('click', () => {
+  const val = Number(document.getElementById('input-claim').value);
+  const err = document.getElementById('claim-error');
+  if (!Number.isInteger(val) || val <= lieCurrentClaim) {
+    err.textContent = `Debe ser un número entero mayor a ${lieCurrentClaim}.`;
+    err.classList.remove('hidden');
+    return;
+  }
+  err.classList.add('hidden');
+  socket.emit('player:make_claim', { code: roomCode, amount: val });
+});
+
+document.getElementById('btn-accuse-liar').addEventListener('click', () => {
+  socket.emit('player:accuse_liar', { code: roomCode });
+});
+
+socket.on('lie:claim_rejected', ({ reason }) => {
+  const err = document.getElementById('claim-error');
+  err.textContent = reason;
+  err.classList.remove('hidden');
+});
+
+socket.on('lie:accused', ({ accuserId, accuserName, accusedId, accusedName, target, category }) => {
+  document.getElementById('lie-p-target').textContent = target;
+  document.getElementById('lie-p-named-count').textContent = '0';
+  document.getElementById('lie-p-named-log').innerHTML = '';
+
+  const amAccused = accusedId === myId;
+  document.getElementById('lie-p-am-accused').classList.toggle('hidden', !amAccused);
+  document.getElementById('lie-p-naming-heading').textContent = amAccused
+    ? `${accuserName} no te creyó. Nombra ${target} de: ${category.prompt}`
+    : `${accuserName} acusó a ${accusedName} de mentiroso. Categoría: ${category.prompt}`;
+
+  if (amAccused) {
+    document.getElementById('input-name-item').value = '';
+    document.getElementById('name-item-error').classList.add('hidden');
+  }
+
+  showScreen('lieNamingPlayer');
+});
+
+document.getElementById('btn-submit-name-item').addEventListener('click', submitNameItem);
+document.getElementById('input-name-item').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitNameItem();
+});
+function submitNameItem() {
+  const text = document.getElementById('input-name-item').value.trim();
+  if (!text) return;
+  socket.emit('player:name_item', { code: roomCode, text });
+  document.getElementById('input-name-item').value = '';
+}
+
+socket.on('lie:item_accepted', ({ text, count }) => {
+  document.getElementById('lie-p-named-count').textContent = count;
+  const log = document.getElementById('lie-p-named-log');
+  const item = document.createElement('div');
+  item.className = 'clue-item';
+  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">✓</span>`;
+  log.prepend(item);
+});
+
+socket.on('lie:item_rejected', ({ text, reason }) => {
+  const log = document.getElementById('lie-p-named-log');
+  const item = document.createElement('div');
+  item.className = 'clue-item';
+  const reasonText = reason === 'repetido' ? '✗ repetido' : '✗ no válido';
+  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who" style="color:var(--red);">${reasonText}</span>`;
+  log.prepend(item);
+});
+
+let lieEligibleVoter = false;
+
+socket.on('lie:vote_needed', ({ text, votesNeeded, eligibleVoterIds }) => {
+  document.getElementById('lie-p-vote-text').textContent = `"${text}"`;
+  lieEligibleVoter = eligibleVoterIds.includes(myId);
+  document.getElementById('lie-p-can-vote').classList.toggle('hidden', !lieEligibleVoter);
+  document.getElementById('lie-p-vote-status').textContent = lieEligibleVoter
+    ? `0 / ${votesNeeded} votos`
+    : 'Esperando la votación del grupo...';
+  showScreen('lieVotingPlayer');
+});
+
+document.getElementById('btn-vote-valid').addEventListener('click', () => castItemVote(true));
+document.getElementById('btn-vote-invalid').addEventListener('click', () => castItemVote(false));
+function castItemVote(valid) {
+  document.getElementById('lie-p-can-vote').classList.add('hidden');
+  document.getElementById('lie-p-vote-status').textContent = 'Voto enviado. Esperando a los demás...';
+  socket.emit('player:vote_item_validity', { code: roomCode, valid });
+}
+
+socket.on('lie:vote_progress', ({ votesIn, votesNeeded }) => {
+  if (lieEligibleVoter) {
+    document.getElementById('lie-p-vote-status').textContent = `Voto enviado (${votesIn}/${votesNeeded}). Esperando...`;
+  } else {
+    document.getElementById('lie-p-vote-status').textContent = `Esperando la votación del grupo... (${votesIn}/${votesNeeded})`;
+  }
+});
+
+socket.on('lie:vote_result', () => {
+  showScreen('lieNamingPlayer');
+});
+
+socket.on('lie:challenge_resolved', ({ success, accusedName, accuserName, roundNumber, roundCount, isLastRound, scores }) => {
+  document.getElementById('lie-p-result-eyebrow').textContent = `Ronda ${roundNumber} de ${roundCount}`;
+  document.getElementById('lie-p-result-title').textContent = success
+    ? `${accusedName} sí pudo`
+    : `${accusedName} no pudo`;
+  document.getElementById('lie-p-result-subtitle').textContent = success
+    ? `${accuserName} perdió un punto por desconfiar.`
+    : `${accuserName} ganó un punto por desenmascararlo.`;
+
+  const me = scores.find((p) => p.id === myId);
+  document.getElementById('lie-p-my-score').textContent = me ? me.score : 0;
+
+  document.getElementById('lie-p-waiting-text').textContent = isLastRound
+    ? '¡Partida terminada! Esperando a que el host inicie una nueva partida...'
+    : 'Esperando a que el host arranque la siguiente ronda...';
+
+  showScreen('lieRoundOverPlayer');
 });
