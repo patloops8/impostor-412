@@ -30,6 +30,29 @@
     <div class="player-grid" id="lobby-players"></div>
 
     <div class="divider"></div>
+
+    <h2 style="font-size:1.4rem; margin-bottom:14px;">Configuración de la partida</h2>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="config-row">
+        <label for="cfg-impostors">Número de impostores</label>
+        <select id="cfg-impostors"></select>
+      </div>
+      <div class="config-row">
+        <label for="cfg-mangas">Mangas a jugar (rondas de conceptos)</label>
+        <select id="cfg-mangas">
+          <option value="1">1</option>
+          <option value="3" selected>3</option>
+          <option value="5">5</option>
+          <option value="7">7</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div class="config-row" style="flex-direction:column; align-items:flex-start;">
+        <label>Categorías incluidas</label>
+        <div class="category-checks" id="category-checks"></div>
+      </div>
+    </div>
+
     <div class="center-flex" style="flex:none; gap:10px;">
       <button class="btn-primary" id="btn-start-match" disabled>Iniciar partida</button>
       <p id="start-hint">Necesitas al menos 3 jugadores</p>
@@ -38,7 +61,7 @@
 
   <!-- PANTALLA: ronda de pistas -->
   <section id="screen-clue" class="hidden">
-    <p class="eyebrow">Ronda <span id="clue-round-number">1</span> · Fase de pistas</p>
+    <p class="eyebrow"><span id="clue-manga-label">Manga 1 de 3</span> · Ronda <span id="clue-round-number">1</span></p>
     <h2 style="font-size:1.8rem; margin-bottom:16px;">Turno de <span id="clue-turn-name">—</span></h2>
     <div class="player-grid" id="clue-player-grid"></div>
 
@@ -72,10 +95,10 @@
     <p>Nueva ronda de pistas en unos segundos...</p>
   </section>
 
-  <!-- PANTALLA: fin de partida -->
+  <!-- PANTALLA: fin de manga / fin de partida -->
   <section id="screen-match-over" class="hidden">
     <div class="reveal-banner" id="final-banner">
-      <p class="eyebrow" id="final-eyebrow">Partida terminada</p>
+      <p class="eyebrow" id="final-eyebrow">Manga terminada</p>
       <h1 style="font-size:2.2rem;" id="final-title">—</h1>
       <p id="final-subtitle"></p>
     </div>
@@ -86,7 +109,7 @@
     <div class="card" id="final-scoreboard"></div>
 
     <div class="center-flex" style="flex:none; margin-top:20px;">
-      <button class="btn-primary" id="btn-next-match">Nueva partida</button>
+      <button class="btn-primary" id="btn-next-match">Siguiente manga</button>
     </div>
   </section>
 

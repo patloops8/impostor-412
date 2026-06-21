@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 const CONCEPTS = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'data', 'concepts.json'), 'utf-8')
 );
+const ALL_CATEGORIES = [...new Set(CONCEPTS.map((c) => c.category))];
 
 // ---------- Estado en memoria ----------
 /** rooms: Map<code, RoomState> */
@@ -21,6 +22,9 @@ const rooms = new Map();
 
 const MIN_PLAYERS = 3;
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin caracteres confusos
+const CLUE_PHASE_END_DELAY_MS = 4500;
+const RESULT_DISPLAY_DELAY_MS = 3500;
+const TIE_DISPLAY_DELAY_MS = 4000;
 
 function generateRoomCode() {
   let code;
@@ -50,14 +54,25 @@ function shuffle(array) {
   return arr;
 }
 
+// Máximo de impostores permitido para que arranquen en minoría real
+function maxImpostorsFor(playerCount) {
+  return Math.max(1, Math.floor((playerCount - 1) / 2));
+}
+
 function newRoom(code, hostSocketId) {
   return {
     code,
     hostId: hostSocketId,
     players: new Map(), // socketId -> { id, name, score, alive, connected }
-    status: 'lobby', // lobby | clue | voting | reveal | match_over
+    status: 'lobby', // lobby | clue | voting | reveal | manga_over
+    config: {
+      impostorCount: 1,
+      mangaCount: 3,
+      categories: ALL_CATEGORIES.slice(),
+    },
+    mangaNumber: 0,
     concept: null,
-    impostorId: null,
+    impostorIds: new Set(),
     usedClues: [],
     clueLog: [],
     clueOrder: [],
@@ -90,7 +105,43 @@ function emitRoomState(room) {
   io.to(room.code).emit('room:players_update', {
     players: publicPlayerList(room),
     status: room.status,
+    config: room.config,
+    maxImpostors: maxImpostorsFor(room.players.size),
   });
+}
+
+function startNewManga(room) {
+  const pool = CONCEPTS.filter((c) => room.config.categories.includes(c.category));
+  const usablePool = pool.length > 0 ? pool : CONCEPTS;
+  room.concept = usablePool[Math.floor(Math.random() * usablePool.length)];
+
+  const ids = shuffle([...room.players.keys()]);
+  const impostorCount = Math.min(room.config.impostorCount, maxImpostorsFor(room.players.size));
+  room.impostorIds = new Set(ids.slice(0, impostorCount));
+  room.usedClues = [];
+  room.roundNumber = 0;
+
+  for (const p of room.players.values()) {
+    p.alive = true;
+  }
+
+  for (const [id, p] of room.players.entries()) {
+    const isImpostor = room.impostorIds.has(id);
+    io.to(id).emit('match:your_role', {
+      isImpostor,
+      impostorCount: room.impostorIds.size,
+      category: isImpostor ? null : room.concept.category,
+      concept: isImpostor ? null : room.concept.name,
+    });
+  }
+
+  emitRoomState(room);
+  io.to(room.code).emit('manga:started', {
+    mangaNumber: room.mangaNumber,
+    mangaCount: room.config.mangaCount,
+    impostorCount: room.impostorIds.size,
+  });
+  startClueRound(room);
 }
 
 function startClueRound(room) {
@@ -128,8 +179,6 @@ function advanceClueTurnIfDisconnected(room) {
   }
 }
 
-const CLUE_PHASE_END_DELAY_MS = 4500;
-
 function finishCluePhase(room) {
   if (room.cluePhaseEnding) return; // evita doble timer si se dispara dos veces
   room.cluePhaseEnding = true;
@@ -166,17 +215,17 @@ function resolveVotes(room) {
     io.to(room.code).emit('round:tie', {
       tiedPlayers: topVoted.map((id) => room.players.get(id)?.name),
     });
-    setTimeout(() => startClueRound(room), 4000);
+    setTimeout(() => startClueRound(room), TIE_DISPLAY_DELAY_MS);
     return;
   }
 
   const eliminatedId = topVoted[0];
   const eliminated = room.players.get(eliminatedId);
   eliminated.alive = false;
-  const wasImpostor = eliminatedId === room.impostorId;
+  const wasImpostor = room.impostorIds.has(eliminatedId);
 
   const votersForImpostorThisRound = [...room.votes.entries()]
-    .filter(([, targetId]) => targetId === room.impostorId)
+    .filter(([, targetId]) => room.impostorIds.has(targetId))
     .map(([voterId]) => voterId);
 
   io.to(room.code).emit('round:elimination', {
@@ -187,42 +236,55 @@ function resolveVotes(room) {
 
   room.status = 'reveal';
 
-  if (wasImpostor) {
-    setTimeout(() => endMatch(room, 'impostor_caught', votersForImpostorThisRound), 3500);
+  const aliveImpostors = alivePlayers(room).filter((p) => room.impostorIds.has(p.id));
+  const aliveInnocentsCount = alivePlayers(room).length - aliveImpostors.length;
+
+  if (aliveImpostors.length === 0) {
+    setTimeout(() => endManga(room, 'impostors_caught', votersForImpostorThisRound), RESULT_DISPLAY_DELAY_MS);
     return;
   }
 
-  // El impostor sobrevive esta ronda
-  const impostor = room.players.get(room.impostorId);
-  if (impostor) impostor.score += 1;
-
-  if (alivePlayers(room).length <= 2) {
-    setTimeout(() => endMatch(room, 'impostor_escaped', []), 3500);
+  if (aliveImpostors.length >= aliveInnocentsCount) {
+    setTimeout(() => endManga(room, 'impostors_win', []), RESULT_DISPLAY_DELAY_MS);
     return;
   }
 
-  setTimeout(() => startClueRound(room), 3500);
+  // El juego sigue: cada impostor que sigue vivo gana un punto por sobrevivir esta ronda
+  aliveImpostors.forEach((imp) => {
+    imp.score += 1;
+  });
+
+  setTimeout(() => startClueRound(room), RESULT_DISPLAY_DELAY_MS);
 }
 
-function endMatch(room, result, votersForImpostor) {
-  room.status = 'match_over';
-  const impostor = room.players.get(room.impostorId);
+function endManga(room, result, votersForFinalImpostor) {
+  room.status = 'manga_over';
+  const impostorNames = [...room.impostorIds]
+    .map((id) => room.players.get(id)?.name)
+    .filter(Boolean);
 
-  if (result === 'impostor_caught') {
+  if (result === 'impostors_caught') {
     for (const p of room.players.values()) {
-      if (p.id === room.impostorId) continue;
+      if (room.impostorIds.has(p.id)) continue;
       p.score += 1;
-      if (votersForImpostor.includes(p.id)) p.score += 1; // bonus detective
+      if (votersForFinalImpostor.includes(p.id)) p.score += 1; // bonus detective
     }
-  } else if (result === 'impostor_escaped') {
-    if (impostor) impostor.score += 3; // bonus final 2
+  } else if (result === 'impostors_win') {
+    for (const id of room.impostorIds) {
+      const p = room.players.get(id);
+      if (p && p.alive) p.score += 3; // bonus por imponerse en número
+    }
   }
 
-  io.to(room.code).emit('match:over', {
+  const isLastManga = room.mangaNumber >= room.config.mangaCount;
+
+  io.to(room.code).emit('manga:over', {
     result,
     concept: room.concept,
-    impostorId: room.impostorId,
-    impostorName: impostor ? impostor.name : null,
+    impostorNames,
+    mangaNumber: room.mangaNumber,
+    mangaCount: room.config.mangaCount,
+    isLastManga,
     scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
   });
 }
@@ -234,7 +296,7 @@ io.on('connection', (socket) => {
     const room = newRoom(code, socket.id);
     rooms.set(code, room);
     socket.join(code);
-    callback({ ok: true, code });
+    callback({ ok: true, code, config: room.config, categories: ALL_CATEGORIES });
   });
 
   socket.on('player:join_room', ({ code, name }, callback) => {
@@ -274,31 +336,40 @@ io.on('connection', (socket) => {
     emitRoomState(room);
   });
 
+  socket.on('host:update_config', ({ code, impostorCount, mangaCount, categories }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
+
+    if (Number.isInteger(impostorCount)) {
+      const max = maxImpostorsFor(room.players.size);
+      room.config.impostorCount = Math.min(Math.max(1, impostorCount), max);
+    }
+    if (Number.isInteger(mangaCount)) {
+      room.config.mangaCount = Math.min(Math.max(1, mangaCount), 20);
+    }
+    if (Array.isArray(categories)) {
+      const valid = categories.filter((c) => ALL_CATEGORIES.includes(c));
+      room.config.categories = valid.length > 0 ? valid : ALL_CATEGORIES.slice();
+    }
+
+    emitRoomState(room);
+  });
+
   socket.on('host:start_match', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
     if (room.players.size < MIN_PLAYERS) return;
 
-    room.concept = CONCEPTS[Math.floor(Math.random() * CONCEPTS.length)];
-    const ids = [...room.players.keys()];
-    room.impostorId = ids[Math.floor(Math.random() * ids.length)];
-    room.usedClues = [];
+    room.mangaNumber = 1;
+    startNewManga(room);
+  });
 
-    for (const p of room.players.values()) {
-      p.alive = true;
-    }
-
-    for (const [id, p] of room.players.entries()) {
-      const isImpostor = id === room.impostorId;
-      io.to(id).emit('match:your_role', {
-        isImpostor,
-        category: isImpostor ? null : room.concept.category,
-        concept: isImpostor ? null : room.concept.name,
-      });
-    }
-
-    emitRoomState(room);
-    startClueRound(room);
+  socket.on('host:next_manga', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId) return;
+    if (room.mangaNumber >= room.config.mangaCount) return;
+    room.mangaNumber += 1;
+    startNewManga(room);
   });
 
   socket.on('player:submit_clue', ({ code, word }) => {
@@ -346,16 +417,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('host:next_match', ({ code }) => {
+  socket.on('host:new_session', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
     room.status = 'lobby';
     room.concept = null;
-    room.impostorId = null;
+    room.impostorIds = new Set();
     room.usedClues = [];
     room.clueLog = [];
     room.roundNumber = 0;
-    for (const p of room.players.values()) p.alive = true;
+    room.mangaNumber = 0;
+    for (const p of room.players.values()) {
+      p.alive = true;
+      p.score = 0;
+    }
     emitRoomState(room);
   });
 

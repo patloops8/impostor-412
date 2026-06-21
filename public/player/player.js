@@ -21,6 +21,7 @@ let myId = null;
 let latestRound = { roundNumber: 0, currentTurnPlayerId: null };
 let currentPlayersSnapshot = [];
 let selectedVoteTarget = null;
+let currentMangaInfo = { mangaNumber: 1, mangaCount: 1 };
 
 const screens = {
   join: document.getElementById('screen-join'),
@@ -78,8 +79,13 @@ socket.on('room:players_update', ({ players }) => {
   currentPlayersSnapshot = players;
 });
 
+// ---------- Inicio de manga ----------
+socket.on('manga:started', ({ mangaNumber, mangaCount }) => {
+  currentMangaInfo = { mangaNumber, mangaCount };
+});
+
 // ---------- Rol ----------
-socket.on('match:your_role', ({ isImpostor, category, concept }) => {
+socket.on('match:your_role', ({ isImpostor, impostorCount, category, concept }) => {
   const card = document.getElementById('role-card');
   const label = document.getElementById('role-label');
   const conceptEl = document.getElementById('role-concept');
@@ -89,12 +95,18 @@ socket.on('match:your_role', ({ isImpostor, category, concept }) => {
     card.className = 'role-card impostor';
     label.textContent = 'Eres el impostor';
     conceptEl.textContent = '???';
-    hint.textContent = 'No sabes el concepto. Escucha las pistas y disimula.';
+    hint.textContent =
+      impostorCount > 1
+        ? `Hay ${impostorCount} impostores en esta manga (tú eres uno, no sabes quiénes son los demás). No sabes el concepto, disimula.`
+        : 'No sabes el concepto. Escucha las pistas y disimula.';
   } else {
     card.className = 'role-card innocent';
     label.textContent = `Tu concepto (${category})`;
     conceptEl.textContent = concept;
-    hint.textContent = 'No lo digas directamente. Da una pista relacionada.';
+    hint.textContent =
+      impostorCount > 1
+        ? `Hay ${impostorCount} impostores entre ustedes. No lo digas directamente, da una pista relacionada.`
+        : 'No lo digas directamente. Da una pista relacionada.';
   }
 
   showScreen('role');
@@ -109,8 +121,8 @@ document.getElementById('btn-role-continue').addEventListener('click', () => {
 socket.on('round:started', ({ roundNumber, currentTurnPlayerId }) => {
   latestRound = { roundNumber, currentTurnPlayerId };
   document.getElementById('clue-log-player').innerHTML = '';
-  // Si ya estoy en la pantalla de pistas (rondas siguientes), actualiza directo.
-  if (!screens.role.classList.contains('hidden')) return; // se actualizará al dar "Continuar"
+  // Si ya estoy en la pantalla de rol (recién empezó la manga), se actualizará al dar "Continuar".
+  if (!screens.role.classList.contains('hidden')) return;
   renderCluePhase();
   showScreen('cluePhase');
 });
@@ -121,7 +133,8 @@ socket.on('round:turn_changed', ({ currentTurnPlayerId }) => {
 });
 
 function renderCluePhase() {
-  document.getElementById('my-round-number').textContent = latestRound.roundNumber;
+  document.getElementById('my-round-number').textContent =
+    `${latestRound.roundNumber} (Manga ${currentMangaInfo.mangaNumber}/${currentMangaInfo.mangaCount})`;
   const isMyTurn = latestRound.currentTurnPlayerId === myId;
 
   document.getElementById('clue-my-turn').classList.toggle('hidden', !isMyTurn);
@@ -208,8 +221,8 @@ socket.on('round:elimination', ({ eliminatedName, wasImpostor }) => {
   document.getElementById('reveal-eyebrow-player').textContent = wasImpostor ? '¡Atrapado!' : 'Era inocente...';
   document.getElementById('reveal-title-player').textContent = eliminatedName;
   document.getElementById('reveal-subtitle-player').textContent = wasImpostor
-    ? 'Era el impostor. Ganan los inocentes.'
-    : 'El impostor sigue libre. Nueva ronda...';
+    ? 'Era impostor. Veamos si sigue la manga...'
+    : 'Era inocente. La manga sigue...';
   showScreen('revealPlayer');
 });
 
@@ -217,28 +230,33 @@ socket.on('round:tie', () => {
   showScreen('tiePlayer');
 });
 
-// ---------- Fin de partida ----------
-socket.on('match:over', ({ result, concept, impostorName, scores }) => {
+// ---------- Fin de manga / sesión ----------
+socket.on('manga:over', ({ result, concept, impostorNames, mangaNumber, mangaCount, isLastManga, scores }) => {
   document.getElementById('final-eyebrow-player').textContent =
-    result === 'impostor_caught' ? 'Impostor atrapado' : 'El impostor escapó';
-  document.getElementById('final-title-player').textContent = `${impostorName} era el impostor`;
+    (result === 'impostors_caught' ? 'Impostores atrapados' : 'Los impostores ganaron') +
+    ` · Manga ${mangaNumber} de ${mangaCount}`;
+  const names = impostorNames.join(', ');
+  document.getElementById('final-title-player').textContent =
+    impostorNames.length > 1 ? `${names} eran los impostores` : `${names} era el impostor`;
   document.getElementById('final-subtitle-player').textContent = `Concepto: ${concept.name}`;
 
   const me = scores.find((p) => p.id === myId);
   document.getElementById('my-score').textContent = me ? me.score : 0;
 
+  document.getElementById('match-over-waiting-text').textContent = isLastManga
+    ? '¡Partida terminada! Esperando a que el host inicie una nueva partida...'
+    : 'Esperando a que el host arranque la siguiente manga...';
+
   showScreen('matchOverPlayer');
 });
 
 socket.on('room:players_update', ({ status }) => {
-  if (status === 'lobby' && !screens.join.classList.contains('hidden')) return;
+  if (status === 'lobby' && myId && !screens.join.classList.contains('hidden')) return;
   if (status === 'lobby' && myId) {
-    // El host arrancó una nueva partida (reset a lobby) y nosotros seguimos en la sala.
-    if (!screens.waiting.classList.contains('hidden')) return;
-    if (
-      screens.matchOverPlayer.classList.contains('hidden') === false ||
-      screens.revealPlayer.classList.contains('hidden') === false
-    ) {
+    const wasShowingResult =
+      !screens.matchOverPlayer.classList.contains('hidden') ||
+      !screens.revealPlayer.classList.contains('hidden');
+    if (wasShowingResult) {
       showScreen('waiting');
     }
   }

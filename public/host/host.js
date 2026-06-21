@@ -17,6 +17,16 @@ socket.on('connect_error', () => {
 });
 
 let roomCode = null;
+let currentPlayersSnapshot = [];
+let currentConfig = { impostorCount: 1, mangaCount: 3, categories: [] };
+let currentMaxImpostors = 1;
+
+const CATEGORY_LABELS = {
+  futbolista: 'Futbolistas',
+  equipo: 'Equipos',
+  selección: 'Selecciones',
+  dt: 'DTs',
+};
 
 const screens = {
   create: document.getElementById('screen-create'),
@@ -33,21 +43,33 @@ function showScreen(name) {
   screens[name].classList.remove('hidden');
 }
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ---------- Crear sala ----------
 document.getElementById('btn-create-room').addEventListener('click', () => {
   socket.emit('host:create_room', {}, (res) => {
     if (!res.ok) return;
     roomCode = res.code;
+    currentConfig = res.config;
     document.getElementById('room-code').textContent = roomCode;
     document.getElementById('join-url').textContent = `${window.location.origin}`;
+    renderCategoryChecks(res.categories, res.config.categories);
     showScreen('lobby');
   });
 });
 
-// ---------- Lobby: lista de jugadores ----------
-socket.on('room:players_update', ({ players, status }) => {
+// ---------- Lobby: lista de jugadores + configuración ----------
+socket.on('room:players_update', ({ players, status, config, maxImpostors }) => {
+  currentPlayersSnapshot = players;
+  if (config) currentConfig = config;
+  if (maxImpostors) currentMaxImpostors = maxImpostors;
   if (status === 'lobby') {
     renderLobbyPlayers(players);
+    renderImpostorOptions();
   }
 });
 
@@ -73,14 +95,55 @@ function renderLobbyPlayers(players) {
   }
 }
 
+function renderImpostorOptions() {
+  const select = document.getElementById('cfg-impostors');
+  const previousValue = Number(select.value) || currentConfig.impostorCount || 1;
+  select.innerHTML = '';
+  for (let i = 1; i <= currentMaxImpostors; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i;
+    select.appendChild(opt);
+  }
+  select.value = Math.min(previousValue, currentMaxImpostors);
+}
+
+function renderCategoryChecks(allCategories, selectedCategories) {
+  const wrap = document.getElementById('category-checks');
+  wrap.innerHTML = '';
+  allCategories.forEach((cat) => {
+    const label = document.createElement('label');
+    label.className = 'category-chip' + (selectedCategories.includes(cat) ? ' checked' : '');
+    label.innerHTML = `<input type="checkbox" value="${cat}" ${selectedCategories.includes(cat) ? 'checked' : ''}/> ${CATEGORY_LABELS[cat] || cat}`;
+    label.querySelector('input').addEventListener('change', () => {
+      label.classList.toggle('checked');
+      sendConfigUpdate();
+    });
+    wrap.appendChild(label);
+  });
+}
+
+function sendConfigUpdate() {
+  const impostorCount = Number(document.getElementById('cfg-impostors').value);
+  const mangaCount = Number(document.getElementById('cfg-mangas').value);
+  const categories = [...document.querySelectorAll('#category-checks input:checked')].map((i) => i.value);
+  socket.emit('host:update_config', { code: roomCode, impostorCount, mangaCount, categories });
+}
+
+document.getElementById('cfg-impostors').addEventListener('change', sendConfigUpdate);
+document.getElementById('cfg-mangas').addEventListener('change', sendConfigUpdate);
+
 document.getElementById('btn-start-match').addEventListener('click', () => {
   socket.emit('host:start_match', { code: roomCode });
 });
 
-// ---------- Ronda de pistas ----------
-let currentPlayersSnapshot = [];
+// ---------- Inicio de manga ----------
+socket.on('manga:started', ({ mangaNumber, mangaCount }) => {
+  document.getElementById('clue-manga-label').textContent = `Manga ${mangaNumber} de ${mangaCount}`;
+});
 
-socket.on('round:started', ({ roundNumber, turnOrder, currentTurnPlayerId }) => {
+// ---------- Ronda de pistas ----------
+socket.on('round:started', ({ roundNumber, currentTurnPlayerId }) => {
   document.getElementById('clue-round-number').textContent = roundNumber;
   document.getElementById('clue-log').innerHTML = '';
   renderClueTurn(currentTurnPlayerId);
@@ -103,10 +166,6 @@ function renderClueTurn(currentTurnPlayerId) {
   const turnPlayer = currentPlayersSnapshot.find((p) => p.id === currentTurnPlayerId);
   document.getElementById('clue-turn-name').textContent = turnPlayer ? turnPlayer.name : '—';
 }
-
-socket.on('room:players_update', ({ players }) => {
-  currentPlayersSnapshot = players;
-});
 
 socket.on('round:clue_submitted', ({ name, word }) => {
   const log = document.getElementById('clue-log');
@@ -138,8 +197,8 @@ socket.on('round:elimination', ({ eliminatedName, wasImpostor }) => {
   document.getElementById('reveal-eyebrow').textContent = wasImpostor ? '¡Atrapado!' : 'Era inocente...';
   document.getElementById('reveal-title').textContent = eliminatedName;
   document.getElementById('reveal-subtitle').textContent = wasImpostor
-    ? 'Era el impostor. Ganan los inocentes.'
-    : 'El impostor sigue libre. Nueva ronda...';
+    ? 'Era impostor. Sigue la partida si quedan más por atrapar.'
+    : 'Era inocente. La partida sigue...';
   showScreen('reveal');
 });
 
@@ -149,13 +208,20 @@ socket.on('round:tie', ({ tiedPlayers }) => {
   showScreen('tie');
 });
 
-// ---------- Fin de partida ----------
-socket.on('match:over', ({ result, concept, impostorName, scores }) => {
+// ---------- Fin de manga / sesión ----------
+let lastMangaWasFinal = false;
+
+socket.on('manga:over', ({ result, concept, impostorNames, mangaNumber, mangaCount, isLastManga, scores }) => {
+  lastMangaWasFinal = isLastManga;
+
   const banner = document.getElementById('final-banner');
-  banner.className = 'reveal-banner ' + (result === 'impostor_caught' ? 'caught' : 'escaped');
+  banner.className = 'reveal-banner ' + (result === 'impostors_caught' ? 'caught' : 'escaped');
   document.getElementById('final-eyebrow').textContent =
-    result === 'impostor_caught' ? 'Impostor atrapado' : 'El impostor escapó';
-  document.getElementById('final-title').textContent = `${impostorName} era el impostor`;
+    (result === 'impostors_caught' ? 'Impostores atrapados' : 'Los impostores se impusieron') +
+    ` · Manga ${mangaNumber} de ${mangaCount}`;
+  const names = impostorNames.join(', ');
+  document.getElementById('final-title').textContent =
+    impostorNames.length > 1 ? `${names} eran los impostores` : `${names} era el impostor`;
   document.getElementById('final-subtitle').textContent = `El concepto era: ${concept.name} (${concept.category})`;
 
   const board = document.getElementById('final-scoreboard');
@@ -167,16 +233,17 @@ socket.on('match:over', ({ result, concept, impostorName, scores }) => {
     board.appendChild(row);
   });
 
+  const nextBtn = document.getElementById('btn-next-match');
+  nextBtn.textContent = isLastManga ? 'Ver resultado final y reiniciar' : 'Siguiente manga';
+
   showScreen('matchOver');
 });
 
 document.getElementById('btn-next-match').addEventListener('click', () => {
-  socket.emit('host:next_match', { code: roomCode });
-  showScreen('lobby');
+  if (lastMangaWasFinal) {
+    socket.emit('host:new_session', { code: roomCode });
+    showScreen('lobby');
+  } else {
+    socket.emit('host:next_manga', { code: roomCode });
+  }
 });
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
