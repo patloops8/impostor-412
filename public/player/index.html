@@ -133,23 +133,35 @@
 
   <section id="screen-lie-naming-player" class="hidden">
     <p class="eyebrow">¡Mentiroso!</p>
-    <h2 style="font-size:1.3rem; margin-bottom:10px;" id="lie-p-naming-heading">—</h2>
-    <p style="font-family:var(--mono); color:var(--lime); margin-bottom:10px;">
-      <span id="lie-p-named-count">0</span> / <span id="lie-p-target">0</span>
-    </p>
+    <h2 style="font-size:1.2rem; margin-bottom:14px;" id="lie-p-naming-heading">—</h2>
 
-    <div id="lie-p-am-accused" class="hidden card">
-      <input type="text" id="input-name-item" placeholder="Escribe un nombre..." />
+    <div class="countdown-row">
+      <div class="countdown-circle" id="lie-p-countdown">10</div>
+      <p style="font-family:var(--mono); color:var(--lime); font-size:1.2rem;">
+        <span id="lie-p-named-count">0</span> / <span id="lie-p-target">0</span>
+      </p>
+    </div>
+
+    <!-- Modo VOZ: solo el acusador ve este botón -->
+    <button class="big-tap-btn hidden" id="btn-mark-answer" style="margin-top:18px;">Marcar respuesta ✓</button>
+
+    <!-- Modo TEXTO: solo el acusado ve este input -->
+    <div id="lie-p-am-accused" class="hidden card" style="margin-top:16px;">
+      <input type="text" id="input-name-item" placeholder="Escribe una respuesta..." />
       <p class="error-text hidden" id="name-item-error" style="margin-top:8px;"></p>
       <button class="btn-primary" id="btn-submit-name-item" style="width:100%; margin-top:12px;">Enviar</button>
     </div>
 
+    <p id="lie-p-naming-waiting" class="hidden center-flex" style="margin-top:16px;">Esperando...</p>
+
     <div class="clue-log" id="lie-p-named-log" style="margin-top:14px;"></div>
   </section>
 
-  <section id="screen-lie-voting-player" class="hidden">
-    <p class="eyebrow">¿Es válido?</p>
-    <h2 style="font-size:1.4rem; margin-bottom:18px;" id="lie-p-vote-text">—</h2>
+  <section id="screen-lie-final-vote-player" class="hidden">
+    <p class="eyebrow">¿El grupo le cree?</p>
+    <h2 style="font-size:1.3rem; margin-bottom:14px;" id="lie-p-finalvote-title">—</h2>
+
+    <div class="clue-log" id="lie-p-finalvote-list" style="margin-bottom:16px;"></div>
 
     <div id="lie-p-can-vote" class="hidden">
       <div class="vote-grid">

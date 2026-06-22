@@ -36,7 +36,7 @@ const screens = {
   matchOverPlayer: document.getElementById('screen-match-over-player'),
   lieClaimPlayer: document.getElementById('screen-lie-claim-player'),
   lieNamingPlayer: document.getElementById('screen-lie-naming-player'),
-  lieVotingPlayer: document.getElementById('screen-lie-voting-player'),
+  lieFinalVotePlayer: document.getElementById('screen-lie-final-vote-player'),
   lieRoundOverPlayer: document.getElementById('screen-lie-round-over-player'),
 };
 
@@ -264,10 +264,32 @@ socket.on('manga:over', ({ result, concept, impostorNames, mangaNumber, mangaCou
    MENTIROSO
    ========================================================= */
 
+let lieCountdownInterval = null;
+
+function startLieCountdown(deadlineAt) {
+  stopLieCountdown();
+  const circle = document.getElementById('lie-p-countdown');
+  function tick() {
+    const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+    circle.textContent = remaining;
+    circle.classList.toggle('urgent', remaining <= 3);
+    if (remaining <= 0) stopLieCountdown();
+  }
+  tick();
+  lieCountdownInterval = setInterval(tick, 250);
+}
+
+function stopLieCountdown() {
+  if (lieCountdownInterval) {
+    clearInterval(lieCountdownInterval);
+    lieCountdownInterval = null;
+  }
+}
+
 socket.on('lie:round_started', ({ roundNumber, roundCount, category, currentTurnPlayerId }) => {
   document.getElementById('lie-p-round-number').textContent = roundNumber;
   document.getElementById('lie-p-round-count').textContent = roundCount;
-  document.getElementById('lie-p-category').textContent = category.prompt;
+  document.getElementById('lie-p-category').textContent = category;
   document.getElementById('lie-p-current-claim').textContent = '0';
   lieCurrentClaim = 0;
   lieCurrentTurnPlayerId = currentTurnPlayerId;
@@ -322,25 +344,67 @@ socket.on('lie:claim_rejected', ({ reason }) => {
   err.classList.remove('hidden');
 });
 
-socket.on('lie:accused', ({ accuserId, accuserName, accusedId, accusedName, target, category }) => {
+let lieMode = 'texto';
+let amAccused = false;
+let amAccuser = false;
+
+socket.on('lie:accused', ({ accuserId, accuserName, accusedId, accusedName, target, category, mode, deadlineAt }) => {
+  lieMode = mode;
+  amAccused = accusedId === myId;
+  amAccuser = accuserId === myId;
+
   document.getElementById('lie-p-target').textContent = target;
   document.getElementById('lie-p-named-count').textContent = '0';
   document.getElementById('lie-p-named-log').innerHTML = '';
 
-  const amAccused = accusedId === myId;
-  document.getElementById('lie-p-am-accused').classList.toggle('hidden', !amAccused);
-  document.getElementById('lie-p-naming-heading').textContent = amAccused
-    ? `${accuserName} no te creyó. Nombra ${target} de: ${category.prompt}`
-    : `${accuserName} acusó a ${accusedName} de mentiroso. Categoría: ${category.prompt}`;
+  const heading = amAccused
+    ? `${accuserName} no te creyó. Nombra ${target} de:\n${category}`
+    : `${accuserName} acusó a ${accusedName}. Categoría:\n${category}`;
+  document.getElementById('lie-p-naming-heading').textContent = heading;
 
-  if (amAccused) {
+  // Mostrar los controles correctos según modo y rol
+  const markBtn = document.getElementById('btn-mark-answer');
+  const textInput = document.getElementById('lie-p-am-accused');
+  const waitingMsg = document.getElementById('lie-p-naming-waiting');
+
+  markBtn.classList.add('hidden');
+  textInput.classList.add('hidden');
+  waitingMsg.classList.add('hidden');
+
+  if (mode === 'voz' && amAccuser) {
+    markBtn.classList.remove('hidden');
+  } else if (mode === 'texto' && amAccused) {
+    textInput.classList.remove('hidden');
     document.getElementById('input-name-item').value = '';
     document.getElementById('name-item-error').classList.add('hidden');
+  } else {
+    waitingMsg.classList.remove('hidden');
+    waitingMsg.textContent = mode === 'voz'
+      ? `Di tus respuestas en voz alta. ${accuserName} irá marcándolas.`
+      : `${accusedName} está escribiendo las respuestas...`;
   }
 
+  startLieCountdown(deadlineAt);
   showScreen('lieNamingPlayer');
 });
 
+// Modo VOZ: acusador marca cada respuesta que escucha
+document.getElementById('btn-mark-answer').addEventListener('click', () => {
+  socket.emit('player:mark_answer_valid', { code: roomCode });
+});
+
+socket.on('lie:answer_marked', ({ count, target, deadlineAt }) => {
+  document.getElementById('lie-p-named-count').textContent = count;
+  const log = document.getElementById('lie-p-named-log');
+  const item = document.createElement('div');
+  item.className = 'clue-item';
+  item.innerHTML = `<span>Respuesta ${count}</span><span class="who">✓</span>`;
+  log.prepend(item);
+  if (deadlineAt) startLieCountdown(deadlineAt);
+  else stopLieCountdown();
+});
+
+// Modo TEXTO: acusado escribe cada respuesta
 document.getElementById('btn-submit-name-item').addEventListener('click', submitNameItem);
 document.getElementById('input-name-item').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitNameItem();
@@ -348,75 +412,86 @@ document.getElementById('input-name-item').addEventListener('keydown', (e) => {
 function submitNameItem() {
   const text = document.getElementById('input-name-item').value.trim();
   if (!text) return;
-  socket.emit('player:name_item', { code: roomCode, text });
   document.getElementById('input-name-item').value = '';
+  socket.emit('player:name_item', { code: roomCode, text });
 }
 
-socket.on('lie:item_accepted', ({ text, count }) => {
+socket.on('lie:item_submitted', ({ text, count, target, deadlineAt }) => {
   document.getElementById('lie-p-named-count').textContent = count;
   const log = document.getElementById('lie-p-named-log');
   const item = document.createElement('div');
   item.className = 'clue-item';
-  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">✓</span>`;
+  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">#${count}</span>`;
   log.prepend(item);
+  if (deadlineAt) startLieCountdown(deadlineAt);
+  else stopLieCountdown();
 });
 
-socket.on('lie:item_rejected', ({ text, reason }) => {
-  const log = document.getElementById('lie-p-named-log');
-  const item = document.createElement('div');
-  item.className = 'clue-item';
-  const reasonText = reason === 'repetido' ? '✗ repetido' : '✗ no válido';
-  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who" style="color:var(--red);">${reasonText}</span>`;
-  log.prepend(item);
+// Voto final único
+socket.on('lie:final_vote_needed', ({ target, mode, namedSoFar, eligibleVoterIds }) => {
+  stopLieCountdown();
+  const canVote = eligibleVoterIds.includes(myId);
+
+  document.getElementById('lie-p-finalvote-title').textContent = `¿Las ${target} respuestas fueron válidas?`;
+
+  const list = document.getElementById('lie-p-finalvote-list');
+  list.innerHTML = '';
+  if (mode === 'texto' && namedSoFar) {
+    namedSoFar.forEach((text) => {
+      const item = document.createElement('div');
+      item.className = 'clue-item';
+      item.innerHTML = `<span>${escapeHtml(text)}</span>`;
+      list.appendChild(item);
+    });
+  } else {
+    const note = document.createElement('div');
+    note.className = 'clue-item';
+    note.innerHTML = `<span>Se dijeron en voz alta. ¿Las aceptan todas?</span>`;
+    list.appendChild(note);
+  }
+
+  document.getElementById('lie-p-can-vote').classList.toggle('hidden', !canVote);
+  document.getElementById('lie-p-vote-status').textContent = canVote
+    ? 'Vota si las respuestas fueron válidas.'
+    : amAccused
+    ? 'El grupo está votando si tus respuestas fueron válidas...'
+    : 'Esperando los votos del grupo...';
+
+  showScreen('lieFinalVotePlayer');
 });
 
-let lieEligibleVoter = false;
+document.getElementById('btn-vote-valid').addEventListener('click', () => castFinalVote(true));
+document.getElementById('btn-vote-invalid').addEventListener('click', () => castFinalVote(false));
 
-socket.on('lie:vote_needed', ({ text, votesNeeded, eligibleVoterIds }) => {
-  document.getElementById('lie-p-vote-text').textContent = `"${text}"`;
-  lieEligibleVoter = eligibleVoterIds.includes(myId);
-  document.getElementById('lie-p-can-vote').classList.toggle('hidden', !lieEligibleVoter);
-  document.getElementById('lie-p-vote-status').textContent = lieEligibleVoter
-    ? `0 / ${votesNeeded} votos`
-    : 'Esperando la votación del grupo...';
-  showScreen('lieVotingPlayer');
-});
-
-document.getElementById('btn-vote-valid').addEventListener('click', () => castItemVote(true));
-document.getElementById('btn-vote-invalid').addEventListener('click', () => castItemVote(false));
-function castItemVote(valid) {
+function castFinalVote(valid) {
   document.getElementById('lie-p-can-vote').classList.add('hidden');
-  document.getElementById('lie-p-vote-status').textContent = 'Voto enviado. Esperando a los demás...';
-  socket.emit('player:vote_item_validity', { code: roomCode, valid });
+  document.getElementById('lie-p-vote-status').textContent = 'Voto enviado. Esperando al resto...';
+  socket.emit('player:vote_final_validity', { code: roomCode, valid });
 }
 
-socket.on('lie:vote_progress', ({ votesIn, votesNeeded }) => {
-  if (lieEligibleVoter) {
-    document.getElementById('lie-p-vote-status').textContent = `Voto enviado (${votesIn}/${votesNeeded}). Esperando...`;
-  } else {
-    document.getElementById('lie-p-vote-status').textContent = `Esperando la votación del grupo... (${votesIn}/${votesNeeded})`;
-  }
+socket.on('lie:final_vote_progress', ({ votesIn, votesNeeded }) => {
+  if (!document.getElementById('lie-p-can-vote').classList.contains('hidden')) return;
+  document.getElementById('lie-p-vote-status').textContent = `${votesIn}/${votesNeeded} votos enviados...`;
 });
 
-socket.on('lie:vote_result', () => {
-  showScreen('lieNamingPlayer');
-});
-
-socket.on('lie:challenge_resolved', ({ success, accusedName, accuserName, roundNumber, roundCount, isLastRound, scores }) => {
+socket.on('lie:challenge_resolved', ({ success, reason, accusedName, accuserName, roundNumber, roundCount, isLastRound, scores }) => {
+  stopLieCountdown();
   document.getElementById('lie-p-result-eyebrow').textContent = `Ronda ${roundNumber} de ${roundCount}`;
   document.getElementById('lie-p-result-title').textContent = success
     ? `${accusedName} sí pudo`
-    : `${accusedName} no pudo`;
+    : reason === 'timeout'
+    ? `${accusedName} se quedó sin tiempo`
+    : `${accusedName} no convenció al grupo`;
   document.getElementById('lie-p-result-subtitle').textContent = success
-    ? `${accuserName} perdió un punto por desconfiar.`
-    : `${accuserName} ganó un punto por desenmascararlo.`;
+    ? `${accuserName} perdió 1 punto.`
+    : `${accuserName} ganó 1 punto.`;
 
   const me = scores.find((p) => p.id === myId);
   document.getElementById('lie-p-my-score').textContent = me ? me.score : 0;
 
   document.getElementById('lie-p-waiting-text').textContent = isLastRound
-    ? '¡Partida terminada! Esperando a que el host inicie una nueva partida...'
-    : 'Esperando a que el host arranque la siguiente ronda...';
+    ? '¡Partida terminada! Esperando que el host reinicie...'
+    : 'Esperando que el host arranque la siguiente ronda...';
 
   showScreen('lieRoundOverPlayer');
 });

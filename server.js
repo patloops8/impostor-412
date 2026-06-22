@@ -16,6 +16,8 @@ const CONCEPTS = JSON.parse(
 );
 const ALL_CATEGORIES = [...new Set(CONCEPTS.map((c) => c.category))];
 
+// Lista plana de prompts. Mentiroso ya no valida contra una base de datos:
+// todo lo decide el grupo (ver lógica de "lie_final_vote" más abajo).
 const LIE_CATEGORIES = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8')
 );
@@ -30,6 +32,8 @@ const CLUE_PHASE_END_DELAY_MS = 4500;
 const RESULT_DISPLAY_DELAY_MS = 3500;
 const TIE_DISPLAY_DELAY_MS = 4000;
 const MAX_CLAIM = 300;
+const VOICE_ANSWER_TIMEOUT_MS = 10000;
+const TEXT_ANSWER_TIMEOUT_MS = 15000;
 
 function generateRoomCode() {
   let code;
@@ -92,8 +96,7 @@ function newRoom(code, hostSocketId) {
     // --- Mentiroso ---
     mentirosoConfig: {
       roundCount: 5,
-      includeObjective: true,
-      includeSubjective: true,
+      mode: 'texto', // 'texto' | 'voz'
     },
     lie: {
       roundNumber: 0,
@@ -103,7 +106,7 @@ function newRoom(code, hostSocketId) {
       currentTurnIndex: 0,
       currentClaim: 0,
       lastClaimerId: null,
-      challenge: null,
+      challenge: null, // { accusedId, accuserId, target, count, namedSoFar, deadlineAt, timeoutHandle, finalVotes }
     },
   };
 }
@@ -326,12 +329,7 @@ function endManga(room, result, votersForFinalImpostor) {
    ========================================================= */
 
 function pickLieCategory(room) {
-  const pool = LIE_CATEGORIES.filter((c) => {
-    if (c.type === 'objetiva') return room.mentirosoConfig.includeObjective;
-    return room.mentirosoConfig.includeSubjective;
-  });
-  const usable = pool.length > 0 ? pool : LIE_CATEGORIES;
-  return usable[Math.floor(Math.random() * usable.length)];
+  return LIE_CATEGORIES[Math.floor(Math.random() * LIE_CATEGORIES.length)];
 }
 
 function startLieSession(room) {
@@ -352,6 +350,7 @@ function startLieRound(room) {
   room.lie.currentTurnIndex = 0;
   room.lie.currentClaim = 0;
   room.lie.lastClaimerId = null;
+  clearLieChallengeTimer(room);
   room.lie.challenge = null;
   room.status = 'lie_claim';
 
@@ -360,6 +359,7 @@ function startLieRound(room) {
     roundNumber: room.lie.roundNumber,
     roundCount: room.mentirosoConfig.roundCount,
     category: room.lie.category,
+    mode: room.mentirosoConfig.mode,
     currentTurnPlayerId: currentLieTurnPlayerId(room),
   });
 }
@@ -382,10 +382,49 @@ function advanceLieTurn(room) {
   });
 }
 
-function resolveLieChallenge(room, success) {
-  const { accusedId, accuserId, target, namedSoFar } = room.lie.challenge;
-  const accused = room.players.get(accusedId);
-  const accuser = room.players.get(accuserId);
+function clearLieChallengeTimer(room) {
+  if (room.lie.challenge && room.lie.challenge.timeoutHandle) {
+    clearTimeout(room.lie.challenge.timeoutHandle);
+    room.lie.challenge.timeoutHandle = null;
+  }
+}
+
+function restartLieAnswerTimer(room) {
+  clearLieChallengeTimer(room);
+  const ch = room.lie.challenge;
+  if (!ch) return;
+  const duration = room.mentirosoConfig.mode === 'voz' ? VOICE_ANSWER_TIMEOUT_MS : TEXT_ANSWER_TIMEOUT_MS;
+  ch.deadlineAt = Date.now() + duration;
+  ch.timeoutHandle = setTimeout(() => {
+    if (room.status === 'lie_naming' && room.lie.challenge === ch) {
+      resolveLieChallenge(room, false, 'timeout');
+    }
+  }, duration);
+  return ch.deadlineAt;
+}
+
+function transitionToFinalVote(room) {
+  clearLieChallengeTimer(room);
+  const ch = room.lie.challenge;
+  room.status = 'lie_final_vote';
+  ch.finalVotes = new Map();
+
+  const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
+  io.to(room.code).emit('lie:final_vote_needed', {
+    target: ch.target,
+    mode: room.mentirosoConfig.mode,
+    namedSoFar: room.mentirosoConfig.mode === 'texto' ? ch.namedSoFar : null,
+    votesNeeded: eligible.length,
+    eligibleVoterIds: eligible.map((p) => p.id),
+  });
+}
+
+function resolveLieChallenge(room, success, reason) {
+  clearLieChallengeTimer(room);
+  const ch = room.lie.challenge;
+  if (!ch) return;
+  const accused = room.players.get(ch.accusedId);
+  const accuser = room.players.get(ch.accuserId);
 
   if (success) {
     if (accused) accused.score += 1;
@@ -400,12 +439,14 @@ function resolveLieChallenge(room, success) {
 
   io.to(room.code).emit('lie:challenge_resolved', {
     success,
+    reason: reason || (success ? 'completed' : 'rejected'),
     accusedName: accused ? accused.name : '???',
     accuserName: accuser ? accuser.name : '???',
     category: room.lie.category,
-    target,
-    namedSoFar,
-    validAnswers: room.lie.category.type === 'objetiva' ? room.lie.category.validAnswers : null,
+    target: ch.target,
+    count: ch.count,
+    namedSoFar: ch.namedSoFar,
+    mode: room.mentirosoConfig.mode,
     roundNumber: room.lie.roundNumber,
     roundCount: room.mentirosoConfig.roundCount,
     isLastRound,
@@ -496,18 +537,15 @@ io.on('connection', (socket) => {
     emitRoomState(room);
   });
 
-  socket.on('host:update_mentiroso_config', ({ code, roundCount, includeObjective, includeSubjective }) => {
+  socket.on('host:update_mentiroso_config', ({ code, roundCount, mode }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
 
     if (Number.isInteger(roundCount)) {
       room.mentirosoConfig.roundCount = Math.min(Math.max(1, roundCount), 20);
     }
-    if (typeof includeObjective === 'boolean') room.mentirosoConfig.includeObjective = includeObjective;
-    if (typeof includeSubjective === 'boolean') room.mentirosoConfig.includeSubjective = includeSubjective;
-
-    if (!room.mentirosoConfig.includeObjective && !room.mentirosoConfig.includeSubjective) {
-      room.mentirosoConfig.includeSubjective = true; // al menos un tipo activo
+    if (mode === 'voz' || mode === 'texto') {
+      room.mentirosoConfig.mode = mode;
     }
 
     emitRoomState(room);
@@ -627,11 +665,14 @@ io.on('connection', (socket) => {
       accusedId,
       accuserId,
       target: room.lie.currentClaim,
+      count: 0,
       namedSoFar: [],
-      pendingItem: null,
-      votes: new Map(),
+      deadlineAt: null,
+      timeoutHandle: null,
+      finalVotes: new Map(),
     };
     room.status = 'lie_naming';
+    const deadlineAt = restartLieAnswerTimer(room);
 
     io.to(room.code).emit('lie:accused', {
       accuserId,
@@ -640,114 +681,84 @@ io.on('connection', (socket) => {
       accusedName: room.players.get(accusedId)?.name,
       target: room.lie.currentClaim,
       category: room.lie.category,
+      mode: room.mentirosoConfig.mode,
+      deadlineAt,
     });
   });
 
+  // Modo VOZ: el acusador marca cada respuesta correcta que escucha en voz alta
+  socket.on('player:mark_answer_valid', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'voz') return;
+    const ch = room.lie.challenge;
+    if (!ch || socket.id !== ch.accuserId) return;
+
+    ch.count += 1;
+
+    if (ch.count >= ch.target) {
+      io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt: null });
+      transitionToFinalVote(room);
+      return;
+    }
+
+    const deadlineAt = restartLieAnswerTimer(room);
+    io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt });
+  });
+
+  // Modo TEXTO: el acusado escribe y envía cada respuesta
   socket.on('player:name_item', ({ code, text }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'lie_naming') return;
+    if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'texto') return;
     const ch = room.lie.challenge;
     if (!ch || socket.id !== ch.accusedId) return;
 
     const clean = (text || '').trim();
     if (!clean) return;
-    const norm = normalizeWord(clean);
 
-    if (ch.namedSoFar.some((it) => normalizeWord(it) === norm)) {
-      io.to(room.code).emit('lie:item_rejected', { text: clean, reason: 'repetido' });
-      resolveLieChallenge(room, false);
+    ch.namedSoFar.push(clean);
+    ch.count += 1;
+
+    if (ch.count >= ch.target) {
+      io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt: null });
+      transitionToFinalVote(room);
       return;
     }
 
-    if (room.lie.category.type === 'objetiva') {
-      const valid = room.lie.category.validAnswers.some((a) => normalizeWord(a) === norm);
-      if (!valid) {
-        io.to(room.code).emit('lie:item_rejected', { text: clean, reason: 'no_valido' });
-        resolveLieChallenge(room, false);
-        return;
-      }
-      acceptNamedItem(room, clean);
-      return;
-    }
-
-    // Categoría subjetiva: el grupo vota
-    ch.pendingItem = clean;
-    ch.votes = new Map();
-    room.status = 'lie_voting';
-
-    const eligibleVoters = connectedPlayers(room).filter(
-      (p) => p.id !== ch.accusedId && p.id !== ch.accuserId
-    );
-
-    io.to(room.code).emit('lie:vote_needed', {
-      text: clean,
-      votesNeeded: eligibleVoters.length,
-      eligibleVoterIds: eligibleVoters.map((p) => p.id),
-    });
+    const deadlineAt = restartLieAnswerTimer(room);
+    io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt });
   });
 
-  socket.on('player:vote_item_validity', ({ code, valid }) => {
+  // Voto final único: ¿la lista completa de respuestas fue válida?
+  socket.on('player:vote_final_validity', ({ code, valid }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'lie_voting') return;
+    if (!room || room.status !== 'lie_final_vote') return;
     const ch = room.lie.challenge;
-    if (!ch) return;
-    if (socket.id === ch.accusedId || socket.id === ch.accuserId) return;
+    if (!ch || socket.id === ch.accusedId) return;
 
-    ch.votes.set(socket.id, !!valid);
+    ch.finalVotes.set(socket.id, !!valid);
 
-    const eligibleVoters = connectedPlayers(room).filter(
-      (p) => p.id !== ch.accusedId && p.id !== ch.accuserId
-    );
-
-    io.to(room.code).emit('lie:vote_progress', {
-      votesIn: ch.votes.size,
-      votesNeeded: eligibleVoters.length,
+    const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
+    io.to(room.code).emit('lie:final_vote_progress', {
+      votesIn: ch.finalVotes.size,
+      votesNeeded: eligible.length,
     });
 
-    if (ch.votes.size >= eligibleVoters.length && eligibleVoters.length > 0) {
+    if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
       let validCount = 0;
       let invalidCount = 0;
-      for (const v of ch.votes.values()) {
+      for (const v of ch.finalVotes.values()) {
         if (v) validCount += 1;
         else invalidCount += 1;
       }
       const accepted = validCount >= invalidCount; // empate = válido
-
-      room.status = 'lie_naming';
-      io.to(room.code).emit('lie:vote_result', {
-        text: ch.pendingItem,
-        accepted,
-        validCount,
-        invalidCount,
-      });
-
-      if (!accepted) {
-        resolveLieChallenge(room, false);
-        return;
-      }
-      acceptNamedItem(room, ch.pendingItem);
+      resolveLieChallenge(room, accepted, 'vote');
     }
   });
-
-  function acceptNamedItem(room, text) {
-    const ch = room.lie.challenge;
-    ch.namedSoFar.push(text);
-    ch.pendingItem = null;
-
-    io.to(room.code).emit('lie:item_accepted', {
-      text,
-      count: ch.namedSoFar.length,
-      target: ch.target,
-    });
-
-    if (ch.namedSoFar.length >= ch.target) {
-      resolveLieChallenge(room, true);
-    }
-  }
 
   socket.on('host:new_session', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
+    clearLieChallengeTimer(room);
     room.status = 'lobby';
     room.gameType = null;
     room.concept = null;
@@ -797,6 +808,19 @@ io.on('connection', (socket) => {
         }
         if (room.status === 'lie_claim' && currentLieTurnPlayerId(room) === socket.id) {
           advanceLieTurn(room);
+        }
+        if (room.status === 'lie_final_vote' && room.lie.challenge) {
+          const ch = room.lie.challenge;
+          const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
+          if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
+            let validCount = 0;
+            let invalidCount = 0;
+            for (const v of ch.finalVotes.values()) {
+              if (v) validCount += 1;
+              else invalidCount += 1;
+            }
+            resolveLieChallenge(room, validCount >= invalidCount, 'vote');
+          }
         }
       }
       emitRoomState(room);

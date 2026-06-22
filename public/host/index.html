@@ -90,13 +90,19 @@
             <option value="10">10</option>
           </select>
         </div>
-        <div class="config-row">
-          <label for="cfg-lie-objective">Incluir categorías objetivas (con datos reales)</label>
-          <input type="checkbox" id="cfg-lie-objective" checked />
-        </div>
-        <div class="config-row">
-          <label for="cfg-lie-subjective">Incluir categorías subjetivas (las vota el grupo)</label>
-          <input type="checkbox" id="cfg-lie-subjective" checked />
+        <div class="config-row" style="flex-direction:column; align-items:flex-start;">
+          <label>¿Cómo van a responder?</label>
+          <div class="category-checks" style="margin-top:10px;">
+            <label class="category-chip checked" id="mode-chip-texto">
+              <input type="radio" name="lie-mode" value="texto" checked /> Texto (escriben en el celular)
+            </label>
+            <label class="category-chip" id="mode-chip-voz">
+              <input type="radio" name="lie-mode" value="voz" /> Voz (lo dicen en persona o en llamada)
+            </label>
+          </div>
+          <p style="font-size:0.78rem; color:var(--text-dim); margin-top:8px;">
+            En modo voz, quien acusó va marcando cada respuesta correcta que escucha decir.
+          </p>
         </div>
       </div>
     </div>
@@ -167,19 +173,28 @@
   </section>
 
   <section id="screen-lie-naming" class="hidden">
-    <p class="eyebrow">Mentiroso!</p>
+    <p class="eyebrow">¡Mentiroso!</p>
     <h2 style="font-size:1.6rem;"><span id="lie-accused-name">—</span> debe nombrar <span id="lie-target-number">0</span></h2>
     <p style="margin:6px 0 16px;" id="lie-category-prompt-2"></p>
-    <p style="font-family:var(--mono); color:var(--lime); margin-bottom:10px;">
-      <span id="lie-named-count">0</span> / <span id="lie-target-number-2">0</span>
-    </p>
-    <div class="clue-log" id="lie-named-log"></div>
+
+    <div class="countdown-row">
+      <div class="countdown-circle" id="lie-countdown">10</div>
+      <div>
+        <p style="font-family:var(--mono); color:var(--lime); font-size:1.1rem;">
+          <span id="lie-named-count">0</span> / <span id="lie-target-number-2">0</span>
+        </p>
+        <p style="font-size:0.8rem; color:var(--text-dim);" id="lie-mode-hint">segundos para la siguiente respuesta</p>
+      </div>
+    </div>
+
+    <div class="clue-log" id="lie-named-log" style="margin-top:16px;"></div>
   </section>
 
-  <section id="screen-lie-voting" class="hidden center-flex">
-    <p class="eyebrow">¿Es válido?</p>
-    <h1 style="font-size:2rem;" id="lie-vote-text">—</h1>
-    <p id="lie-vote-progress">0 / 0 votos</p>
+  <section id="screen-lie-final-vote" class="hidden center-flex">
+    <p class="eyebrow">¿El grupo le cree?</p>
+    <h1 style="font-size:1.8rem;" id="lie-finalvote-title">—</h1>
+    <div class="clue-log" id="lie-finalvote-list" style="width:100%; max-height:200px;"></div>
+    <p id="lie-finalvote-progress">0 / 0 votos</p>
   </section>
 
   <section id="screen-lie-round-over" class="hidden">

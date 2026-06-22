@@ -38,7 +38,7 @@ const screens = {
   matchOver: document.getElementById('screen-match-over'),
   lieClaim: document.getElementById('screen-lie-claim'),
   lieNaming: document.getElementById('screen-lie-naming'),
-  lieVoting: document.getElementById('screen-lie-voting'),
+  lieFinalVote: document.getElementById('screen-lie-final-vote'),
   lieRoundOver: document.getElementById('screen-lie-round-over'),
 };
 
@@ -168,13 +168,17 @@ document.getElementById('cfg-mangas').addEventListener('change', sendImpostorCon
 
 function sendMentirosoConfigUpdate() {
   const roundCount = Number(document.getElementById('cfg-lie-rounds').value);
-  const includeObjective = document.getElementById('cfg-lie-objective').checked;
-  const includeSubjective = document.getElementById('cfg-lie-subjective').checked;
-  socket.emit('host:update_mentiroso_config', { code: roomCode, roundCount, includeObjective, includeSubjective });
+  const mode = document.querySelector('input[name="lie-mode"]:checked').value;
+  socket.emit('host:update_mentiroso_config', { code: roomCode, roundCount, mode });
 }
 document.getElementById('cfg-lie-rounds').addEventListener('change', sendMentirosoConfigUpdate);
-document.getElementById('cfg-lie-objective').addEventListener('change', sendMentirosoConfigUpdate);
-document.getElementById('cfg-lie-subjective').addEventListener('change', sendMentirosoConfigUpdate);
+document.querySelectorAll('input[name="lie-mode"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    document.getElementById('mode-chip-texto').classList.toggle('checked', document.querySelector('input[name="lie-mode"][value="texto"]').checked);
+    document.getElementById('mode-chip-voz').classList.toggle('checked', document.querySelector('input[name="lie-mode"][value="voz"]').checked);
+    sendMentirosoConfigUpdate();
+  });
+});
 
 document.getElementById('btn-start-match').addEventListener('click', () => {
   socket.emit('host:start_match', { code: roomCode });
@@ -297,10 +301,32 @@ function renderScoreboard(elementId, scores) {
    MENTIROSO
    ========================================================= */
 
+let countdownInterval = null;
+
+function startCountdown(deadlineAt) {
+  stopCountdown();
+  const circle = document.getElementById('lie-countdown');
+  function tick() {
+    const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+    circle.textContent = remaining;
+    circle.classList.toggle('urgent', remaining <= 3);
+    if (remaining <= 0) stopCountdown();
+  }
+  tick();
+  countdownInterval = setInterval(tick, 250);
+}
+
+function stopCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
+
 socket.on('lie:round_started', ({ roundNumber, roundCount, category, currentTurnPlayerId }) => {
   document.getElementById('lie-round-number').textContent = roundNumber;
   document.getElementById('lie-round-count').textContent = roundCount;
-  document.getElementById('lie-category-prompt').textContent = category.prompt;
+  document.getElementById('lie-category-prompt').textContent = category;
   document.getElementById('lie-current-claim').textContent = '0';
   document.getElementById('lie-claim-log').innerHTML = '';
   renderLieTurn(currentTurnPlayerId);
@@ -325,72 +351,93 @@ socket.on('lie:claim_made', ({ name, amount }) => {
   log.prepend(item);
 });
 
-socket.on('lie:accused', ({ accuserName, accusedName, target, category }) => {
+socket.on('lie:accused', ({ accuserName, accusedName, target, category, mode, deadlineAt }) => {
   document.getElementById('lie-accused-name').textContent = accusedName;
   document.getElementById('lie-target-number').textContent = target;
   document.getElementById('lie-target-number-2').textContent = target;
   document.getElementById('lie-named-count').textContent = '0';
-  document.getElementById('lie-category-prompt-2').textContent = `${accuserName} no le creyó. Categoría: ${category.prompt}`;
+  document.getElementById('lie-category-prompt-2').textContent = `${accuserName} no le creyó a ${accusedName}. Categoría: ${category}`;
+  document.getElementById('lie-mode-hint').textContent =
+    mode === 'voz'
+      ? `${accuserName} va marcando cada respuesta correcta que escucha en voz alta`
+      : `${accusedName} está escribiendo las respuestas`;
   document.getElementById('lie-named-log').innerHTML = '';
+  startCountdown(deadlineAt);
   showScreen('lieNaming');
 });
 
-socket.on('lie:item_accepted', ({ text, count }) => {
+socket.on('lie:answer_marked', ({ count, target, deadlineAt }) => {
   document.getElementById('lie-named-count').textContent = count;
   const log = document.getElementById('lie-named-log');
   const item = document.createElement('div');
   item.className = 'clue-item';
-  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">✓ válido</span>`;
+  item.innerHTML = `<span>Respuesta ${count}</span><span class="who">✓ marcada</span>`;
   log.prepend(item);
+  if (deadlineAt) startCountdown(deadlineAt);
+  else stopCountdown();
 });
 
-socket.on('lie:item_rejected', ({ text, reason }) => {
+socket.on('lie:item_submitted', ({ text, count, target, deadlineAt }) => {
+  document.getElementById('lie-named-count').textContent = count;
   const log = document.getElementById('lie-named-log');
   const item = document.createElement('div');
   item.className = 'clue-item';
-  const reasonText = reason === 'repetido' ? '✗ repetido' : '✗ no válido';
-  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who" style="color:var(--red);">${reasonText}</span>`;
+  item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">#${count}</span>`;
   log.prepend(item);
+  if (deadlineAt) startCountdown(deadlineAt);
+  else stopCountdown();
 });
 
-socket.on('lie:vote_needed', ({ text, votesNeeded }) => {
-  document.getElementById('lie-vote-text').textContent = `"${text}"`;
-  document.getElementById('lie-vote-progress').textContent = `0 / ${votesNeeded} votos`;
-  showScreen('lieVoting');
+socket.on('lie:final_vote_needed', ({ target, mode, namedSoFar }) => {
+  stopCountdown();
+  document.getElementById('lie-finalvote-title').textContent = `¿Las ${target} respuestas fueron válidas?`;
+  const list = document.getElementById('lie-finalvote-list');
+  list.innerHTML = '';
+  if (mode === 'texto' && namedSoFar) {
+    namedSoFar.forEach((text) => {
+      const item = document.createElement('div');
+      item.className = 'clue-item';
+      item.innerHTML = `<span>${escapeHtml(text)}</span>`;
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('lie-finalvote-progress').textContent = 'Esperando votos...';
+  showScreen('lieFinalVote');
 });
 
-socket.on('lie:vote_progress', ({ votesIn, votesNeeded }) => {
-  document.getElementById('lie-vote-progress').textContent = `${votesIn} / ${votesNeeded} votos`;
-});
-
-socket.on('lie:vote_result', () => {
-  showScreen('lieNaming');
+socket.on('lie:final_vote_progress', ({ votesIn, votesNeeded }) => {
+  document.getElementById('lie-finalvote-progress').textContent = `${votesIn} / ${votesNeeded} votos`;
 });
 
 let lastLieRoundWasFinal = false;
 
-socket.on('lie:challenge_resolved', ({ success, accusedName, accuserName, category, target, namedSoFar, validAnswers, roundNumber, roundCount, isLastRound, scores }) => {
+socket.on('lie:challenge_resolved', ({ success, reason, accusedName, accuserName, category, target, count, namedSoFar, mode, roundNumber, roundCount, isLastRound, scores }) => {
+  stopCountdown();
   lastLieRoundWasFinal = isLastRound;
 
   const banner = document.getElementById('lie-result-banner');
   banner.className = 'reveal-banner ' + (success ? 'caught' : 'escaped');
   document.getElementById('lie-result-eyebrow').textContent = `Ronda ${roundNumber} de ${roundCount}`;
-  document.getElementById('lie-result-title').textContent = success
-    ? `${accusedName} sí pudo`
-    : `${accusedName} no pudo`;
-  document.getElementById('lie-result-subtitle').textContent = `Categoría: ${category.prompt} (decía ${target})`;
+
+  let title = success ? `${accusedName} sí pudo` : `${accusedName} no pudo`;
+  let subtitle = `Categoría: ${category} (decía ${target})`;
+  if (reason === 'timeout') subtitle = `Se le acabó el tiempo a ${accusedName}. ` + subtitle;
+  if (reason === 'vote' && !success) subtitle = `El grupo no le creyó. ` + subtitle;
+
+  document.getElementById('lie-result-title').textContent = title;
+  document.getElementById('lie-result-subtitle').textContent = subtitle;
 
   const list = document.getElementById('lie-result-list');
   list.innerHTML = '';
-  namedSoFar.forEach((text) => {
-    const item = document.createElement('div');
-    item.className = 'clue-item';
-    item.innerHTML = `<span>${escapeHtml(text)}</span><span class="who">✓</span>`;
-    list.appendChild(item);
-  });
-  document.getElementById('lie-reveal-heading').textContent = validAnswers
-    ? `Nombró ${namedSoFar.length} de ${target} (respuestas posibles: ${validAnswers.length})`
-    : `Nombró ${namedSoFar.length} de ${target}`;
+  if (mode === 'texto') {
+    namedSoFar.forEach((text) => {
+      const item = document.createElement('div');
+      item.className = 'clue-item';
+      item.innerHTML = `<span>${escapeHtml(text)}</span>`;
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('lie-reveal-heading').textContent = `Llegó a ${count} de ${target}`;
 
   renderScoreboard('lie-scoreboard', scores);
 
