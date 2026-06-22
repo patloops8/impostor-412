@@ -20,6 +20,7 @@ let roomCode = null;
 let currentPlayersSnapshot = [];
 let currentGameType = null;
 let currentMaxImpostors = 1;
+let currentMinPlayers = 3;
 
 const CATEGORY_LABELS = {
   futbolista: 'Futbolistas',
@@ -70,6 +71,7 @@ socket.on('room:players_update', (state) => {
   currentPlayersSnapshot = state.players;
   currentGameType = state.gameType;
   if (state.maxImpostors) currentMaxImpostors = state.maxImpostors;
+  if (state.minPlayers) currentMinPlayers = state.minPlayers;
 
   if (state.status === 'lobby') {
     renderLobbyPlayers(state.players);
@@ -94,13 +96,13 @@ function renderLobbyPlayers(players) {
 function updateStartButton(playerCount) {
   const startBtn = document.getElementById('btn-start-match');
   const hint = document.getElementById('start-hint');
-  const canStart = playerCount >= 3 && currentGameType;
+  const canStart = playerCount >= currentMinPlayers && currentGameType;
   startBtn.classList.toggle('hidden', !currentGameType);
   startBtn.disabled = !canStart;
   if (!currentGameType) {
     hint.textContent = 'Elige un juego para continuar';
-  } else if (playerCount < 3) {
-    hint.textContent = 'Necesitas al menos 3 jugadores';
+  } else if (playerCount < currentMinPlayers) {
+    hint.textContent = `Necesitas al menos ${currentMinPlayers} jugadores`;
   } else {
     hint.textContent = 'Listos para arrancar';
   }

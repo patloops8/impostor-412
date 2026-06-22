@@ -134,6 +134,7 @@ function publicPlayerList(room) {
 }
 
 function emitRoomState(room) {
+  const minPlayers = room.gameType === 'mentiroso' ? 2 : MIN_PLAYERS;
   io.to(room.code).emit('room:players_update', {
     players: publicPlayerList(room),
     status: room.status,
@@ -141,6 +142,7 @@ function emitRoomState(room) {
     impostorConfig: room.impostorConfig,
     mentirosoConfig: room.mentirosoConfig,
     maxImpostors: maxImpostorsFor(room.players.size),
+    minPlayers,
   });
 }
 
@@ -554,8 +556,10 @@ io.on('connection', (socket) => {
   socket.on('host:start_match', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
-    if (room.players.size < MIN_PLAYERS) return;
     if (!room.gameType) return;
+
+    const minPlayers = room.gameType === 'mentiroso' ? 2 : MIN_PLAYERS;
+    if (room.players.size < minPlayers) return;
 
     if (room.gameType === 'impostor') {
       room.mangaNumber = 1;
