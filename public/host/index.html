@@ -287,73 +287,63 @@
 
   <!-- Pantalla: subasta activa (muestra silueta) -->
   <section id="screen-subasta-bidding" class="hidden">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <p class="eyebrow" id="sub-card-counter">Carta 1 de 30</p>
       <p class="eyebrow" id="sub-formation-label">4-3-3</p>
     </div>
 
-    <div class="silhouette-container">
-      <img id="sub-silhouette-img" class="silhouette-img" src="" alt="silueta" />
-      <div id="sub-silhouette-placeholder" class="silhouette-placeholder hidden">
-        <span id="sub-placeholder-pos">?</span>
+    <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start;">
+      <!-- Silueta -->
+      <div>
+        <div class="silhouette-container" style="max-width:200px; margin:0 0 10px;">
+          <img id="sub-silhouette-img" class="silhouette-img" src="" alt="silueta" />
+          <div id="sub-silhouette-placeholder" class="silhouette-placeholder hidden">
+            <span id="sub-placeholder-pos">?</span>
+          </div>
+        </div>
+        <div id="sub-card-position" style="margin-bottom:6px;"></div>
+        <p style="font-family:var(--mono); font-size:1.1rem; color:var(--lime);" id="sub-card-starting-price">$—M precio base</p>
+        <p id="sub-highest-bid-display" style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">Sin pujas aún</p>
+      </div>
+      <!-- Timer + log de pujas -->
+      <div style="min-width:200px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <div class="countdown-circle" id="sub-bid-countdown">30</div>
+          <button class="btn-secondary" id="btn-force-resolve" style="padding:8px 14px; font-size:0.8rem;">Cerrar subasta</button>
+        </div>
+        <h4 style="font-size:0.85rem; color:var(--text-dim); margin-bottom:8px;">Pujas en vivo</h4>
+        <div class="clue-log" id="sub-live-bid-log" style="max-height:200px;"></div>
       </div>
     </div>
-
-    <div class="auction-info-row">
-      <div>
-        <p class="eyebrow">Posición</p>
-        <p id="sub-card-position" style="font-weight:800; font-size:1.1rem;">—</p>
-      </div>
-      <div>
-        <p class="eyebrow">Precio inicial</p>
-        <p id="sub-card-starting-price" style="font-family:var(--mono); font-size:1.3rem; color:var(--lime);">$—M</p>
-      </div>
-      <div>
-        <div class="countdown-circle" id="sub-bid-countdown">30</div>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-    <p style="text-align:center;" id="sub-bids-in">Esperando pujas...</p>
   </section>
 
-  <!-- Pantalla: resultado de carta -->
+  <!-- Pantalla: resultado de carta (revela identidad inmediatamente) -->
   <section id="screen-subasta-card-result" class="hidden">
-    <div class="reveal-banner" id="sub-result-banner">
-      <p class="eyebrow" id="sub-result-eyebrow">Resultado</p>
-      <h1 style="font-size:1.8rem;" id="sub-result-title">—</h1>
-      <p id="sub-result-subtitle"></p>
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start;">
+      <div class="silhouette-container" style="max-width:160px; margin:0;">
+        <img id="sub-result-img" class="silhouette-img revealed" src="" alt="" />
+        <div id="sub-result-placeholder" class="silhouette-placeholder hidden"><span>?</span></div>
+      </div>
+      <div>
+        <div class="reveal-banner" id="sub-result-banner" style="padding:16px;">
+          <p class="eyebrow" id="sub-result-eyebrow">Resultado</p>
+          <h2 style="font-size:1.4rem; margin:6px 0;" id="sub-result-player-name">—</h2>
+          <p id="sub-result-player-label" style="font-size:0.82rem; color:var(--text-dim);"></p>
+          <p id="sub-result-subtitle" style="margin-top:6px;"></p>
+          <p id="sub-result-troll" class="hidden" style="color:var(--red); font-weight:800; margin-top:4px;">🎭 ¡Carta TROLL!</p>
+        </div>
+        <div class="clue-log" id="sub-bids-log" style="margin-top:10px; max-height:180px;"></div>
+      </div>
     </div>
-    <div class="divider"></div>
-    <h3 style="margin-bottom:10px;">Pujas de esta carta</h3>
-    <div class="clue-log" id="sub-bids-log"></div>
     <div class="center-flex" style="flex:none; margin-top:18px;">
       <button class="btn-primary" id="btn-next-subasta-card">Siguiente carta</button>
     </div>
   </section>
 
-  <!-- Pantalla: revelacion final (carta a carta) -->
-  <section id="screen-subasta-reveal" class="hidden">
-    <p class="eyebrow" id="sub-reveal-counter">Revelando 1 de 30</p>
-    <div class="silhouette-container">
-      <img id="sub-reveal-img" class="silhouette-img revealed" src="" alt="" />
-      <div id="sub-reveal-placeholder" class="silhouette-placeholder hidden"><span>?</span></div>
-    </div>
-    <div class="reveal-banner" id="sub-reveal-card-banner" style="margin-top:12px;">
-      <p class="eyebrow" id="sub-reveal-card-eyebrow">—</p>
-      <h2 style="font-size:1.5rem;" id="sub-reveal-card-name">—</h2>
-      <p id="sub-reveal-card-label"></p>
-      <p style="font-family:var(--mono); color:var(--lime); margin-top:6px;" id="sub-reveal-card-value">Valor real: $—M</p>
-    </div>
-    <div class="center-flex" style="flex:none; margin-top:16px;">
-      <button class="btn-primary" id="btn-next-reveal">Siguiente revelación</button>
-    </div>
-  </section>
-
-  <!-- Pantalla: resultado final subasta -->
+  <!-- Pantalla: resultado final subasta (valores reales revelados) -->
   <section id="screen-subasta-over" class="hidden">
     <p class="eyebrow">Subasta Futbolera — Resultado Final</p>
-    <h2 style="font-size:1.5rem; margin-bottom:16px;">Clasificación por valor real del equipo</h2>
+    <h2 style="font-size:1.4rem; margin-bottom:16px;">Valores reales revelados</h2>
     <div class="card" id="sub-final-scoreboard"></div>
     <div class="center-flex" style="flex:none; margin-top:20px;">
       <button class="btn-primary" id="btn-subasta-new-session">Nueva partida</button>

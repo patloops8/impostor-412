@@ -502,6 +502,44 @@ socket.on('lie:challenge_resolved', ({ success, reason, accusedName, accuserName
 });
 
 
+
+/* =========================================================
+   CARGA DE IMÁGENES WIKIPEDIA (client-side)
+   ========================================================= */
+const wikiImageCacheP = new Map();
+
+async function loadWikiSilhouetteP(imgEl, placeholderEl, posPlaceholderEl, wikiTitle, positionName, revealed = false) {
+  if (!imgEl) return;
+  if (!wikiTitle) { showPlaceholderP(imgEl, placeholderEl, posPlaceholderEl, positionName); return; }
+  if (wikiImageCacheP.has(wikiTitle)) {
+    const url = wikiImageCacheP.get(wikiTitle);
+    if (url) applyImageP(imgEl, placeholderEl, url, revealed);
+    else showPlaceholderP(imgEl, placeholderEl, posPlaceholderEl, positionName);
+    return;
+  }
+  try {
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`);
+    const data = await res.json();
+    const url = data.thumbnail?.source || null;
+    wikiImageCacheP.set(wikiTitle, url);
+    if (url) applyImageP(imgEl, placeholderEl, url, revealed);
+    else showPlaceholderP(imgEl, placeholderEl, posPlaceholderEl, positionName);
+  } catch { wikiImageCacheP.set(wikiTitle, null); showPlaceholderP(imgEl, placeholderEl, posPlaceholderEl, positionName); }
+}
+
+function applyImageP(imgEl, placeholderEl, url, revealed) {
+  imgEl.className = revealed ? 'silhouette-img revealed' : 'silhouette-img';
+  imgEl.onerror = () => { imgEl.classList.add('hidden'); if (placeholderEl) placeholderEl.classList.remove('hidden'); };
+  imgEl.src = url;
+  imgEl.classList.remove('hidden');
+  if (placeholderEl) placeholderEl.classList.add('hidden');
+}
+
+function showPlaceholderP(imgEl, placeholderEl, posPlaceholderEl, positionName) {
+  if (imgEl) imgEl.classList.add('hidden');
+  if (placeholderEl) placeholderEl.classList.remove('hidden');
+  if (posPlaceholderEl && positionName) posPlaceholderEl.textContent = positionName.charAt(0).toUpperCase();
+}
 /* =========================================================
    SUBASTA FUTBOLERA — player
    ========================================================= */
@@ -510,10 +548,12 @@ screens.subastaFormationVotePlayer = document.getElementById('screen-subasta-for
 screens.subastaWaitingDeck = document.getElementById('screen-subasta-waiting-deck');
 screens.subastaBiddingPlayer = document.getElementById('screen-subasta-bidding-player');
 screens.subastaCardResultPlayer = document.getElementById('screen-subasta-card-result-player');
-screens.subastaRevealPlayer = document.getElementById('screen-subasta-reveal-player');
 screens.subastaOverPlayer = document.getElementById('screen-subasta-over-player');
 
 let mySubastaState = { budget: 500, skipsLeft: 5, team: { portero: [], defensa: [], mediocampista: [], delantero: [] } };
+let currentSubastaWikiTitle = null;
+let currentSubastaPosition = null;
+
 const FORMATIONS_INFO = {
   '4-3-3': 'portero, 4 defensas, 3 medios, 3 delanteros',
   '4-4-2': 'portero, 4 defensas, 4 medios, 2 delanteros',
@@ -523,8 +563,16 @@ const FORMATIONS_INFO = {
   '5-3-2': 'portero, 5 defensas, 3 medios, 2 delanteros',
 };
 
-function positionLabelP(pos) {
+function posLabelP(pos) {
   return { portero: 'Portero', defensa: 'Defensa', mediocampista: 'Mediocampista', delantero: 'Delantero' }[pos] || pos;
+}
+
+function updateSubastaStats() {
+  document.getElementById('sub-p-budget').textContent = `$${mySubastaState.budget}M`;
+  document.getElementById('sub-p-skips').textContent = mySubastaState.skipsLeft;
+  document.getElementById('sub-p-budget-result').textContent = `$${mySubastaState.budget}M`;
+  document.getElementById('sub-p-skips-result').textContent = mySubastaState.skipsLeft;
+  document.getElementById('sub-p-skips-btn').textContent = mySubastaState.skipsLeft;
 }
 
 socket.on('subasta:formation_vote_started', ({ formations, deadlineAt }) => {
@@ -537,10 +585,9 @@ socket.on('subasta:formation_vote_started', ({ formations, deadlineAt }) => {
     btn.style.textAlign = 'left';
     btn.innerHTML = `<strong>${f}</strong><br><span style="font-size:0.8rem; color:var(--text-dim);">${FORMATIONS_INFO[f] || ''}</span>`;
     btn.addEventListener('click', () => {
-      btns.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+      btns.querySelectorAll('button').forEach(b => { b.disabled = true; b.classList.remove('selected'); });
       btn.classList.add('selected');
       socket.emit('player:vote_formation', { code: roomCode, formation: f });
-      btns.querySelectorAll('button').forEach(b => b.disabled = true);
       document.getElementById('sub-p-voted-text').classList.remove('hidden');
     });
     btns.appendChild(btn);
@@ -553,8 +600,11 @@ socket.on('subasta:formation_decided', ({ formation }) => {
   showScreen('subastaWaitingDeck');
 });
 
-socket.on('subasta:card_shown_private', ({ eligible, skipsLeft }) => {
+// Info privada de la carta + imagen para el jugador
+socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, position, startingPrice }) => {
   mySubastaState.skipsLeft = skipsLeft;
+  currentSubastaWikiTitle = wikiTitle;
+  currentSubastaPosition = position;
   updateSubastaStats();
 
   document.getElementById('sub-p-can-bid').classList.toggle('hidden', !eligible);
@@ -566,25 +616,47 @@ socket.on('subasta:card_shown_private', ({ eligible, skipsLeft }) => {
     document.getElementById('bid-error').classList.add('hidden');
     document.getElementById('btn-submit-bid').disabled = false;
     document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
-    document.getElementById('sub-p-skips-btn').textContent = skipsLeft;
   }
 });
 
-socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice }) => {
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle }) => {
   document.getElementById('sub-p-card-counter').textContent = `${cardIndex + 1}/${totalCards}`;
   const badge = document.getElementById('sub-p-position-badge');
-  badge.textContent = positionLabelP(position);
+  badge.textContent = posLabelP(position);
   badge.className = 'position-badge ' + position;
-  document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio inicial`;
+  document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio base`;
+  document.getElementById('sub-p-highest-bid').textContent = 'Sin pujas aún';
+
+  // Cargar silueta en el celular del jugador
+  loadWikiSilhouetteP(
+    document.getElementById('sub-p-silhouette-img'),
+    document.getElementById('sub-p-silhouette-placeholder'),
+    document.getElementById('sub-p-placeholder-pos'),
+    wikiTitle, posLabelP(position), false
+  );
+
   showScreen('subastaBiddingPlayer');
 });
 
-function updateSubastaStats() {
-  document.getElementById('sub-p-budget').textContent = `$${mySubastaState.budget}M`;
-  document.getElementById('sub-p-skips').textContent = mySubastaState.skipsLeft;
-  document.getElementById('sub-p-budget-result').textContent = `$${mySubastaState.budget}M`;
-  document.getElementById('sub-p-skips-result').textContent = mySubastaState.skipsLeft;
-}
+// Ver pujas de los demás en tiempo real
+socket.on('subasta:bid_public', ({ name, amount, highestBid }) => {
+  document.getElementById('sub-p-highest-bid').textContent = `Mejor: $${highestBid.amount}M — ${escapeHtml(highestBid.name)}`;
+  // Actualizar el mínimo de puja
+  const input = document.getElementById('input-bid');
+  if (input && Number(input.value) <= amount) {
+    input.placeholder = `Supera los $${amount}M actuales...`;
+  }
+});
+
+socket.on('subasta:timer_extended', ({ newDeadline }) => {
+  // Notificar al jugador que el timer se extendió
+  const errEl = document.getElementById('bid-error');
+  if (errEl && !document.getElementById('sub-p-can-bid').classList.contains('hidden')) {
+    errEl.textContent = '¡Puja de último segundo! +5 segundos extra';
+    errEl.classList.remove('hidden');
+    setTimeout(() => errEl.classList.add('hidden'), 3000);
+  }
+});
 
 document.getElementById('btn-submit-bid').addEventListener('click', () => {
   const amount = Number(document.getElementById('input-bid').value);
@@ -604,7 +676,7 @@ document.getElementById('btn-submit-bid').addEventListener('click', () => {
 document.getElementById('btn-skip-card').addEventListener('click', () => {
   document.getElementById('sub-p-can-bid').classList.add('hidden');
   document.getElementById('sub-p-bid-sent').classList.remove('hidden');
-  document.getElementById('sub-p-bid-sent-msg').textContent = 'Skip enviado. Esperando...';
+  document.getElementById('sub-p-bid-sent-msg').textContent = 'Pasaste. Esperando...';
   socket.emit('player:skip_card', { code: roomCode });
 });
 
@@ -618,39 +690,41 @@ socket.on('subasta:bid_rejected', ({ reason }) => {
 
 socket.on('subasta:skip_confirmed', ({ skipsLeft }) => {
   mySubastaState.skipsLeft = skipsLeft;
+  updateSubastaStats();
 });
 
-socket.on('subasta:card_resolved', ({ card, result, winnerName }) => {
+socket.on('subasta:card_resolved', ({ cardName, cardLabel, cardPosition, result, winnerName, cardTroll }) => {
   const isWinner = result.winnerId === myId;
   if (isWinner) {
     mySubastaState.budget -= result.amount;
-    mySubastaState.team[card.position].push({ name: '???', amountPaid: result.amount });
+    mySubastaState.team[cardPosition] = mySubastaState.team[cardPosition] || [];
+    mySubastaState.team[cardPosition].push({ name: cardName, amountPaid: result.amount });
   }
   updateSubastaStats();
 
   const eyebrow = document.getElementById('sub-p-result-eyebrow');
   const title = document.getElementById('sub-p-result-title');
   const sub = document.getElementById('sub-p-result-subtitle');
+  const trollEl = document.getElementById('sub-p-result-troll');
+
+  if (cardTroll) trollEl.classList.remove('hidden');
+  else trollEl.classList.add('hidden');
 
   if (result.type === 'discard') {
-    eyebrow.textContent = 'Descartada';
-    title.textContent = 'Nadie se llevó esta carta';
-    sub.textContent = '';
+    eyebrow.textContent = 'Descartado';
+    title.textContent = cardName;
+    sub.textContent = 'Nadie se llevó esta carta';
   } else if (isWinner) {
-    eyebrow.textContent = '¡La conseguiste!';
-    title.textContent = `${positionLabelP(card.position)} por $${result.amount}M`;
-    sub.textContent = 'La identidad se revela al final.';
+    eyebrow.textContent = `¡Lo conseguiste! $${result.amount}M`;
+    title.textContent = cardName;
+    sub.textContent = cardLabel;
   } else {
-    eyebrow.textContent = result.type === 'lottery' ? 'Ruleta' : 'Vendida';
-    title.textContent = winnerName ? `${winnerName} se la llevó` : '—';
-    sub.textContent = result.amount ? `Por $${result.amount}M` : '';
+    eyebrow.textContent = winnerName ? `${winnerName} se lo llevó por $${result.amount}M` : 'Ruleta';
+    title.textContent = cardName;
+    sub.textContent = cardLabel;
   }
 
   showScreen('subastaCardResultPlayer');
-});
-
-socket.on('subasta:final_reveal_started', () => {
-  showScreen('subastaRevealPlayer');
 });
 
 socket.on('subasta:game_over', ({ scores }) => {
@@ -659,15 +733,13 @@ socket.on('subasta:game_over', ({ scores }) => {
   const teamDiv = document.getElementById('sub-p-final-team');
   teamDiv.innerHTML = '';
   if (me) {
-    for (const [pos, cards] of Object.entries(me.team)) {
-      cards.forEach(c => {
-        const slot = document.createElement('div');
-        slot.className = 'team-slot filled';
-        slot.innerHTML = `<div class="pos-label">${positionLabelP(pos)}</div>
-          <div class="player-name">${escapeHtml(c.name || '???')}</div>
-          <div class="player-price">$${c.amountPaid}M pagados</div>`;
-        teamDiv.appendChild(slot);
-      });
+    for (const c of me.cards) {
+      const slot = document.createElement('div');
+      slot.className = 'team-slot filled';
+      slot.innerHTML = `<div class="pos-label">${posLabelP(c.position)}</div>
+        <div class="player-name">${escapeHtml(c.name)}</div>
+        <div class="player-price">$${c.amountPaid}M pagados · <span style="color:${c.troll ? 'var(--red)' : 'var(--lime);'}">$${c.realValue}M real</span></div>`;
+      teamDiv.appendChild(slot);
     }
   }
   showScreen('subastaOverPlayer');

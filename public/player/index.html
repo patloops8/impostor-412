@@ -201,14 +201,24 @@
 
   <section id="screen-subasta-bidding-player" class="hidden">
     <div class="budget-bar">
-      <div class="sub-stat"><div class="val" id="sub-p-budget">$100M</div><div class="lbl">presupuesto</div></div>
+      <div class="sub-stat"><div class="val" id="sub-p-budget">$500M</div><div class="lbl">presupuesto</div></div>
       <div class="sub-stat"><div class="val" id="sub-p-skips">5</div><div class="lbl">skips</div></div>
       <div class="sub-stat"><div class="val" id="sub-p-card-counter">1/30</div><div class="lbl">carta</div></div>
     </div>
 
-    <div style="text-align:center; margin-bottom:10px;">
-      <span class="position-badge" id="sub-p-position-badge">Portero</span>
-      <p style="font-family:var(--mono); color:var(--lime); font-size:1.3rem; margin-top:8px;" id="sub-p-starting-price">$—M precio inicial</p>
+    <!-- Silueta en el celular del jugador -->
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <div class="silhouette-container" style="max-width:120px; flex-shrink:0; margin:0;">
+        <img id="sub-p-silhouette-img" class="silhouette-img" src="" alt="silueta" />
+        <div id="sub-p-silhouette-placeholder" class="silhouette-placeholder hidden">
+          <span id="sub-p-placeholder-pos">?</span>
+        </div>
+      </div>
+      <div>
+        <span class="position-badge" id="sub-p-position-badge">Portero</span>
+        <p style="font-family:var(--mono); color:var(--lime); font-size:1.1rem; margin-top:6px;" id="sub-p-starting-price">$—M precio base</p>
+        <p id="sub-p-highest-bid" style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;">Sin pujas aún</p>
+      </div>
     </div>
 
     <div id="sub-p-can-bid" class="hidden">
@@ -216,7 +226,7 @@
         <input type="number" inputmode="numeric" id="input-bid" placeholder="Tu puja en millones..." />
         <p class="error-text hidden" id="bid-error"></p>
         <button class="btn-primary" id="btn-submit-bid" style="width:100%;">Pujar</button>
-        <button class="btn-secondary" id="btn-skip-card" style="width:100%;">Skip (<span id="sub-p-skips-btn">5</span> restantes)</button>
+        <button class="btn-secondary" id="btn-skip-card" style="width:100%;">Pasar (<span id="sub-p-skips-btn">5</span> skips restantes)</button>
       </div>
     </div>
 
@@ -225,26 +235,23 @@
     </div>
 
     <div id="sub-p-ineligible" class="hidden center-flex" style="margin-top:14px;">
-      <p id="sub-p-ineligible-msg" style="color:var(--text-dim);">Esta posición ya está cubierta o no tienes presupuesto.</p>
+      <p id="sub-p-ineligible-msg" style="color:var(--text-dim);">Esta posición ya está cubierta o no tienes presupuesto suficiente.</p>
     </div>
   </section>
 
   <section id="screen-subasta-card-result-player" class="hidden center-flex">
     <p class="eyebrow" id="sub-p-result-eyebrow">Resultado</p>
     <h2 style="font-size:1.4rem;" id="sub-p-result-title">—</h2>
-    <p id="sub-p-result-subtitle"></p>
+    <p id="sub-p-result-subtitle" style="margin-bottom:8px;"></p>
+    <p id="sub-p-result-troll" class="hidden" style="color:var(--red); font-weight:800;">🎭 ¡Carta TROLL!</p>
     <div class="budget-bar" style="width:100%; margin-top:14px;">
-      <div class="sub-stat"><div class="val" id="sub-p-budget-result">$100M</div><div class="lbl">presupuesto restante</div></div>
+      <div class="sub-stat"><div class="val" id="sub-p-budget-result">$500M</div><div class="lbl">presupuesto restante</div></div>
       <div class="sub-stat"><div class="val" id="sub-p-skips-result">5</div><div class="lbl">skips</div></div>
     </div>
-    <p style="color:var(--text-dim);">Esperando la siguiente carta...</p>
+    <p style="color:var(--text-dim); margin-top:10px;">Esperando la siguiente carta...</p>
   </section>
 
-  <section id="screen-subasta-reveal-player" class="hidden center-flex">
-    <p class="eyebrow">Revelación final</p>
-    <h2 style="font-size:1.3rem;">El host está revelando los jugadores...</h2>
-    <p>Mira la pantalla principal.</p>
-  </section>
+
 
   <section id="screen-subasta-over-player" class="hidden">
     <p class="eyebrow">Subasta terminada</p>
