@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>412 — Vista TV</title>
+<link rel="icon" href="data:,"/>
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -28,7 +29,7 @@
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket=io();
+const socket=io({ transports:['websocket','polling'], reconnection:true, reconnectionAttempts:Infinity, reconnectionDelay:800, reconnectionDelayMax:4000, timeout:20000 });
 const $=id=>document.getElementById(id);
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 let players=[];

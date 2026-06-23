@@ -6,7 +6,17 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  // Priorizar WebSocket (rápido) pero permitir polling como respaldo.
+  transports: ['websocket', 'polling'],
+  // Tiempos más tolerantes: en móvil/Render las conexiones tardan más en establecerse.
+  pingTimeout: 30000,
+  pingInterval: 25000,
+  // Permitir que el cliente "actualice" de polling a websocket sin perder la sesión.
+  allowUpgrades: true,
+  // CORS abierto (mismo origen en producción, pero evita bloqueos en pruebas).
+  cors: { origin: '*', methods: ['GET','POST'] },
+});
 const PORT = process.env.PORT || 3000;
 
 /* ===================== DATOS ===================== */
@@ -655,6 +665,8 @@ io.on('connection', socket => {
 
 /* ===================== EXPRESS ===================== */
 app.use(express.static(path.join(__dirname,'public')));
+app.get('/favicon.ico',(_q,res)=>res.status(204).end()); // evita el 404 en consola
+app.get('/health',(_q,res)=>res.status(200).send('ok')); // para ping de UptimeRobot (mantener despierto)
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 app.get('/',(_q,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));

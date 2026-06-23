@@ -1,4 +1,13 @@
-const socket = io();
+const socket = io({
+  // Intentar WebSocket primero; si la red lo bloquea, cae a polling automáticamente.
+  transports: ['websocket', 'polling'],
+  // Reconexión robusta: si se cae, reintenta rápido y de forma persistente.
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 800,
+  reconnectionDelayMax: 4000,
+  timeout: 20000,
+});
 
 /* ===== Conexión + reconexión ===== */
 const connBanner = document.getElementById('conn-banner');
