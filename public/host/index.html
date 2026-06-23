@@ -285,7 +285,7 @@
     <p>Preparando las siluetas...</p>
   </section>
 
-  <!-- Pantalla: subasta activa (muestra silueta) -->
+  <!-- Pantalla: subasta activa (análisis → puja) -->
   <section id="screen-subasta-bidding" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <p class="eyebrow" id="sub-card-counter">Carta 1 de 30</p>
@@ -293,7 +293,7 @@
     </div>
 
     <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:start;">
-      <!-- Silueta -->
+      <!-- Silueta + info -->
       <div>
         <div class="silhouette-container" style="max-width:200px; margin:0 0 10px;">
           <img id="sub-silhouette-img" class="silhouette-img" src="" alt="silueta" />
@@ -305,14 +305,23 @@
         <p style="font-family:var(--mono); font-size:1.1rem; color:var(--lime);" id="sub-card-starting-price">$—M precio base</p>
         <p id="sub-highest-bid-display" style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">Sin pujas aún</p>
       </div>
-      <!-- Timer + log de pujas -->
-      <div style="min-width:200px;">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-          <div class="countdown-circle" id="sub-bid-countdown">30</div>
-          <button class="btn-secondary" id="btn-force-resolve" style="padding:8px 14px; font-size:0.8rem;">Cerrar subasta</button>
+      <!-- Timer + fase + log -->
+      <div style="min-width:210px;">
+        <!-- Fase de análisis -->
+        <div id="sub-phase-analysis">
+          <p class="eyebrow" style="color:var(--text-dim); margin-bottom:6px;">🔍 Analizando</p>
+          <div class="countdown-circle" id="sub-analysis-countdown">15</div>
+          <p style="font-size:0.78rem; color:var(--text-dim); margin-top:6px;">Las pujas abren en...</p>
         </div>
-        <h4 style="font-size:0.85rem; color:var(--text-dim); margin-bottom:8px;">Pujas en vivo</h4>
-        <div class="clue-log" id="sub-live-bid-log" style="max-height:200px;"></div>
+        <!-- Fase de puja -->
+        <div id="sub-phase-bidding" class="hidden">
+          <p class="eyebrow" style="color:var(--lime); margin-bottom:6px;">💰 ¡Pujas abiertas!</p>
+          <div class="countdown-circle" id="sub-bid-countdown">15</div>
+          <button class="btn-secondary" id="btn-force-resolve" style="padding:6px 12px; font-size:0.75rem; margin-top:6px; width:100%;">Cerrar subasta</button>
+        </div>
+        <div class="divider" style="margin:10px 0;"></div>
+        <h4 style="font-size:0.8rem; color:var(--text-dim); margin-bottom:6px;">Pujas en vivo</h4>
+        <div class="clue-log" id="sub-live-bid-log" style="max-height:180px;"></div>
       </div>
     </div>
   </section>

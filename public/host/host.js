@@ -590,17 +590,24 @@ socket.on('subasta:formation_decided', ({ formation }) => {
 // Carta de subasta
 let currentSubastaDeadline = 0;
 
-socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, deadlineAt, totalEligible }) => {
+let subAnalysisCdi = null;
+let currentStartingPrice = 0;
+
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, analysisDeadline }) => {
   if (subBidCdi) { clearInterval(subBidCdi); subBidCdi = null; }
-  currentSubastaDeadline = deadlineAt;
+  if (subAnalysisCdi) { clearInterval(subAnalysisCdi); subAnalysisCdi = null; }
+  currentStartingPrice = startingPrice;
 
   document.getElementById('sub-card-counter').textContent = `Carta ${cardIndex + 1} de ${totalCards}`;
   document.getElementById('sub-card-starting-price').textContent = `$${startingPrice}M precio base`;
   document.getElementById('sub-card-position').innerHTML = `<span class="position-badge ${position}">${positionLabel(position)}</span>`;
-  document.getElementById('sub-highest-bid-display').textContent = 'Sin pujas aún';
+  document.getElementById('sub-highest-bid-display').textContent = 'Sin pujas — esperando fase de puja';
   document.getElementById('sub-live-bid-log').innerHTML = '';
 
-  // Cargar silueta desde Wikipedia (client-side)
+  // Mostrar fase de análisis, ocultar fase de puja
+  document.getElementById('sub-phase-analysis').classList.remove('hidden');
+  document.getElementById('sub-phase-bidding').classList.add('hidden');
+
   loadWikiSilhouette(
     document.getElementById('sub-silhouette-img'),
     document.getElementById('sub-silhouette-placeholder'),
@@ -608,15 +615,28 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
     wikiTitle, positionLabel(position), false
   );
 
-  subBidCdi = startSubCountdown('sub-bid-countdown', deadlineAt);
+  subAnalysisCdi = startSubCountdown('sub-analysis-countdown', analysisDeadline);
   showScreen('subastaBidding');
+});
+
+// Transición a fase de puja
+socket.on('subasta:bidding_phase', ({ deadlineAt }) => {
+  if (subAnalysisCdi) { clearInterval(subAnalysisCdi); subAnalysisCdi = null; }
+  document.getElementById('sub-phase-analysis').classList.add('hidden');
+  document.getElementById('sub-phase-bidding').classList.remove('hidden');
+  document.getElementById('sub-highest-bid-display').textContent = `Sin pujas — mínimo $${currentStartingPrice}M`;
+  subBidCdi = startSubCountdown('sub-bid-countdown', deadlineAt);
 });
 
 // Timer extendido (puja de último segundo)
 socket.on('subasta:timer_extended', ({ newDeadline }) => {
-  currentSubastaDeadline = newDeadline;
   if (subBidCdi) { clearInterval(subBidCdi); }
   subBidCdi = startSubCountdown('sub-bid-countdown', newDeadline);
+  const log = document.getElementById('sub-live-bid-log');
+  const ext = document.createElement('div');
+  ext.className = 'clue-item';
+  ext.innerHTML = `<span style="color:var(--red);">⏱ +5s — puja de último segundo</span>`;
+  log.prepend(ext);
 });
 
 // Puja pública recibida

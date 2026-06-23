@@ -139,6 +139,8 @@ function newRoom(code, hostId) {
       deck: [],
       currentCardIndex: -1,
       currentCard: null,
+      auctionPhase: null,   // 'analysis' | 'bidding'
+      analysisTimer: null,
       bidDeadline: null,
       bidTimer: null,
       bids: new Map(),
@@ -417,18 +419,22 @@ function getPositionsFilled(ps, slots) {
   return filled;
 }
 
+const ANALYSIS_DURATION_MS = 15000;
+const BIDDING_DURATION_MS = 15000;
+const LAST_SECOND_EXTENSION_MS = 5000;
+
 function showSubastaCard(room) {
   const sub = room.subasta;
   const card = sub.deck[sub.currentCardIndex];
-  if (!card) { console.error('[Subasta] Carta no encontrada en índice', sub.currentCardIndex); return; }
+  if (!card) { console.error('[Subasta] Carta no encontrada:', sub.currentCardIndex); return; }
+
+  clearSubastaBidTimer(room);
   sub.currentCard = card;
   sub.bids = new Map();
-  sub.highestBid = null; // { playerId, name, amount }
-  const slots = FORMATIONS[sub.formation];
-  const deadline = Date.now() + room.subastaConfig.timerSeconds * 1000;
-  sub.bidDeadline = deadline;
+  sub.highestBid = null;
+  sub.auctionPhase = 'analysis';
 
-  // Determinar elegibilidad de cada jugador
+  const slots = FORMATIONS[sub.formation];
   let totalEligible = 0;
   for (const [pid] of room.players.entries()) {
     const ps = sub.playerState.get(pid);
@@ -440,9 +446,10 @@ function showSubastaCard(room) {
     if (eligible) totalEligible++;
   }
 
-  room.status = 'subasta_bidding';
+  room.status = 'subasta_analysis';
+  const analysisDeadline = Date.now() + ANALYSIS_DURATION_MS;
 
-  // Enviar a cada jugador: su elegibilidad + info de la carta (incluyendo wikiTitle para cargar imagen)
+  // Info privada para cada jugador
   for (const [pid, bid] of sub.bids.entries()) {
     io.to(pid).emit('subasta:card_shown_private', {
       eligible: bid.eligible,
@@ -453,21 +460,40 @@ function showSubastaCard(room) {
     });
   }
 
+  // Broadcast pantalla de análisis (silueta + posición + precio)
   io.to(room.code).emit('subasta:card_shown', {
     cardIndex: sub.currentCardIndex,
     totalCards: sub.deck.length,
     position: card.position,
     startingPrice: card.startingPrice,
-    wikiTitle: card.wikiTitle, // cliente carga imagen directamente desde Wikipedia
-    deadlineAt: deadline,
+    wikiTitle: card.wikiTitle,
+    analysisDeadline,
     totalEligible,
   });
 
-  // Usar setInterval para timer más confiable
+  // Después de 15s de análisis, abrir la puja
+  sub.analysisTimer = setTimeout(() => {
+    if (room.subasta.auctionPhase !== 'analysis') return;
+    startBiddingPhase(room);
+  }, ANALYSIS_DURATION_MS);
+}
+
+function startBiddingPhase(room) {
+  const sub = room.subasta;
+  sub.auctionPhase = 'bidding';
+  room.status = 'subasta_bidding';
+  sub.bidDeadline = Date.now() + BIDDING_DURATION_MS;
+
+  io.to(room.code).emit('subasta:bidding_phase', {
+    deadlineAt: sub.bidDeadline,
+    highestBid: sub.highestBid,
+  });
+
   startSubastaInterval(room);
 }
 
 function clearSubastaBidTimer(room) {
+  if (room.subasta.analysisTimer) { clearTimeout(room.subasta.analysisTimer); room.subasta.analysisTimer = null; }
   if (room.subasta.bidTimer) { clearTimeout(room.subasta.bidTimer); room.subasta.bidTimer = null; }
   if (subastaTimers.has(room.code)) {
     clearInterval(subastaTimers.get(room.code));
@@ -810,7 +836,7 @@ io.on('connection', socket => {
 
   socket.on('player:submit_bid', ({ code, amount }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'subasta_bidding') return;
+    if (!room || room.status !== 'subasta_bidding' || room.subasta.auctionPhase !== 'bidding') return;
     const sub = room.subasta;
     const bid = sub.bids.get(socket.id);
     if (!bid || !bid.eligible || bid.responded) return;
@@ -818,8 +844,9 @@ io.on('connection', socket => {
     const card = sub.currentCard;
     const ps = sub.playerState.get(socket.id);
     const minBid = sub.highestBid ? sub.highestBid.amount + 1 : card.startingPrice;
-    if (!Number.isInteger(n) || n < minBid || n > (ps?.budget ?? 0)) {
-      socket.emit('subasta:bid_rejected', { reason: `La puja debe ser al menos $${minBid}M y no superar tu presupuesto de $${ps?.budget ?? 0}M.` }); return;
+    const maxBid = ps?.budget ?? 0;
+    if (!Number.isInteger(n) || n < minBid || n > maxBid) {
+      socket.emit('subasta:bid_rejected', { reason: `La puja mínima es $${minBid}M. Tienes $${maxBid}M disponibles.` }); return;
     }
     bid.amount = n;
     bid.responded = true;
@@ -906,7 +933,7 @@ io.on('connection', socket => {
     room.roundNumber = 0;
     room.mangaNumber = 0;
     room.lie = { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [], currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null };
-    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, bidDeadline: null, bidTimer: null, bids: new Map(), playerState: new Map(), resolvedCards: [] };
+    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, auctionPhase: null, analysisTimer: null, bidDeadline: null, bidTimer: null, bids: new Map(), playerState: new Map(), resolvedCards: [] };
     for (const p of room.players.values()) { p.alive = true; p.score = 0; }
     emitRoomState(room);
   });

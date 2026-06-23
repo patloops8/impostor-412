@@ -612,22 +612,39 @@ socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, posit
   document.getElementById('sub-p-ineligible').classList.toggle('hidden', eligible);
 
   if (eligible) {
-    document.getElementById('input-bid').value = '';
+    
     document.getElementById('bid-error').classList.add('hidden');
-    document.getElementById('btn-submit-bid').disabled = false;
+    
     document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
   }
 });
 
+let myCurrentHighestBid = 0; // monto actual más alto en la carta
+let myStartingPrice = 0;
+let myEligibleForBid = false;
+let subPAnalysisCdi = null;
+
+function updateBidButtons() {
+  const base = Math.max(myCurrentHighestBid, myStartingPrice);
+  document.getElementById('sub-p-bid-preview-1').textContent = base + 1;
+  document.getElementById('sub-p-bid-preview-5').textContent = base + 5;
+  document.getElementById('sub-p-bid-preview-10').textContent = base + 10;
+}
+
 socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle }) => {
+  myCurrentHighestBid = 0;
+  myStartingPrice = startingPrice;
+  myEligibleForBid = false; // se actualiza en card_shown_private
+  if (subPAnalysisCdi) { clearInterval(subPAnalysisCdi); subPAnalysisCdi = null; }
+
   document.getElementById('sub-p-card-counter').textContent = `${cardIndex + 1}/${totalCards}`;
   const badge = document.getElementById('sub-p-position-badge');
   badge.textContent = posLabelP(position);
   badge.className = 'position-badge ' + position;
   document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio base`;
   document.getElementById('sub-p-highest-bid').textContent = 'Sin pujas aún';
+  updateBidButtons();
 
-  // Cargar silueta en el celular del jugador
   loadWikiSilhouetteP(
     document.getElementById('sub-p-silhouette-img'),
     document.getElementById('sub-p-silhouette-placeholder'),
@@ -638,45 +655,91 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   showScreen('subastaBiddingPlayer');
 });
 
-// Ver pujas de los demás en tiempo real
-socket.on('subasta:bid_public', ({ name, amount, highestBid }) => {
-  document.getElementById('sub-p-highest-bid').textContent = `Mejor: $${highestBid.amount}M — ${escapeHtml(highestBid.name)}`;
-  // Actualizar el mínimo de puja
-  const input = document.getElementById('input-bid');
-  if (input && Number(input.value) <= amount) {
-    input.placeholder = `Supera los $${amount}M actuales...`;
+// Info privada: elegibilidad + datos para botones de puja
+socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, position, startingPrice }) => {
+  mySubastaState.skipsLeft = skipsLeft;
+  myStartingPrice = startingPrice;
+  myEligibleForBid = eligible;
+  updateSubastaStats();
+
+  // Durante análisis: mostrar fase de análisis, no los botones de puja aún
+  document.getElementById('sub-p-analysis-phase').classList.toggle('hidden', !eligible && !myEligibleForBid);
+  document.getElementById('sub-p-can-bid').classList.add('hidden');
+  document.getElementById('sub-p-bid-sent').classList.add('hidden');
+  document.getElementById('sub-p-ineligible').classList.toggle('hidden', eligible);
+
+  if (eligible) {
+    document.getElementById('sub-p-analysis-phase').classList.remove('hidden');
+    document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
+    updateBidButtons();
   }
 });
 
-socket.on('subasta:timer_extended', ({ newDeadline }) => {
-  // Notificar al jugador que el timer se extendió
+// Fase de análisis countdown en el celular
+socket.on('subasta:card_shown', ({ analysisDeadline }) => {
+  if (!analysisDeadline) return;
+  if (subPAnalysisCdi) clearInterval(subPAnalysisCdi);
+  const el = document.getElementById('sub-p-analysis-countdown');
+  if (!el) return;
+  function tick() {
+    const rem = Math.max(0, Math.ceil((analysisDeadline - Date.now()) / 1000));
+    el.textContent = rem;
+    el.classList.toggle('urgent', rem <= 3);
+  }
+  tick();
+  subPAnalysisCdi = setInterval(tick, 250);
+});
+
+// Abrir fase de puja
+socket.on('subasta:bidding_phase', ({ deadlineAt }) => {
+  if (subPAnalysisCdi) { clearInterval(subPAnalysisCdi); subPAnalysisCdi = null; }
+  if (myEligibleForBid) {
+    document.getElementById('sub-p-analysis-phase').classList.add('hidden');
+    document.getElementById('sub-p-can-bid').classList.remove('hidden');
+    document.getElementById('sub-p-bid-sent').classList.add('hidden');
+    
+    
+    
+    updateBidButtons();
+  }
+});
+
+// Pujas públicas de otros jugadores
+socket.on('subasta:bid_public', ({ name, amount, highestBid }) => {
+  myCurrentHighestBid = highestBid.amount;
+  document.getElementById('sub-p-highest-bid').textContent = `Mejor: $${highestBid.amount}M — ${escapeHtml(highestBid.name)}`;
+  updateBidButtons();
+});
+
+socket.on('subasta:timer_extended', () => {
   const errEl = document.getElementById('bid-error');
   if (errEl && !document.getElementById('sub-p-can-bid').classList.contains('hidden')) {
-    errEl.textContent = '¡Puja de último segundo! +5 segundos extra';
+    errEl.textContent = '⏱ ¡Puja de último segundo! +5s extra';
     errEl.classList.remove('hidden');
     setTimeout(() => errEl.classList.add('hidden'), 3000);
   }
 });
 
-document.getElementById('btn-submit-bid').addEventListener('click', () => {
-  const amount = Number(document.getElementById('input-bid').value);
+function submitBid(increment) {
+  const base = Math.max(myCurrentHighestBid, myStartingPrice);
+  const amount = base + increment;
   const errEl = document.getElementById('bid-error');
-  if (!amount || amount < 1) {
-    errEl.textContent = 'Ingresa un monto válido.';
-    errEl.classList.remove('hidden');
-    return;
-  }
   errEl.classList.add('hidden');
   document.getElementById('sub-p-can-bid').classList.add('hidden');
   document.getElementById('sub-p-bid-sent').classList.remove('hidden');
   document.getElementById('sub-p-bid-sent-msg').textContent = `Puja de $${amount}M enviada. Esperando...`;
   socket.emit('player:submit_bid', { code: roomCode, amount });
-});
+}
+
+document.getElementById('btn-submit-bid-1').addEventListener('click', () => submitBid(1));
+document.getElementById('btn-submit-bid-5').addEventListener('click', () => submitBid(5));
+document.getElementById('btn-submit-bid-10').addEventListener('click', () => submitBid(10));
 
 document.getElementById('btn-skip-card').addEventListener('click', () => {
+  document.getElementById('sub-p-analysis-phase').classList.add('hidden');
   document.getElementById('sub-p-can-bid').classList.add('hidden');
   document.getElementById('sub-p-bid-sent').classList.remove('hidden');
-  document.getElementById('sub-p-bid-sent-msg').textContent = 'Pasaste. Esperando...';
+  document.getElementById('sub-p-bid-sent-msg').textContent = 'Pasaste esta carta.';
   socket.emit('player:skip_card', { code: roomCode });
 });
 
@@ -686,6 +749,8 @@ socket.on('subasta:bid_rejected', ({ reason }) => {
   errEl.classList.remove('hidden');
   document.getElementById('sub-p-can-bid').classList.remove('hidden');
   document.getElementById('sub-p-bid-sent').classList.add('hidden');
+  // Re-calcular botones con el monto mínimo correcto
+  updateBidButtons();
 });
 
 socket.on('subasta:skip_confirmed', ({ skipsLeft }) => {

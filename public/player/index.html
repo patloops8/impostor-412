@@ -221,12 +221,23 @@
       </div>
     </div>
 
+    <!-- Fase análisis: solo mirar -->
+    <div id="sub-p-analysis-phase" class="hidden">
+      <div style="text-align:center; padding:14px; background:var(--bg-raised); border-radius:var(--radius); border:1px solid var(--line);">
+        <p style="font-family:var(--mono); font-size:0.8rem; text-transform:uppercase; color:var(--text-dim);">🔍 Fase de análisis</p>
+        <p style="font-size:0.9rem; margin-top:6px;">Observa la silueta. Las pujas abren en:</p>
+        <div class="countdown-circle" id="sub-p-analysis-countdown" style="margin:10px auto;">15</div>
+      </div>
+    </div>
+
+    <!-- Fase puja: botones -->
     <div id="sub-p-can-bid" class="hidden">
-      <div class="bid-form">
-        <input type="number" inputmode="numeric" id="input-bid" placeholder="Tu puja en millones..." />
-        <p class="error-text hidden" id="bid-error"></p>
-        <button class="btn-primary" id="btn-submit-bid" style="width:100%;">Pujar</button>
-        <button class="btn-secondary" id="btn-skip-card" style="width:100%;">Pasar (<span id="sub-p-skips-btn">5</span> skips restantes)</button>
+      <p class="error-text hidden" id="bid-error" style="margin-bottom:8px;"></p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary" id="btn-submit-bid-1" style="width:100%;">Pujar +1M → $<span id="sub-p-bid-preview-1">—</span>M</button>
+        <button class="btn-primary" id="btn-submit-bid-5" style="width:100%; background:var(--grass);">Pujar +5M → $<span id="sub-p-bid-preview-5">—</span>M</button>
+        <button class="btn-primary" id="btn-submit-bid-10" style="width:100%; background:#1a3f5c;">Pujar +10M → $<span id="sub-p-bid-preview-10">—</span>M</button>
+        <button class="btn-secondary" id="btn-skip-card" style="width:100%;">Pasar (skip) — <span id="sub-p-skips-btn">5</span> restantes</button>
       </div>
     </div>
 
