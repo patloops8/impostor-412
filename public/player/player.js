@@ -81,8 +81,13 @@ function joinRoom() {
   });
 }
 
-socket.on('room:players_update', ({ players, status }) => {
+socket.on('room:players_update', ({ players, status, subastaConfig }) => {
   currentPlayersSnapshot = players;
+  // Sincronizar el budget inicial si aún no ha empezado la partida
+  if (subastaConfig && status === 'lobby') {
+    mySubastaState.budget = subastaConfig.budget;
+    mySubastaState.skipsLeft = subastaConfig.skipLimit;
+  }
   if (status === 'lobby' && myId) {
     const wasShowingResult =
       !screens.matchOverPlayer.classList.contains('hidden') ||
@@ -508,7 +513,7 @@ screens.subastaCardResultPlayer = document.getElementById('screen-subasta-card-r
 screens.subastaRevealPlayer = document.getElementById('screen-subasta-reveal-player');
 screens.subastaOverPlayer = document.getElementById('screen-subasta-over-player');
 
-let mySubastaState = { budget: 100, skipsLeft: 5, team: { portero: [], defensa: [], mediocampista: [], delantero: [] } };
+let mySubastaState = { budget: 500, skipsLeft: 5, team: { portero: [], defensa: [], mediocampista: [], delantero: [] } };
 const FORMATIONS_INFO = {
   '4-3-3': 'portero, 4 defensas, 3 medios, 3 delanteros',
   '4-4-2': 'portero, 4 defensas, 4 medios, 2 delanteros',

@@ -548,13 +548,21 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   const img = document.getElementById('sub-silhouette-img');
   const placeholder = document.getElementById('sub-silhouette-placeholder');
   if (imageUrl) {
+    img.className = 'silhouette-img'; // reset, quita .revealed si venía de antes
+    img.onerror = () => {
+      // Si la imagen falla al cargar, mostrar placeholder
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      document.getElementById('sub-placeholder-pos').textContent = positionLabel(position).charAt(0).toUpperCase();
+    };
     img.src = imageUrl;
     img.classList.remove('hidden');
     placeholder.classList.add('hidden');
   } else {
     img.classList.add('hidden');
+    img.src = '';
     placeholder.classList.remove('hidden');
-    document.getElementById('sub-placeholder-pos').textContent = positionLabel(position).charAt(0);
+    document.getElementById('sub-placeholder-pos').textContent = positionLabel(position).charAt(0).toUpperCase();
   }
 
   subBidCdi = startSubCountdown('sub-bid-countdown', deadlineAt);
@@ -630,12 +638,17 @@ function renderRevealEntry(entry, num, total) {
   const img = document.getElementById('sub-reveal-img');
   const placeholder = document.getElementById('sub-reveal-placeholder');
   if (card.imageUrl) {
-    img.src = card.imageUrl;
     img.className = 'silhouette-img revealed';
+    img.onerror = () => {
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    };
+    img.src = card.imageUrl;
     img.classList.remove('hidden');
     placeholder.classList.add('hidden');
   } else {
     img.classList.add('hidden');
+    img.src = '';
     placeholder.classList.remove('hidden');
   }
 

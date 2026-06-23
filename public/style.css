@@ -550,23 +550,25 @@ input[type='text']::placeholder {
 
 .silhouette-container {
   width: 100%;
-  max-width: 300px;
+  max-width: 260px;
   margin: 0 auto 16px;
   aspect-ratio: 3/4;
-  background: var(--bg-raised);
-  border: 2px solid var(--line);
+  background: #e8e6e0;            /* Fondo claro para que la silueta negra sea visible */
+  border: 3px solid var(--grass-light);
   border-radius: var(--radius);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .silhouette-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0);
+  /* Convierte la imagen en silueta negra perfecta sobre el fondo claro */
+  filter: brightness(0) contrast(1.2);
 }
 
 .silhouette-img.revealed {
@@ -574,13 +576,17 @@ input[type='text']::placeholder {
   transition: filter 0.8s ease;
 }
 
+.silhouette-img.error {
+  display: none;
+}
+
 .silhouette-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--display);
-  font-size: 4rem;
-  color: var(--text-dim);
+  font-size: 5rem;
+  color: #666;                    /* Oscuro sobre fondo claro */
   width: 100%;
   height: 100%;
 }

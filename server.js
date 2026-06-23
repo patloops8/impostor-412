@@ -52,13 +52,17 @@ async function getWikiImageUrl(wikiTitle) {
 async function prewarmImageCache() {
   const titles = [...new Set(SUBASTA_CARDS.map(c => c.wikiTitle))];
   let loaded = 0;
-  for (let i = 0; i < titles.length; i += 5) {
-    const batch = titles.slice(i, i + 5);
-    await Promise.all(batch.map(t => getWikiImageUrl(t)));
+  // Lotes de 8 con 150ms entre lotes para no sobrecargar Wikipedia
+  for (let i = 0; i < titles.length; i += 8) {
+    const batch = titles.slice(i, i + 8);
+    await Promise.all(batch.map(async t => {
+      try { await getWikiImageUrl(t); } catch {}
+    }));
     loaded += batch.length;
-    await new Promise(r => setTimeout(r, 300));
+    if (i + 8 < titles.length) await new Promise(r => setTimeout(r, 150));
   }
-  console.log(`[Subasta] Cache de imagenes: ${loaded} titulos procesados`);
+  const found = [...imageCache.values()].filter(Boolean).length;
+  console.log(`[Subasta] Cache lista: ${found}/${loaded} imagenes encontradas`);
 }
 prewarmImageCache().catch(() => {});
 
@@ -125,7 +129,7 @@ function newRoom(code, hostId) {
            currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null },
 
     // Subasta
-    subastaConfig: { budget: 100, timerSeconds: 30, skipLimit: 5 },
+    subastaConfig: { budget: 500, timerSeconds: 30, skipLimit: 5 },
     subasta: {
       phase: 'config',
       formation: null,
@@ -398,11 +402,19 @@ async function buildSubastaDeck(room) {
     const available = shuffle(pool[pos]);
     selected.push(...available.slice(0, Math.min(needed, available.length)));
   }
-  const deck = [];
-  for (const card of shuffle(selected)) {
-    const imageUrl = await getWikiImageUrl(card.wikiTitle);
-    deck.push({ ...card, imageUrl });
-  }
+  // Fetch todas las URLs en paralelo (mucho más rápido que secuencial)
+  const shuffled = shuffle(selected);
+  const deck = await Promise.all(
+    shuffled.map(async card => {
+      try {
+        const imageUrl = await getWikiImageUrl(card.wikiTitle);
+        return { ...card, imageUrl };
+      } catch {
+        return { ...card, imageUrl: null };
+      }
+    })
+  );
+  console.log('[Subasta] Deck armado:', deck.length, 'cartas,', deck.filter(c=>c.imageUrl).length, 'con imagen');
   return deck;
 }
 
@@ -452,7 +464,13 @@ function showSubastaCard(room) {
 
   // Start timer
   clearSubastaBidTimer(room);
-  sub.bidTimer = setTimeout(() => resolveSubastaCard(room), room.subastaConfig.timerSeconds * 1000);
+  sub.bidTimer = setTimeout(() => {
+    try {
+      resolveSubastaCard(room);
+    } catch(err) {
+      console.error('[Subasta] Error en resolveSubastaCard via timer:', err);
+    }
+  }, room.subastaConfig.timerSeconds * 1000);
 }
 
 function clearSubastaBidTimer(room) {
@@ -467,9 +485,18 @@ function checkAllEligibleResponded(room) {
 }
 
 function resolveSubastaCard(room) {
+  // Guard: evitar doble resolución (timer + todos-respondieron)
+  if (room.status !== 'subasta_bidding') {
+    console.log('[Subasta] resolveSubastaCard ignorado: status=' + room.status);
+    return;
+  }
   clearSubastaBidTimer(room);
   const sub = room.subasta;
   const card = sub.currentCard;
+  if (!card) {
+    console.error('[Subasta] resolveSubastaCard: currentCard es null, abortando');
+    return;
+  }
   const bids = sub.bids;
 
   const validBids = [];
