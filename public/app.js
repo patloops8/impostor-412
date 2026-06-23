@@ -281,27 +281,31 @@ let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=fal
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
-let subClockTarget=0;     // timestamp (ms) en que el contador llega a 0
-let subClockRAF=null;
+let subClockTarget=0;
+let subClockIv=null;
+let subClockLastShown=-1;
+let subClockActive=false;
 function setSubCount(seconds){
-  // Llamado por cada tick del servidor: fija el objetivo y arranca/continúa la animación local.
   subClockTarget = Date.now() + seconds*1000;
-  if(!subClockRAF) tickSubClockLocal();
-}
-function tickSubClockLocal(){
-  const el=$('sub-countdown');
-  if(!el){ subClockRAF=null; return; }
-  const remaining = Math.max(0, Math.round((subClockTarget - Date.now())/1000));
-  el.textContent = remaining;
-  el.classList.toggle('urgent', remaining<=5);
-  // Seguir animando solo si estamos en la pantalla de subasta
-  if(currentVisibleSection()==='s-sub-play'){
-    subClockRAF = setTimeout(tickSubClockLocal, 200);
-  } else {
-    subClockRAF = null;
+  subClockActive = true;
+  if(!subClockIv){
+    subClockIv = setInterval(tickSubClockLocal, 250);
+    tickSubClockLocal();
   }
 }
-function stopSubClock(){ if(subClockRAF){clearTimeout(subClockRAF);subClockRAF=null;} }
+function tickSubClockLocal(){
+  if(!subClockActive){ return; }
+  const el=$('sub-countdown');
+  if(!el) return;
+  const remaining = Math.max(0, Math.round((subClockTarget - Date.now())/1000));
+  // Solo tocar el DOM si el número realmente cambió (evita redibujos innecesarios)
+  if(remaining !== subClockLastShown){
+    subClockLastShown = remaining;
+    el.textContent = remaining;
+    el.classList.toggle('urgent', remaining<=5);
+  }
+}
+function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subClockIv);subClockIv=null;} subClockLastShown=-1; }
 function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 

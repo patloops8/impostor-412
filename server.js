@@ -312,10 +312,13 @@ function resolveCard(r){
 
 function startRPS(r,playerIds,card){
   const s=r.subasta;
-  s.rps={ card, players:playerIds, choices:new Map() };
+  // Si hay más de 2 candidatos, elegir 2 al azar para competir; el resto queda fuera.
+  let contenders=playerIds;
+  if(playerIds.length>2){ contenders=shuffle(playerIds).slice(0,2); }
+  s.rps={ card, players:contenders, choices:new Map() };
   r.status='subasta_rps';
   io.to(r.code).emit('sub:rps_start',{
-    playerIds, playerNames:playerIds.map(id=>r.players.get(id)?.name),
+    playerIds:contenders, playerNames:contenders.map(id=>r.players.get(id)?.name),
     cardName:card.name, positionLabel:POSITION_LABELS[card.position],
   });
   // Por si alguien no elige en 12s, elegir aleatorio por él
