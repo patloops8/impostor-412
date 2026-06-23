@@ -262,7 +262,9 @@ function startSubClock(r){
     const room=rooms.get(code);
     if(!room||room.status!=='subasta_play'){clearInterval(iv);timers.delete(code);return;}
     const s=room.subasta; s.secondsLeft--;
-    io.to(code).emit('sub:tick',{phase:s.auctionPhase,secondsLeft:Math.max(0,s.secondsLeft)});
+    // 'volatile': si un cliente está atrasado, descarta los ticks viejos en lugar de
+    // encolarlos. Así las pujas (no volatile) no se atascan detrás de una pila de ticks.
+    io.to(code).volatile.emit('sub:tick',{phase:s.auctionPhase,secondsLeft:Math.max(0,s.secondsLeft)});
     if(s.secondsLeft<=0){
       if(s.auctionPhase==='analysis'){
         s.auctionPhase='bidding'; s.secondsLeft=BIDDING_S;
@@ -419,7 +421,7 @@ function startFormationClock(r){
     const room=rooms.get(code);
     if(!room||room.status!=='subasta_formation'){clearInterval(iv);timers.delete(code);return;}
     const s=room.subasta; s.formationSecondsLeft--;
-    io.to(code).emit('sub:formation_tick',{secondsLeft:Math.max(0,s.formationSecondsLeft)});
+    io.to(code).volatile.emit('sub:formation_tick',{secondsLeft:Math.max(0,s.formationSecondsLeft)});
     if(s.formationSecondsLeft<=0){ clearInterval(iv); timers.delete(code); resolveFormationVote(room); }
   },1000);
   timers.set(code,iv);

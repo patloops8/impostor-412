@@ -294,6 +294,7 @@ let subClockTarget=0;
 let subClockIv=null;
 let subClockLastShown=-1;
 let subClockActive=false;
+let subZeroSince=0;
 function setSubCount(seconds){
   subClockTarget = Date.now() + seconds*1000;
   subClockActive = true;
@@ -312,6 +313,17 @@ function tickSubClockLocal(){
     subClockLastShown = remaining;
     el.textContent = remaining;
     el.classList.toggle('urgent', remaining<=5);
+  }
+  // Salvaguarda anti-atasco: si llevamos varios segundos clavados en 0,
+  // significa que se perdió el evento del servidor. Pedimos re-sincronización.
+  if(remaining===0){
+    subZeroSince = subZeroSince || Date.now();
+    if(Date.now()-subZeroSince > 3000){
+      subZeroSince = Date.now(); // evitar spamear
+      if(roomCode) socket.emit('player:request_sub_sync',{code:roomCode});
+    }
+  } else {
+    subZeroSince = 0;
   }
 }
 function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subClockIv);subClockIv=null;} subClockLastShown=-1; }
