@@ -256,7 +256,11 @@ function startSubClock(r){
     if(s.secondsLeft<=0){
       if(s.auctionPhase==='analysis'){
         s.auctionPhase='bidding'; s.secondsLeft=BIDDING_S;
-        io.to(code).emit('sub:bidding_open',{secondsLeft:s.secondsLeft});
+        // Emitir a CADA jugador su elegibilidad junto con la apertura de puja.
+        // Así no depende del orden en que llegaron eventos anteriores.
+        for(const [pid,bid] of s.bids.entries()){
+          io.to(pid).emit('sub:bidding_open',{ secondsLeft:s.secondsLeft, eligible:bid.eligible, skipsLeft:s.playerState.get(pid)?.skipsLeft??0 });
+        }
       } else {
         clearInterval(iv); timers.delete(code);
         try{ resolveCard(room); }catch(e){console.error('[Subasta]',e);}

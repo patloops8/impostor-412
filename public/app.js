@@ -264,7 +264,30 @@ function applySil(img,ph,url,rev){ img.className=rev?'silhouette-img revealed':'
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
 let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null;
-function setSubCount(s){ const el=$('sub-countdown'); el.textContent=s; el.classList.toggle('urgent',s<=5); }
+// Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
+// Esto evita el "correteo" en celulares con red lenta: el número baja suave
+// localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
+let subClockTarget=0;     // timestamp (ms) en que el contador llega a 0
+let subClockRAF=null;
+function setSubCount(seconds){
+  // Llamado por cada tick del servidor: fija el objetivo y arranca/continúa la animación local.
+  subClockTarget = Date.now() + seconds*1000;
+  if(!subClockRAF) tickSubClockLocal();
+}
+function tickSubClockLocal(){
+  const el=$('sub-countdown');
+  if(!el){ subClockRAF=null; return; }
+  const remaining = Math.max(0, Math.round((subClockTarget - Date.now())/1000));
+  el.textContent = remaining;
+  el.classList.toggle('urgent', remaining<=5);
+  // Seguir animando solo si estamos en la pantalla de subasta
+  if(currentVisibleSection()==='s-sub-play'){
+    subClockRAF = setTimeout(tickSubClockLocal, 200);
+  } else {
+    subClockRAF = null;
+  }
+}
+function stopSubClock(){ if(subClockRAF){clearTimeout(subClockRAF);subClockRAF=null;} }
 function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
@@ -285,15 +308,31 @@ socket.on('sub:card',({cardIndex,totalCards,position,positionLabel,startingPrice
   $('sub-highest').textContent='Sin pujas aún';
   $('sub-bid-log').innerHTML='';
   $('sub-phase-label').textContent='Analizando...';
-  setSubCount(secondsLeft);
   $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.add('hidden'); $('sub-ineligible').classList.add('hidden');
   updBidBtns();
   loadSil($('sub-img'),$('sub-img-placeholder'),$('sub-img-pos'),wikiTitle,positionLabel,false);
-  show('s-sub-play');
+  show('s-sub-play');           // mostrar la pantalla primero...
+  stopSubClock();               // ...resetear cualquier reloj previo...
+  setSubCount(secondsLeft);     // ...y arrancar el reloj local ya en pantalla
 });
 socket.on('sub:eligibility',({eligible,skipsLeft})=>{ subState.skipsLeft=skipsLeft; subEligible=eligible; updSubStats(); $('sub-ineligible').classList.toggle('hidden',eligible); });
 socket.on('sub:tick',({phase,secondsLeft})=>{ setSubCount(secondsLeft); $('sub-phase-label').textContent=phase==='analysis'?'Analizando...':'¡Pujas abiertas!'; });
-socket.on('sub:bidding_open',()=>{ $('sub-phase-label').textContent='¡Pujas abiertas!'; if(subEligible){ $('sub-can-bid').classList.remove('hidden'); $('btn-skip').disabled=subState.skipsLeft<=0; updBidBtns(); } });
+socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
+  $('sub-phase-label').textContent='¡Pujas abiertas!';
+  // La elegibilidad viene en el propio evento: fuente de verdad confiable.
+  if(typeof eligible==='boolean') subEligible=eligible;
+  if(typeof skipsLeft==='number'){ subState.skipsLeft=skipsLeft; updSubStats(); }
+  if(subEligible){
+    $('sub-ineligible').classList.add('hidden');
+    $('sub-bid-sent').classList.add('hidden');
+    $('sub-can-bid').classList.remove('hidden');
+    $('btn-skip').disabled=subState.skipsLeft<=0;
+    updBidBtns();
+  } else {
+    $('sub-can-bid').classList.add('hidden');
+    $('sub-ineligible').classList.remove('hidden');
+  }
+});
 socket.on('sub:bid_public',({name,amount,highestBid})=>{ subHighest=highestBid.amount; $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`; updBidBtns(); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--lime);font-family:var(--mono);">$${amount}M</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
 socket.on('sub:skip_public',({name})=>{ const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--text-dim);">skip</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
 socket.on('sub:timer_extended',({secondsLeft})=>{ setSubCount(secondsLeft); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span style="color:var(--red);">⏱ +5s</span>';log.prepend(it); });
@@ -305,6 +344,7 @@ socket.on('sub:skip_confirmed',({skipsLeft})=>{ subState.skipsLeft=skipsLeft; up
 socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHighest=highestBid.amount;$('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;} setSubCount(secondsLeft); updBidBtns(); if(phase==='bidding'&&subEligible)$('sub-can-bid').classList.remove('hidden'); });
 let subLast=false;
 socket.on('sub:card_resolved',({cardName,cardLabel,cardPosition,positionLabel,cardWikiTitle,cardTroll,result,winnerName,isLastCard})=>{
+  stopSubClock();
   subLast=isLastCard;
   const isW=result.winnerId===myId;
   if(isW){ subState.budget-=result.amount; updSubStats(); }
