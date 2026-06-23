@@ -4,6 +4,10 @@ const connBanner = document.getElementById('connection-banner');
 socket.on('connect', () => {
   connBanner.classList.remove('error');
   connBanner.classList.add('hidden');
+  // Al (re)conectar, si estoy en una sala, pedir el estado actual de la subasta por si me perdí algo
+  if (typeof roomCode !== 'undefined' && roomCode) {
+    socket.emit('player:request_subasta_sync', { code: roomCode });
+  }
 });
 socket.on('disconnect', () => {
   connBanner.textContent = 'Se perdió la conexión, reconectando...';
@@ -616,8 +620,6 @@ socket.on('subasta:formation_decided', ({ formation }) => {
 let myCurrentHighestBid = 0; // monto actual más alto en la carta
 let myStartingPrice = 0;
 let myEligibleForBid = false;
-let subPAnalysisCdi = null;
-
 function updateBidButtons() {
   const base = Math.max(myCurrentHighestBid, myStartingPrice);
   document.getElementById('sub-p-bid-preview-1').textContent = base + 1;
@@ -625,11 +627,15 @@ function updateBidButtons() {
   document.getElementById('sub-p-bid-preview-10').textContent = base + 10;
 }
 
-socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, analysisDeadline }) => {
+function setPlayerCountdown(seconds) {
+  const a = document.getElementById('sub-p-analysis-countdown');
+  if (a) { a.textContent = seconds; a.classList.toggle('urgent', seconds <= 3); }
+}
+
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, secondsLeft }) => {
   myCurrentHighestBid = 0;
   myStartingPrice = startingPrice;
   myEligibleForBid = false; // se actualiza en card_shown_private
-  if (subPAnalysisCdi) { clearInterval(subPAnalysisCdi); subPAnalysisCdi = null; }
 
   document.getElementById('sub-p-card-counter').textContent = `${cardIndex + 1}/${totalCards}`;
   const badge = document.getElementById('sub-p-position-badge');
@@ -638,6 +644,7 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio base`;
   document.getElementById('sub-p-highest-bid').textContent = 'Sin pujas aún';
   updateBidButtons();
+  setPlayerCountdown(secondsLeft);
 
   loadWikiSilhouetteP(
     document.getElementById('sub-p-silhouette-img'),
@@ -647,20 +654,11 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   );
 
   showScreen('subastaBiddingPlayer');
+});
 
-  // Countdown de la fase de análisis
-  if (analysisDeadline) {
-    const el = document.getElementById('sub-p-analysis-countdown');
-    if (el) {
-      function tick() {
-        const rem = Math.max(0, Math.ceil((analysisDeadline - Date.now()) / 1000));
-        el.textContent = rem;
-        el.classList.toggle('urgent', rem <= 3);
-      }
-      tick();
-      subPAnalysisCdi = setInterval(tick, 250);
-    }
-  }
+// Tick del servidor: única fuente de verdad
+socket.on('subasta:tick', ({ phase, secondsLeft }) => {
+  setPlayerCountdown(secondsLeft);
 });
 
 // Info privada: elegibilidad + datos para botones de puja
@@ -670,7 +668,7 @@ socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, posit
   myEligibleForBid = eligible;
   updateSubastaStats();
 
-  // Durante análisis: mostrar fase de análisis a los elegibles, mensaje a los no elegibles
+  // Fase de análisis: los elegibles ven la pantalla de análisis; los no elegibles, el mensaje
   document.getElementById('sub-p-can-bid').classList.add('hidden');
   document.getElementById('sub-p-bid-sent').classList.add('hidden');
   document.getElementById('sub-p-analysis-phase').classList.toggle('hidden', !eligible);
@@ -683,16 +681,27 @@ socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, posit
 });
 
 // Abrir fase de puja
-socket.on('subasta:bidding_phase', ({ deadlineAt }) => {
-  if (subPAnalysisCdi) { clearInterval(subPAnalysisCdi); subPAnalysisCdi = null; }
+socket.on('subasta:bidding_phase', () => {
   if (myEligibleForBid) {
     document.getElementById('sub-p-analysis-phase').classList.add('hidden');
     document.getElementById('sub-p-can-bid').classList.remove('hidden');
     document.getElementById('sub-p-bid-sent').classList.add('hidden');
-    
-    
-    
     updateBidButtons();
+  }
+});
+
+// Re-sincronización: el servidor responde con el estado actual de la carta
+socket.on('subasta:resync', ({ phase, secondsLeft, highestBid, startingPrice }) => {
+  if (highestBid) {
+    myCurrentHighestBid = highestBid.amount;
+    document.getElementById('sub-p-highest-bid').textContent = `Mejor: $${highestBid.amount}M — ${escapeHtml(highestBid.name)}`;
+  }
+  setPlayerCountdown(secondsLeft);
+  updateBidButtons();
+  // Si ya estamos en fase de puja y soy elegible, mostrar botones
+  if (phase === 'bidding' && myEligibleForBid) {
+    document.getElementById('sub-p-analysis-phase').classList.add('hidden');
+    document.getElementById('sub-p-can-bid').classList.remove('hidden');
   }
 });
 

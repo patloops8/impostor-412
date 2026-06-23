@@ -147,7 +147,7 @@ function newRoom(code, hostId) {
       deck: [],
       currentCardIndex: -1,
       currentCard: null,
-      auctionPhase: null,   // 'analysis' | 'bidding'
+      auctionPhase: null, secondsLeft: 0, totalEligible: 0,
       analysisTimer: null,
       bidDeadline: null,
       bidTimer: null,
@@ -436,9 +436,21 @@ function getPositionsFilled(ps, slots) {
   return filled;
 }
 
-const ANALYSIS_DURATION_MS = 15000;
-const BIDDING_DURATION_MS = 15000;
-const LAST_SECOND_EXTENSION_MS = 5000;
+const ANALYSIS_DURATION = 15; // segundos
+const BIDDING_DURATION = 15;  // segundos
+const LAST_SECOND_EXTENSION = 5; // segundos
+
+// ============================================================
+//  RELOJ AUTORITATIVO DEL SERVIDOR
+//  Un solo interval por sala. Cada segundo emite la fase y los
+//  segundos restantes. Los clientes SOLO muestran lo que llega.
+// ============================================================
+function clearSubastaBidTimer(room) {
+  if (subastaTimers.has(room.code)) {
+    clearInterval(subastaTimers.get(room.code));
+    subastaTimers.delete(room.code);
+  }
+}
 
 function showSubastaCard(room) {
   const sub = room.subasta;
@@ -450,6 +462,7 @@ function showSubastaCard(room) {
   sub.bids = new Map();
   sub.highestBid = null;
   sub.auctionPhase = 'analysis';
+  sub.secondsLeft = ANALYSIS_DURATION;
 
   const slots = FORMATIONS[sub.formation];
   let totalEligible = 0;
@@ -463,10 +476,10 @@ function showSubastaCard(room) {
     if (eligible) totalEligible++;
   }
 
-  room.status = 'subasta_analysis';
-  const analysisDeadline = Date.now() + ANALYSIS_DURATION_MS;
+  room.status = 'subasta_bidding'; // un solo status para toda la subasta de la carta
+  sub.totalEligible = totalEligible;
 
-  // Info privada para cada jugador
+  // Info privada para cada jugador (elegibilidad)
   for (const [pid, bid] of sub.bids.entries()) {
     io.to(pid).emit('subasta:card_shown_private', {
       eligible: bid.eligible,
@@ -477,48 +490,40 @@ function showSubastaCard(room) {
     });
   }
 
-  // Broadcast pantalla de análisis (silueta + posición + precio)
+  // Broadcast inicial de la carta
   io.to(room.code).emit('subasta:card_shown', {
     cardIndex: sub.currentCardIndex,
     totalCards: sub.deck.length,
     position: card.position,
     startingPrice: card.startingPrice,
     wikiTitle: card.wikiTitle,
-    analysisDeadline,
+    phase: 'analysis',
+    secondsLeft: sub.secondsLeft,
     totalEligible,
   });
 
-  // Después de 15s de análisis, abrir la puja
-  sub.analysisTimer = setTimeout(() => {
-    if (room.subasta.auctionPhase !== 'analysis') return;
-    startBiddingPhase(room);
-  }, ANALYSIS_DURATION_MS);
+  startSubastaClock(room);
 }
 
-function startBiddingPhase(room) {
+// Devuelve un snapshot del estado actual de la carta (para re-sincronizar clientes)
+function subastaCardSnapshot(room) {
   const sub = room.subasta;
-  sub.auctionPhase = 'bidding';
-  room.status = 'subasta_bidding';
-  sub.bidDeadline = Date.now() + BIDDING_DURATION_MS;
-
-  io.to(room.code).emit('subasta:bidding_phase', {
-    deadlineAt: sub.bidDeadline,
+  const card = sub.currentCard;
+  if (!card) return null;
+  return {
+    cardIndex: sub.currentCardIndex,
+    totalCards: sub.deck.length,
+    position: card.position,
+    startingPrice: card.startingPrice,
+    wikiTitle: card.wikiTitle,
+    phase: sub.auctionPhase,
+    secondsLeft: sub.secondsLeft,
     highestBid: sub.highestBid,
-  });
-
-  startSubastaInterval(room);
+    totalEligible: sub.totalEligible,
+  };
 }
 
-function clearSubastaBidTimer(room) {
-  if (room.subasta.analysisTimer) { clearTimeout(room.subasta.analysisTimer); room.subasta.analysisTimer = null; }
-  if (room.subasta.bidTimer) { clearTimeout(room.subasta.bidTimer); room.subasta.bidTimer = null; }
-  if (subastaTimers.has(room.code)) {
-    clearInterval(subastaTimers.get(room.code));
-    subastaTimers.delete(room.code);
-  }
-}
-
-function startSubastaInterval(room) {
+function startSubastaClock(room) {
   clearSubastaBidTimer(room);
   const code = room.code;
   const iv = setInterval(() => {
@@ -528,14 +533,33 @@ function startSubastaInterval(room) {
       subastaTimers.delete(code);
       return;
     }
-    const remaining = r.subasta.bidDeadline - Date.now();
-    if (remaining <= 0) {
-      clearInterval(iv);
-      subastaTimers.delete(code);
-      try { resolveSubastaCard(r); }
-      catch(e) { console.error('[Subasta] resolveSubastaCard error:', e); }
+    const sub = r.subasta;
+    sub.secondsLeft -= 1;
+
+    // Emitir tick a TODOS: misma fuente de verdad para host y celulares
+    io.to(code).emit('subasta:tick', {
+      phase: sub.auctionPhase,
+      secondsLeft: Math.max(0, sub.secondsLeft),
+    });
+
+    if (sub.secondsLeft <= 0) {
+      if (sub.auctionPhase === 'analysis') {
+        // Pasar a fase de puja
+        sub.auctionPhase = 'bidding';
+        sub.secondsLeft = BIDDING_DURATION;
+        io.to(code).emit('subasta:bidding_phase', {
+          secondsLeft: sub.secondsLeft,
+          highestBid: sub.highestBid,
+        });
+      } else {
+        // Fin de la puja: resolver
+        clearInterval(iv);
+        subastaTimers.delete(code);
+        try { resolveSubastaCard(r); }
+        catch(e) { console.error('[Subasta] resolveSubastaCard error:', e); }
+      }
     }
-  }, 500);
+  }, 1000);
   subastaTimers.set(code, iv);
 }
 
@@ -869,11 +893,10 @@ io.on('connection', socket => {
     bid.responded = true;
     sub.highestBid = { playerId: socket.id, name: room.players.get(socket.id)?.name, amount: n };
 
-    // Si quedan 5 segundos o menos, extender el timer a 5 segundos
-    const remaining = sub.bidDeadline - Date.now();
-    if (remaining <= 5000) {
-      sub.bidDeadline = Date.now() + 5000;
-      io.to(room.code).emit('subasta:timer_extended', { newDeadline: sub.bidDeadline });
+    // Si quedan 5 segundos o menos, devolver el reloj a 5 segundos
+    if (sub.auctionPhase === 'bidding' && sub.secondsLeft <= LAST_SECOND_EXTENSION) {
+      sub.secondsLeft = LAST_SECOND_EXTENSION;
+      io.to(room.code).emit('subasta:timer_extended', { secondsLeft: sub.secondsLeft });
     }
 
     // Emitir puja pública para que todos la vean
@@ -883,8 +906,8 @@ io.on('connection', socket => {
       amount: n,
       highestBid: sub.highestBid,
     });
-
-    if (checkAllEligibleResponded(room)) resolveSubastaCard(room);
+    // NOTA: ya no se resuelve por "todos respondieron". La carta se resuelve
+    // SOLO cuando el reloj llega a 0, para dar siempre chance de contra-pujar.
   });
 
   socket.on('player:skip_card', ({ code }) => {
@@ -902,7 +925,19 @@ io.on('connection', socket => {
     io.to(room.code).emit('subasta:skip_public', {
       name: room.players.get(socket.id)?.name,
     });
-    if (checkAllEligibleResponded(room)) resolveSubastaCard(room);
+    // Resolución temprana SOLO si todos los elegibles ya respondieron Y nadie pujó
+    // (es decir, todos pasaron → descarte inmediato, no hay nada que esperar).
+    if (checkAllEligibleResponded(room) && !sub.highestBid) {
+      clearSubastaBidTimer(room);
+      resolveSubastaCard(room);
+    }
+  });
+
+  socket.on('player:request_subasta_sync', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'subasta_bidding') return;
+    const snap = subastaCardSnapshot(room);
+    if (snap) socket.emit('subasta:resync', snap);
   });
 
   socket.on('host:force_resolve_card', ({ code }) => {
@@ -950,7 +985,7 @@ io.on('connection', socket => {
     room.roundNumber = 0;
     room.mangaNumber = 0;
     room.lie = { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [], currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null };
-    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, auctionPhase: null, analysisTimer: null, bidDeadline: null, bidTimer: null, bids: new Map(), playerState: new Map(), resolvedCards: [] };
+    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, auctionPhase: null, secondsLeft: 0, totalEligible: 0, bids: new Map(), playerState: new Map(), resolvedCards: [] };
     for (const p of room.players.values()) { p.alive = true; p.score = 0; }
     emitRoomState(room);
   });
@@ -977,7 +1012,12 @@ io.on('connection', socket => {
             resolveLieChallenge(room, yes >= no, 'vote');
           }
         }
-        if (room.status === 'subasta_bidding' && checkAllEligibleResponded(room)) resolveSubastaCard(room);
+        // En subasta, si un jugador se desconecta, el reloj del servidor sigue corriendo
+        // y resuelve la carta al llegar a 0. No forzamos resolución aquí.
+        if (room.status === 'subasta_bidding' && checkAllEligibleResponded(room) && !room.subasta.highestBid) {
+          clearSubastaBidTimer(room);
+          resolveSubastaCard(room);
+        }
       }
       emitRoomState(room);
     }

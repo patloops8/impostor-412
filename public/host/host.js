@@ -543,31 +543,27 @@ renderGamePicker = function(gameType) {
   document.getElementById('config-subasta').classList.toggle('hidden', gameType !== 'subasta');
 };
 
-// Countdown helpers
+// Countdown: el servidor manda los ticks, el host SOLO los muestra.
 let subFormationCdi = null;
-let subBidCdi = null;
 
-function startSubCountdown(elementId, deadlineAt) {
+function setCountdownDisplay(elementId, seconds) {
   const el = document.getElementById(elementId);
-  if (!el) return null;
-  let expired = false;
-  function tick() {
-    const remaining = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
-    el.textContent = remaining;
-    el.classList.toggle('urgent', remaining <= 5);
-    if (remaining <= 0 && !expired) {
-      expired = true;
-      // el contador de pujas ahora se muestra en el log en vivo
-    }
-  }
-  tick();
-  return setInterval(tick, 250);
+  if (!el) return;
+  el.textContent = seconds;
+  el.classList.toggle('urgent', seconds <= 5);
 }
 
 // Formacion vote
 socket.on('subasta:formation_vote_started', ({ formations, deadlineAt }) => {
   document.getElementById('sub-formation-votes-in').textContent = '0 / ' + currentPlayersSnapshot.length + ' votos';
-  subFormationCdi = startSubCountdown('sub-formation-countdown', deadlineAt);
+  if (subFormationCdi) clearInterval(subFormationCdi);
+  const el = document.getElementById('sub-formation-countdown');
+  function tick() {
+    const rem = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+    if (el) { el.textContent = rem; el.classList.toggle('urgent', rem <= 5); }
+  }
+  tick();
+  subFormationCdi = setInterval(tick, 500);
   showScreen('subastaFormationVote');
 });
 
@@ -590,12 +586,9 @@ socket.on('subasta:formation_decided', ({ formation }) => {
 // Carta de subasta
 let currentSubastaDeadline = 0;
 
-let subAnalysisCdi = null;
 let currentStartingPrice = 0;
 
-socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, analysisDeadline }) => {
-  if (subBidCdi) { clearInterval(subBidCdi); subBidCdi = null; }
-  if (subAnalysisCdi) { clearInterval(subAnalysisCdi); subAnalysisCdi = null; }
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, phase, secondsLeft }) => {
   currentStartingPrice = startingPrice;
 
   document.getElementById('sub-card-counter').textContent = `Carta ${cardIndex + 1} de ${totalCards}`;
@@ -604,9 +597,10 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   document.getElementById('sub-highest-bid-display').textContent = 'Sin pujas — esperando fase de puja';
   document.getElementById('sub-live-bid-log').innerHTML = '';
 
-  // Mostrar fase de análisis, ocultar fase de puja
+  // Fase inicial = análisis
   document.getElementById('sub-phase-analysis').classList.remove('hidden');
   document.getElementById('sub-phase-bidding').classList.add('hidden');
+  setCountdownDisplay('sub-analysis-countdown', secondsLeft);
 
   loadWikiSilhouette(
     document.getElementById('sub-silhouette-img'),
@@ -615,23 +609,29 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
     wikiTitle, positionLabel(position), false
   );
 
-  subAnalysisCdi = startSubCountdown('sub-analysis-countdown', analysisDeadline);
   showScreen('subastaBidding');
 });
 
+// Tick del servidor: única fuente de verdad del tiempo
+socket.on('subasta:tick', ({ phase, secondsLeft }) => {
+  if (phase === 'analysis') {
+    setCountdownDisplay('sub-analysis-countdown', secondsLeft);
+  } else if (phase === 'bidding') {
+    setCountdownDisplay('sub-bid-countdown', secondsLeft);
+  }
+});
+
 // Transición a fase de puja
-socket.on('subasta:bidding_phase', ({ deadlineAt }) => {
-  if (subAnalysisCdi) { clearInterval(subAnalysisCdi); subAnalysisCdi = null; }
+socket.on('subasta:bidding_phase', ({ secondsLeft }) => {
   document.getElementById('sub-phase-analysis').classList.add('hidden');
   document.getElementById('sub-phase-bidding').classList.remove('hidden');
   document.getElementById('sub-highest-bid-display').textContent = `Sin pujas — mínimo $${currentStartingPrice}M`;
-  subBidCdi = startSubCountdown('sub-bid-countdown', deadlineAt);
+  setCountdownDisplay('sub-bid-countdown', secondsLeft);
 });
 
 // Timer extendido (puja de último segundo)
-socket.on('subasta:timer_extended', ({ newDeadline }) => {
-  if (subBidCdi) { clearInterval(subBidCdi); }
-  subBidCdi = startSubCountdown('sub-bid-countdown', newDeadline);
+socket.on('subasta:timer_extended', ({ secondsLeft }) => {
+  setCountdownDisplay('sub-bid-countdown', secondsLeft);
   const log = document.getElementById('sub-live-bid-log');
   const ext = document.createElement('div');
   ext.className = 'clue-item';
@@ -665,8 +665,6 @@ document.getElementById('btn-force-resolve').addEventListener('click', () => {
 
 // Resultado de carta - revela identidad inmediatamente
 socket.on('subasta:card_resolved', ({ cardName, cardLabel, cardPosition, cardWikiTitle, cardTroll, cardStartingPrice, result, winnerName, bidLog, isLastCard }) => {
-  if (subBidCdi) { clearInterval(subBidCdi); subBidCdi = null; }
-
   // Revelar imagen del jugador (sin silueta)
   loadWikiSilhouette(
     document.getElementById('sub-result-img'),
