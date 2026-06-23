@@ -18,13 +18,21 @@ const ALL_CATEGORIES = [...new Set(CONCEPTS.map(c => c.category))];
 const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8'));
 const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
 
+// Posiciones específicas. Orden de subasta de atrás hacia adelante.
+const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
+const POSITION_LABELS = {
+  POR: 'Portero', LD: 'Lateral Derecho', DFC: 'Defensa Central', LI: 'Lateral Izquierdo',
+  MCD: 'Mediocentro Defensivo', MC: 'Mediocentro', MCO: 'Mediocentro Ofensivo',
+  ED: 'Extremo Derecho', EI: 'Extremo Izquierdo', DC: 'Delantero Centro',
+};
+// Cada formación define cuántos jugadores por posición específica (deben sumar 11)
 const FORMATIONS = {
-  '4-3-3': { portero: 1, defensa: 4, mediocampista: 3, delantero: 3 },
-  '4-4-2': { portero: 1, defensa: 4, mediocampista: 4, delantero: 2 },
-  '4-2-3-1': { portero: 1, defensa: 4, mediocampista: 5, delantero: 1 },
-  '3-5-2': { portero: 1, defensa: 3, mediocampista: 5, delantero: 2 },
-  '3-4-3': { portero: 1, defensa: 3, mediocampista: 4, delantero: 3 },
-  '5-3-2': { portero: 1, defensa: 5, mediocampista: 3, delantero: 2 },
+  '4-3-3':   { POR:1, LD:1, DFC:2, LI:1, MCD:1, MC:2, MCO:0, ED:1, EI:1, DC:1 },
+  '4-4-2':   { POR:1, LD:1, DFC:2, LI:1, MCD:0, MC:2, MCO:0, ED:1, EI:1, DC:2 },
+  '4-2-3-1': { POR:1, LD:1, DFC:2, LI:1, MCD:2, MC:0, MCO:1, ED:1, EI:1, DC:1 },
+  '3-5-2':   { POR:1, LD:0, DFC:3, LI:0, MCD:1, MC:2, MCO:1, ED:1, EI:1, DC:1 },
+  '3-4-3':   { POR:1, LD:0, DFC:3, LI:0, MCD:1, MC:2, MCO:0, ED:1, EI:1, DC:2 },
+  '4-3-1-2': { POR:1, LD:1, DFC:2, LI:1, MCD:1, MC:2, MCO:1, ED:0, EI:0, DC:2 },
 };
 const ALL_FORMATIONS = Object.keys(FORMATIONS);
 
@@ -390,25 +398,34 @@ function resolveLieChallenge(room, success, reason) {
    SUBASTA FUTBOLERA — logica
    ========================================================= */
 function subastaPlayerState(budget, skipLimit) {
-  return { budget, skipsLeft: skipLimit, team: { portero: [], defensa: [], mediocampista: [], delantero: [] }, totalRealValue: 0 };
+  const team = {};
+  for (const pos of POSITION_ORDER) team[pos] = [];
+  return { budget, skipsLeft: skipLimit, team, totalRealValue: 0 };
 }
 
 function buildSubastaDeck(room) {
-  // El cliente carga las imágenes directamente desde Wikipedia (más fiable que hacerlo en servidor)
+  // Las cartas se agrupan y ordenan POR POSICIÓN (orden de POSITION_ORDER).
+  // Dentro de cada posición van barajadas. No se avanza de posición hasta terminar la anterior.
   const formation = room.subasta.formation;
   const slots = FORMATIONS[formation];
   const playerCount = room.players.size;
-  const pool = { portero: [], defensa: [], mediocampista: [], delantero: [] };
-  for (const card of SUBASTA_CARDS) pool[card.position].push(card);
-  const selected = [];
-  for (const [pos, count] of Object.entries(slots)) {
+  const pool = {};
+  for (const pos of POSITION_ORDER) pool[pos] = [];
+  for (const card of SUBASTA_CARDS) {
+    if (pool[card.position]) pool[card.position].push(card);
+  }
+  const deck = [];
+  for (const pos of POSITION_ORDER) {
+    const count = slots[pos] || 0;
+    if (count === 0) continue;
     const needed = count * playerCount;
     const available = shuffle(pool[pos]);
-    selected.push(...available.slice(0, Math.min(needed, available.length)));
+    const chosen = available.slice(0, Math.min(needed, available.length));
+    deck.push(...chosen); // ya en orden de posición; dentro barajadas
   }
-  const deck = shuffle(selected).map(card => ({ ...card })); // copia sin imageUrl, el cliente la cargará
-  console.log('[Subasta] Deck armado:', deck.length, 'cartas para', playerCount, 'jugadores con formación', formation);
-  return deck;
+  const result = deck.map(card => ({ ...card }));
+  console.log('[Subasta] Deck por posición:', result.length, 'cartas,', playerCount, 'jugadores,', formation);
+  return result;
 }
 
 function getPositionsFilled(ps, slots) {

@@ -564,7 +564,18 @@ const FORMATIONS_INFO = {
 };
 
 function posLabelP(pos) {
-  return { portero: 'Portero', defensa: 'Defensa', mediocampista: 'Mediocampista', delantero: 'Delantero' }[pos] || pos;
+  return {
+    POR: 'Portero', LD: 'Lateral Der.', DFC: 'Defensa Central', LI: 'Lateral Izq.',
+    MCD: 'Medio Def.', MC: 'Mediocentro', MCO: 'Medio Ofensivo',
+    ED: 'Extremo Der.', EI: 'Extremo Izq.', DC: 'Delantero',
+  }[pos] || pos;
+}
+
+function positionGroup(pos) {
+  if (pos === 'POR') return 'portero';
+  if (['LD','DFC','LI'].includes(pos)) return 'defensa';
+  if (['MCD','MC','MCO'].includes(pos)) return 'mediocampista';
+  return 'delantero';
 }
 
 function updateSubastaStats() {
@@ -600,24 +611,7 @@ socket.on('subasta:formation_decided', ({ formation }) => {
   showScreen('subastaWaitingDeck');
 });
 
-// Info privada de la carta + imagen para el jugador
-socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, position, startingPrice }) => {
-  mySubastaState.skipsLeft = skipsLeft;
-  currentSubastaWikiTitle = wikiTitle;
-  currentSubastaPosition = position;
-  updateSubastaStats();
-
-  document.getElementById('sub-p-can-bid').classList.toggle('hidden', !eligible);
-  document.getElementById('sub-p-bid-sent').classList.add('hidden');
-  document.getElementById('sub-p-ineligible').classList.toggle('hidden', eligible);
-
-  if (eligible) {
-    
-    document.getElementById('bid-error').classList.add('hidden');
-    
-    document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
-  }
-});
+// Info privada de la carta + imagen para el jugador (handler único más abajo)
 
 let myCurrentHighestBid = 0; // monto actual más alto en la carta
 let myStartingPrice = 0;
@@ -631,7 +625,7 @@ function updateBidButtons() {
   document.getElementById('sub-p-bid-preview-10').textContent = base + 10;
 }
 
-socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle }) => {
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, wikiTitle, analysisDeadline }) => {
   myCurrentHighestBid = 0;
   myStartingPrice = startingPrice;
   myEligibleForBid = false; // se actualiza en card_shown_private
@@ -640,7 +634,7 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   document.getElementById('sub-p-card-counter').textContent = `${cardIndex + 1}/${totalCards}`;
   const badge = document.getElementById('sub-p-position-badge');
   badge.textContent = posLabelP(position);
-  badge.className = 'position-badge ' + position;
+  badge.className = 'position-badge ' + positionGroup(position);
   document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio base`;
   document.getElementById('sub-p-highest-bid').textContent = 'Sin pujas aún';
   updateBidButtons();
@@ -653,6 +647,20 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
   );
 
   showScreen('subastaBiddingPlayer');
+
+  // Countdown de la fase de análisis
+  if (analysisDeadline) {
+    const el = document.getElementById('sub-p-analysis-countdown');
+    if (el) {
+      function tick() {
+        const rem = Math.max(0, Math.ceil((analysisDeadline - Date.now()) / 1000));
+        el.textContent = rem;
+        el.classList.toggle('urgent', rem <= 3);
+      }
+      tick();
+      subPAnalysisCdi = setInterval(tick, 250);
+    }
+  }
 });
 
 // Info privada: elegibilidad + datos para botones de puja
@@ -662,32 +670,16 @@ socket.on('subasta:card_shown_private', ({ eligible, skipsLeft, wikiTitle, posit
   myEligibleForBid = eligible;
   updateSubastaStats();
 
-  // Durante análisis: mostrar fase de análisis, no los botones de puja aún
-  document.getElementById('sub-p-analysis-phase').classList.toggle('hidden', !eligible && !myEligibleForBid);
+  // Durante análisis: mostrar fase de análisis a los elegibles, mensaje a los no elegibles
   document.getElementById('sub-p-can-bid').classList.add('hidden');
   document.getElementById('sub-p-bid-sent').classList.add('hidden');
+  document.getElementById('sub-p-analysis-phase').classList.toggle('hidden', !eligible);
   document.getElementById('sub-p-ineligible').classList.toggle('hidden', eligible);
 
   if (eligible) {
-    document.getElementById('sub-p-analysis-phase').classList.remove('hidden');
     document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
     updateBidButtons();
   }
-});
-
-// Fase de análisis countdown en el celular
-socket.on('subasta:card_shown', ({ analysisDeadline }) => {
-  if (!analysisDeadline) return;
-  if (subPAnalysisCdi) clearInterval(subPAnalysisCdi);
-  const el = document.getElementById('sub-p-analysis-countdown');
-  if (!el) return;
-  function tick() {
-    const rem = Math.max(0, Math.ceil((analysisDeadline - Date.now()) / 1000));
-    el.textContent = rem;
-    el.classList.toggle('urgent', rem <= 3);
-  }
-  tick();
-  subPAnalysisCdi = setInterval(tick, 250);
 });
 
 // Abrir fase de puja

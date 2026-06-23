@@ -600,7 +600,7 @@ socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPric
 
   document.getElementById('sub-card-counter').textContent = `Carta ${cardIndex + 1} de ${totalCards}`;
   document.getElementById('sub-card-starting-price').textContent = `$${startingPrice}M precio base`;
-  document.getElementById('sub-card-position').innerHTML = `<span class="position-badge ${position}">${positionLabel(position)}</span>`;
+  document.getElementById('sub-card-position').innerHTML = `<span class="position-badge ${positionGroup(position)}">${positionLabel(position)}</span>`;
   document.getElementById('sub-highest-bid-display').textContent = 'Sin pujas — esperando fase de puja';
   document.getElementById('sub-live-bid-log').innerHTML = '';
 
@@ -753,5 +753,17 @@ document.getElementById('btn-subasta-new-session').addEventListener('click', () 
 });
 
 function positionLabel(pos) {
-  return { portero: 'Portero', defensa: 'Defensa', mediocampista: 'Mediocampista', delantero: 'Delantero' }[pos] || pos;
+  return {
+    POR: 'Portero', LD: 'Lateral Derecho', DFC: 'Defensa Central', LI: 'Lateral Izquierdo',
+    MCD: 'Mediocentro Defensivo', MC: 'Mediocentro', MCO: 'Medio Ofensivo',
+    ED: 'Extremo Derecho', EI: 'Extremo Izquierdo', DC: 'Delantero Centro',
+  }[pos] || pos;
+}
+
+// Agrupa las 9 posiciones en 4 familias para el color del badge
+function positionGroup(pos) {
+  if (pos === 'POR') return 'portero';
+  if (['LD','DFC','LI'].includes(pos)) return 'defensa';
+  if (['MCD','MC','MCO'].includes(pos)) return 'mediocampista';
+  return 'delantero'; // ED, EI, DC
 }
