@@ -545,3 +545,142 @@ input[type='text']::placeholder {
 .big-tap-btn:active {
   transform: scale(0.97);
 }
+
+/* ===================== SUBASTA FUTBOLERA ===================== */
+
+.silhouette-container {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto 16px;
+  aspect-ratio: 3/4;
+  background: var(--bg-raised);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.silhouette-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0);
+}
+
+.silhouette-img.revealed {
+  filter: none;
+  transition: filter 0.8s ease;
+}
+
+.silhouette-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 4rem;
+  color: var(--text-dim);
+  width: 100%;
+  height: 100%;
+}
+
+.auction-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+  padding: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.bid-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.team-slot {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 0.82rem;
+}
+
+.team-slot.filled {
+  border-color: var(--grass-light);
+}
+
+.team-slot .pos-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.team-slot .player-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.team-slot .player-price {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--lime);
+}
+
+.budget-bar {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.sub-stat {
+  text-align: center;
+}
+
+.sub-stat .val {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--lime);
+}
+
+.sub-stat .lbl {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  text-transform: uppercase;
+}
+
+.position-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.position-badge.portero { background: #1a3a2a; color: #4ecb71; border: 1px solid #4ecb71; }
+.position-badge.defensa { background: #1a2a3a; color: #4e8ecb; border: 1px solid #4e8ecb; }
+.position-badge.mediocampista { background: #2a2a1a; color: #cbc34e; border: 1px solid #cbc34e; }
+.position-badge.delantero { background: #3a1a1a; color: #cb4e4e; border: 1px solid #cb4e4e; }

@@ -43,6 +43,10 @@
           <span class="game-pick-title">Mentiroso</span>
           <span class="game-pick-desc">Suban la apuesta o acusen de mentiroso.</span>
         </button>
+        <button class="game-pick-card" id="pick-subasta">
+          <span class="game-pick-title">Subasta</span>
+          <span class="game-pick-desc">Puja por siluetas. El mejor equipo gana.</span>
+        </button>
       </div>
     </div>
 
@@ -70,6 +74,47 @@
         <div class="config-row" style="flex-direction:column; align-items:flex-start;">
           <label>Categorías incluidas</label>
           <div class="category-checks" id="category-checks"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Config: Subasta Futbolera -->
+    <div id="config-subasta" class="hidden">
+      <div class="config-header">
+        <h2 style="font-size:1.3rem;">Configurar Subasta Futbolera</h2>
+        <button class="link-btn" id="btn-change-game-3">Cambiar juego</button>
+      </div>
+      <div class="card" style="margin-bottom:18px;">
+        <div class="config-row">
+          <label for="cfg-sub-budget">Presupuesto por jugador (M)</label>
+          <select id="cfg-sub-budget">
+            <option value="50">$50M</option>
+            <option value="75">$75M</option>
+            <option value="100" selected>$100M</option>
+            <option value="150">$150M</option>
+            <option value="200">$200M</option>
+          </select>
+        </div>
+        <div class="config-row">
+          <label for="cfg-sub-timer">Tiempo para pujar (segundos)</label>
+          <select id="cfg-sub-timer">
+            <option value="15">15s</option>
+            <option value="20">20s</option>
+            <option value="30" selected>30s</option>
+            <option value="45">45s</option>
+            <option value="60">60s</option>
+          </select>
+        </div>
+        <div class="config-row">
+          <label for="cfg-sub-skips">Skips por jugador</label>
+          <select id="cfg-sub-skips">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+            <option value="99">Sin límite</option>
+          </select>
         </div>
       </div>
     </div>
@@ -211,6 +256,105 @@
     <div class="card" id="lie-scoreboard"></div>
     <div class="center-flex" style="flex:none; margin-top:20px;">
       <button class="btn-primary" id="btn-next-lie-round">Siguiente ronda</button>
+    </div>
+  </section>
+
+
+  <!-- ===================== SUBASTA FUTBOLERA ===================== -->
+
+  <!-- Configuracion Subasta en el lobby (va dentro de config-subasta) -->
+
+  <!-- Pantalla: votacion de formacion -->
+  <section id="screen-subasta-formation-vote" class="hidden">
+    <p class="eyebrow">Subasta Futbolera</p>
+    <h2 style="font-size:1.6rem; margin-bottom:6px;">Voten por la formación</h2>
+    <p style="margin-bottom:18px;">Cada jugador elige desde su celular. Gana la más votada.</p>
+    <div class="countdown-row" style="margin-bottom:18px;">
+      <div class="countdown-circle" id="sub-formation-countdown">45</div>
+      <p id="sub-formation-votes-in">0 / 0 votos</p>
+    </div>
+    <div class="player-grid" id="sub-formation-vote-grid"></div>
+  </section>
+
+  <!-- Pantalla: armando el deck -->
+  <section id="screen-subasta-building" class="hidden center-flex">
+    <p class="eyebrow">Subasta Futbolera</p>
+    <h1 style="font-size:2rem;" id="sub-formation-decided">Formación: —</h1>
+    <p>Preparando las siluetas...</p>
+  </section>
+
+  <!-- Pantalla: subasta activa (muestra silueta) -->
+  <section id="screen-subasta-bidding" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <p class="eyebrow" id="sub-card-counter">Carta 1 de 30</p>
+      <p class="eyebrow" id="sub-formation-label">4-3-3</p>
+    </div>
+
+    <div class="silhouette-container">
+      <img id="sub-silhouette-img" class="silhouette-img" src="" alt="silueta" />
+      <div id="sub-silhouette-placeholder" class="silhouette-placeholder hidden">
+        <span id="sub-placeholder-pos">?</span>
+      </div>
+    </div>
+
+    <div class="auction-info-row">
+      <div>
+        <p class="eyebrow">Posición</p>
+        <p id="sub-card-position" style="font-weight:800; font-size:1.1rem;">—</p>
+      </div>
+      <div>
+        <p class="eyebrow">Precio inicial</p>
+        <p id="sub-card-starting-price" style="font-family:var(--mono); font-size:1.3rem; color:var(--lime);">$—M</p>
+      </div>
+      <div>
+        <div class="countdown-circle" id="sub-bid-countdown">30</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <p style="text-align:center;" id="sub-bids-in">Esperando pujas...</p>
+  </section>
+
+  <!-- Pantalla: resultado de carta -->
+  <section id="screen-subasta-card-result" class="hidden">
+    <div class="reveal-banner" id="sub-result-banner">
+      <p class="eyebrow" id="sub-result-eyebrow">Resultado</p>
+      <h1 style="font-size:1.8rem;" id="sub-result-title">—</h1>
+      <p id="sub-result-subtitle"></p>
+    </div>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:10px;">Pujas de esta carta</h3>
+    <div class="clue-log" id="sub-bids-log"></div>
+    <div class="center-flex" style="flex:none; margin-top:18px;">
+      <button class="btn-primary" id="btn-next-subasta-card">Siguiente carta</button>
+    </div>
+  </section>
+
+  <!-- Pantalla: revelacion final (carta a carta) -->
+  <section id="screen-subasta-reveal" class="hidden">
+    <p class="eyebrow" id="sub-reveal-counter">Revelando 1 de 30</p>
+    <div class="silhouette-container">
+      <img id="sub-reveal-img" class="silhouette-img revealed" src="" alt="" />
+      <div id="sub-reveal-placeholder" class="silhouette-placeholder hidden"><span>?</span></div>
+    </div>
+    <div class="reveal-banner" id="sub-reveal-card-banner" style="margin-top:12px;">
+      <p class="eyebrow" id="sub-reveal-card-eyebrow">—</p>
+      <h2 style="font-size:1.5rem;" id="sub-reveal-card-name">—</h2>
+      <p id="sub-reveal-card-label"></p>
+      <p style="font-family:var(--mono); color:var(--lime); margin-top:6px;" id="sub-reveal-card-value">Valor real: $—M</p>
+    </div>
+    <div class="center-flex" style="flex:none; margin-top:16px;">
+      <button class="btn-primary" id="btn-next-reveal">Siguiente revelación</button>
+    </div>
+  </section>
+
+  <!-- Pantalla: resultado final subasta -->
+  <section id="screen-subasta-over" class="hidden">
+    <p class="eyebrow">Subasta Futbolera — Resultado Final</p>
+    <h2 style="font-size:1.5rem; margin-bottom:16px;">Clasificación por valor real del equipo</h2>
+    <div class="card" id="sub-final-scoreboard"></div>
+    <div class="center-flex" style="flex:none; margin-top:20px;">
+      <button class="btn-primary" id="btn-subasta-new-session">Nueva partida</button>
     </div>
   </section>
 

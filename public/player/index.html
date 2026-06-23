@@ -183,6 +183,80 @@
     <p id="lie-p-waiting-text">Esperando a que el host arranque la siguiente ronda...</p>
   </section>
 
+
+  <!-- ===================== SUBASTA FUTBOLERA ===================== -->
+
+  <section id="screen-subasta-formation-vote-player" class="hidden">
+    <p class="eyebrow">Subasta Futbolera</p>
+    <h2 style="font-size:1.4rem; margin-bottom:16px;">Elige la formación</h2>
+    <div id="sub-p-formation-buttons" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <p id="sub-p-voted-text" class="hidden center-flex" style="margin-top:18px; color:var(--lime); font-weight:700;">¡Voto enviado! Esperando a los demás...</p>
+  </section>
+
+  <section id="screen-subasta-waiting-deck" class="hidden center-flex">
+    <p class="eyebrow">Subasta Futbolera</p>
+    <h2 id="sub-p-formation-decided" style="font-size:1.5rem;">Formación elegida: —</h2>
+    <p>Preparando las siluetas...</p>
+  </section>
+
+  <section id="screen-subasta-bidding-player" class="hidden">
+    <div class="budget-bar">
+      <div class="sub-stat"><div class="val" id="sub-p-budget">$100M</div><div class="lbl">presupuesto</div></div>
+      <div class="sub-stat"><div class="val" id="sub-p-skips">5</div><div class="lbl">skips</div></div>
+      <div class="sub-stat"><div class="val" id="sub-p-card-counter">1/30</div><div class="lbl">carta</div></div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:10px;">
+      <span class="position-badge" id="sub-p-position-badge">Portero</span>
+      <p style="font-family:var(--mono); color:var(--lime); font-size:1.3rem; margin-top:8px;" id="sub-p-starting-price">$—M precio inicial</p>
+    </div>
+
+    <div id="sub-p-can-bid" class="hidden">
+      <div class="bid-form">
+        <input type="number" inputmode="numeric" id="input-bid" placeholder="Tu puja en millones..." />
+        <p class="error-text hidden" id="bid-error"></p>
+        <button class="btn-primary" id="btn-submit-bid" style="width:100%;">Pujar</button>
+        <button class="btn-secondary" id="btn-skip-card" style="width:100%;">Skip (<span id="sub-p-skips-btn">5</span> restantes)</button>
+      </div>
+    </div>
+
+    <div id="sub-p-bid-sent" class="hidden center-flex" style="margin-top:14px;">
+      <p style="color:var(--lime); font-weight:700;" id="sub-p-bid-sent-msg">Puja enviada. Esperando...</p>
+    </div>
+
+    <div id="sub-p-ineligible" class="hidden center-flex" style="margin-top:14px;">
+      <p id="sub-p-ineligible-msg" style="color:var(--text-dim);">Esta posición ya está cubierta o no tienes presupuesto.</p>
+    </div>
+  </section>
+
+  <section id="screen-subasta-card-result-player" class="hidden center-flex">
+    <p class="eyebrow" id="sub-p-result-eyebrow">Resultado</p>
+    <h2 style="font-size:1.4rem;" id="sub-p-result-title">—</h2>
+    <p id="sub-p-result-subtitle"></p>
+    <div class="budget-bar" style="width:100%; margin-top:14px;">
+      <div class="sub-stat"><div class="val" id="sub-p-budget-result">$100M</div><div class="lbl">presupuesto restante</div></div>
+      <div class="sub-stat"><div class="val" id="sub-p-skips-result">5</div><div class="lbl">skips</div></div>
+    </div>
+    <p style="color:var(--text-dim);">Esperando la siguiente carta...</p>
+  </section>
+
+  <section id="screen-subasta-reveal-player" class="hidden center-flex">
+    <p class="eyebrow">Revelación final</p>
+    <h2 style="font-size:1.3rem;">El host está revelando los jugadores...</h2>
+    <p>Mira la pantalla principal.</p>
+  </section>
+
+  <section id="screen-subasta-over-player" class="hidden">
+    <p class="eyebrow">Subasta terminada</p>
+    <h2 style="font-size:1.4rem; margin-bottom:14px;">Tu equipo final</h2>
+    <div id="sub-p-final-team" class="team-grid"></div>
+    <div class="card" style="margin-top:14px;">
+      <p style="color:var(--text-dim); font-size:0.85rem;">Valor real total de tu equipo</p>
+      <p style="font-family:var(--mono); font-size:2rem; color:var(--lime); margin-top:4px;" id="sub-p-total-value">$0M</p>
+    </div>
+    <p style="margin-top:14px;">Esperando que el host reinicie...</p>
+  </section>
+
 </div>
 
 <script src="/socket.io/socket.io.js"></script>

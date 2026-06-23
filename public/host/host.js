@@ -457,3 +457,224 @@ document.getElementById('btn-next-lie-round').addEventListener('click', () => {
     socket.emit('host:next_lie_round', { code: roomCode });
   }
 });
+
+
+/* =========================================================
+   SUBASTA FUTBOLERA — host
+   ========================================================= */
+
+// Agregar pantallas al objeto screens
+screens.subastaFormationVote = document.getElementById('screen-subasta-formation-vote');
+screens.subastaBuilding = document.getElementById('screen-subasta-building');
+screens.subastaBidding = document.getElementById('screen-subasta-bidding');
+screens.subastaCardResult = document.getElementById('screen-subasta-card-result');
+screens.subastaReveal = document.getElementById('screen-subasta-reveal');
+screens.subastaOver = document.getElementById('screen-subasta-over');
+
+// Pick subasta
+document.getElementById('pick-subasta').addEventListener('click', () => {
+  socket.emit('host:select_game', { code: roomCode, gameType: 'subasta' });
+});
+document.getElementById('btn-change-game-3').addEventListener('click', backToGamePicker);
+
+// Config subasta
+function sendSubastaConfigUpdate() {
+  const budget = Number(document.getElementById('cfg-sub-budget').value);
+  const timerSeconds = Number(document.getElementById('cfg-sub-timer').value);
+  const skipLimit = Number(document.getElementById('cfg-sub-skips').value);
+  socket.emit('host:update_subasta_config', { code: roomCode, budget, timerSeconds, skipLimit });
+}
+['cfg-sub-budget','cfg-sub-timer','cfg-sub-skips'].forEach(id => {
+  document.getElementById(id).addEventListener('change', sendSubastaConfigUpdate);
+});
+
+// Mostrar config correcta en renderGamePicker
+const origRenderGamePicker = renderGamePicker;
+renderGamePicker = function(gameType) {
+  origRenderGamePicker(gameType);
+  document.getElementById('config-subasta').classList.toggle('hidden', gameType !== 'subasta');
+};
+
+// Countdown helpers
+let subFormationCdi = null;
+let subBidCdi = null;
+
+function startSubCountdown(elementId, deadlineAt) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  function tick() {
+    const rem = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+    el.textContent = rem;
+    el.classList.toggle('urgent', rem <= 5);
+  }
+  tick();
+  return setInterval(tick, 250);
+}
+
+// Formacion vote
+socket.on('subasta:formation_vote_started', ({ formations, deadlineAt }) => {
+  const grid = document.getElementById('sub-formation-vote-grid');
+  grid.innerHTML = '';
+  document.getElementById('sub-formation-votes-in').textContent = '0 / ' + currentPlayersSnapshot.length + ' votos';
+  subFormationCdi = startSubCountdown('sub-formation-countdown', deadlineAt);
+  showScreen('subastaFormationVote');
+});
+
+socket.on('subasta:formation_vote_cast', ({ name, formation, votesIn, totalPlayers }) => {
+  document.getElementById('sub-formation-votes-in').textContent = `${votesIn} / ${totalPlayers} votos`;
+  const grid = document.getElementById('sub-formation-vote-grid');
+  const chip = document.createElement('div');
+  chip.className = 'player-chip';
+  chip.innerHTML = `<div class="name">${escapeHtml(name)}</div><div class="meta">${escapeHtml(formation)}</div>`;
+  grid.appendChild(chip);
+});
+
+socket.on('subasta:formation_decided', ({ formation, votes }) => {
+  if (subFormationCdi) { clearInterval(subFormationCdi); subFormationCdi = null; }
+  document.getElementById('sub-formation-decided').textContent = 'Formación: ' + formation;
+  showScreen('subastaBuilding');
+});
+
+// Carta de subasta
+let currentSubastaFormation = '4-3-3';
+
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice, imageUrl, deadlineAt }) => {
+  if (subBidCdi) { clearInterval(subBidCdi); }
+  document.getElementById('sub-card-counter').textContent = `Carta ${cardIndex + 1} de ${totalCards}`;
+  document.getElementById('sub-card-position').innerHTML = `<span class="position-badge ${position}">${positionLabel(position)}</span>`;
+  document.getElementById('sub-card-starting-price').textContent = `$${startingPrice}M`;
+  document.getElementById('sub-bids-in').textContent = 'Esperando pujas...';
+
+  const img = document.getElementById('sub-silhouette-img');
+  const placeholder = document.getElementById('sub-silhouette-placeholder');
+  if (imageUrl) {
+    img.src = imageUrl;
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    document.getElementById('sub-placeholder-pos').textContent = positionLabel(position).charAt(0);
+  }
+
+  subBidCdi = startSubCountdown('sub-bid-countdown', deadlineAt);
+  showScreen('subastaBidding');
+});
+
+socket.on('subasta:bid_in', ({ bidsIn, totalEligible }) => {
+  document.getElementById('sub-bids-in').textContent = `${bidsIn} / ${totalEligible} pujas recibidas`;
+});
+
+socket.on('subasta:card_resolved', ({ card, result, winnerName, allBids, isLastCard }) => {
+  if (subBidCdi) { clearInterval(subBidCdi); subBidCdi = null; }
+
+  const banner = document.getElementById('sub-result-banner');
+  const eyebrow = document.getElementById('sub-result-eyebrow');
+  const title = document.getElementById('sub-result-title');
+  const subtitle = document.getElementById('sub-result-subtitle');
+
+  if (result.type === 'bid') {
+    banner.className = 'reveal-banner caught';
+    eyebrow.textContent = `¡Vendido por $${result.amount}M!`;
+    title.textContent = winnerName;
+    subtitle.textContent = `Posición: ${positionLabel(card.position)} · Precio inicial: $${card.startingPrice}M`;
+  } else if (result.type === 'lottery') {
+    banner.className = 'reveal-banner escaped';
+    eyebrow.textContent = `Ruleta — $${result.amount}M`;
+    title.textContent = `${winnerName} ganó la ruleta`;
+    subtitle.textContent = `Nadie pujó. Se pagó el precio inicial.`;
+  } else {
+    banner.className = 'reveal-banner escaped';
+    eyebrow.textContent = 'Carta descartada';
+    title.textContent = 'Todos skipean';
+    subtitle.textContent = 'Nadie se lleva esta carta.';
+  }
+
+  const log = document.getElementById('sub-bids-log');
+  log.innerHTML = '';
+  for (const [name, bid] of Object.entries(allBids)) {
+    const item = document.createElement('div');
+    item.className = 'clue-item';
+    item.innerHTML = `<span>${escapeHtml(String(bid))}</span><span class="who">${escapeHtml(name)}</span>`;
+    log.appendChild(item);
+  }
+
+  const btn = document.getElementById('btn-next-subasta-card');
+  btn.textContent = isLastCard ? 'Revelar equipos' : 'Siguiente carta';
+  showScreen('subastaCardResult');
+});
+
+document.getElementById('btn-next-subasta-card').addEventListener('click', () => {
+  socket.emit('host:next_subasta_card', { code: roomCode });
+});
+
+// Revelacion final
+let currentRevealEntry = null;
+
+socket.on('subasta:final_reveal_started', ({ totalCards, scores, firstEntry }) => {
+  currentRevealEntry = firstEntry;
+  renderRevealEntry(firstEntry, 1, totalCards);
+  showScreen('subastaReveal');
+});
+
+socket.on('subasta:reveal_next', ({ entry, revealIndex, totalCards }) => {
+  currentRevealEntry = entry;
+  renderRevealEntry(entry, revealIndex + 1, totalCards);
+});
+
+function renderRevealEntry(entry, num, total) {
+  if (!entry) return;
+  const { card, result } = entry;
+  document.getElementById('sub-reveal-counter').textContent = `Revelando ${num} de ${total}`;
+
+  const img = document.getElementById('sub-reveal-img');
+  const placeholder = document.getElementById('sub-reveal-placeholder');
+  if (card.imageUrl) {
+    img.src = card.imageUrl;
+    img.className = 'silhouette-img revealed';
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  }
+
+  const banner = document.getElementById('sub-reveal-card-banner');
+  banner.className = 'reveal-banner ' + (card.troll ? 'escaped' : 'caught');
+  document.getElementById('sub-reveal-card-eyebrow').textContent = card.troll ? '¡Carta troll! 🎭' : `${positionLabel(card.position)}`;
+  document.getElementById('sub-reveal-card-name').textContent = card.name;
+  document.getElementById('sub-reveal-card-label').textContent = card.label;
+  document.getElementById('sub-reveal-card-value').textContent = `Valor real: $${card.realValue}M`;
+
+  const btnText = result.type === 'discard' ? '(descartada — sin dueño)' : null;
+  if (btnText) document.getElementById('sub-reveal-card-label').textContent += ' · ' + btnText;
+}
+
+document.getElementById('btn-next-reveal').addEventListener('click', () => {
+  socket.emit('host:next_reveal', { code: roomCode });
+});
+
+socket.on('subasta:game_over', ({ scores, finalScores }) => {
+  const board = document.getElementById('sub-final-scoreboard');
+  board.innerHTML = '';
+  scores.forEach((s, idx) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    const teamSlots = Object.values(s.team).flat().length;
+    row.innerHTML = `<span class="rank">#${idx + 1}</span>
+      <span style="flex:1; margin-left:10px;">${escapeHtml(s.name)}</span>
+      <span class="points" style="color:var(--lime);">$${s.totalRealValue}M</span>
+      <span style="font-size:0.75rem; color:var(--text-dim); margin-left:10px;">${teamSlots}/11 jugadores</span>`;
+    board.appendChild(row);
+  });
+  showScreen('subastaOver');
+});
+
+document.getElementById('btn-subasta-new-session').addEventListener('click', () => {
+  socket.emit('host:new_session', { code: roomCode });
+  showScreen('lobby');
+});
+
+function positionLabel(pos) {
+  return { portero: 'Portero', defensa: 'Defensa', mediocampista: 'Mediocampista', delantero: 'Delantero' }[pos] || pos;
+}

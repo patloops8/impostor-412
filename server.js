@@ -1,3 +1,4 @@
+
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -7,51 +8,91 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
 const PORT = process.env.PORT || 3000;
 
-// ---------- Datos ----------
-const CONCEPTS = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'data', 'concepts.json'), 'utf-8')
-);
-const ALL_CATEGORIES = [...new Set(CONCEPTS.map((c) => c.category))];
+/* =========================================================
+   DATOS
+   ========================================================= */
+const CONCEPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'concepts.json'), 'utf-8'));
+const ALL_CATEGORIES = [...new Set(CONCEPTS.map(c => c.category))];
+const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8'));
+const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
 
-// Lista plana de prompts. Mentiroso ya no valida contra una base de datos:
-// todo lo decide el grupo (ver lógica de "lie_final_vote" más abajo).
-const LIE_CATEGORIES = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8')
-);
+const FORMATIONS = {
+  '4-3-3': { portero: 1, defensa: 4, mediocampista: 3, delantero: 3 },
+  '4-4-2': { portero: 1, defensa: 4, mediocampista: 4, delantero: 2 },
+  '4-2-3-1': { portero: 1, defensa: 4, mediocampista: 5, delantero: 1 },
+  '3-5-2': { portero: 1, defensa: 3, mediocampista: 5, delantero: 2 },
+  '3-4-3': { portero: 1, defensa: 3, mediocampista: 4, delantero: 3 },
+  '5-3-2': { portero: 1, defensa: 5, mediocampista: 3, delantero: 2 },
+};
+const ALL_FORMATIONS = Object.keys(FORMATIONS);
 
-// ---------- Estado en memoria ----------
-/** rooms: Map<code, RoomState> */
-const rooms = new Map();
+/* =========================================================
+   WIKIPEDIA IMAGE CACHE
+   ========================================================= */
+const imageCache = new Map();
 
-const MIN_PLAYERS = 3;
-const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin caracteres confusos
+async function getWikiImageUrl(wikiTitle) {
+  if (imageCache.has(wikiTitle)) return imageCache.get(wikiTitle);
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) { imageCache.set(wikiTitle, null); return null; }
+    const data = await res.json();
+    const imgUrl = data.thumbnail?.source || null;
+    imageCache.set(wikiTitle, imgUrl);
+    return imgUrl;
+  } catch {
+    imageCache.set(wikiTitle, null);
+    return null;
+  }
+}
+
+async function prewarmImageCache() {
+  const titles = [...new Set(SUBASTA_CARDS.map(c => c.wikiTitle))];
+  let loaded = 0;
+  for (let i = 0; i < titles.length; i += 5) {
+    const batch = titles.slice(i, i + 5);
+    await Promise.all(batch.map(t => getWikiImageUrl(t)));
+    loaded += batch.length;
+    await new Promise(r => setTimeout(r, 300));
+  }
+  console.log(`[Subasta] Cache de imagenes: ${loaded} titulos procesados`);
+}
+prewarmImageCache().catch(() => {});
+
+/* =========================================================
+   CONSTANTES
+   ========================================================= */
+const MIN_PLAYERS_IMPOSTOR = 3;
+const MIN_PLAYERS_MENTIROSO = 2;
+const MIN_PLAYERS_SUBASTA = 2;
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CLUE_PHASE_END_DELAY_MS = 4500;
 const RESULT_DISPLAY_DELAY_MS = 3500;
 const TIE_DISPLAY_DELAY_MS = 4000;
 const MAX_CLAIM = 300;
 const VOICE_ANSWER_TIMEOUT_MS = 10000;
 const TEXT_ANSWER_TIMEOUT_MS = 15000;
+const FORMATION_VOTE_TIMEOUT_MS = 45000;
+
+/* =========================================================
+   ESTADO EN MEMORIA
+   ========================================================= */
+const rooms = new Map();
 
 function generateRoomCode() {
   let code;
   do {
     code = '';
-    for (let i = 0; i < 4; i++) {
-      code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
-    }
+    for (let i = 0; i < 4; i++) code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
   } while (rooms.has(code));
   return code;
 }
 
 function normalizeWord(word) {
-  return word
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, ''); // quita acentos
+  return word.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function shuffle(array) {
@@ -63,122 +104,99 @@ function shuffle(array) {
   return arr;
 }
 
-// Máximo de impostores permitido para que arranquen en minoría real
-function maxImpostorsFor(playerCount) {
-  return Math.max(1, Math.floor((playerCount - 1) / 2));
-}
+function maxImpostorsFor(n) { return Math.max(1, Math.floor((n - 1) / 2)); }
 
-function newRoom(code, hostSocketId) {
+function newRoom(code, hostId) {
   return {
-    code,
-    hostId: hostSocketId,
-    players: new Map(), // socketId -> { id, name, score, alive, connected }
-    gameType: null, // null | 'impostor' | 'mentiroso'
+    code, hostId,
+    players: new Map(),
+    gameType: null,
     status: 'lobby',
 
-    // --- El Impostor ---
-    impostorConfig: {
-      impostorCount: 1,
-      mangaCount: 3,
-      categories: ALL_CATEGORIES.slice(),
-    },
-    mangaNumber: 0,
-    concept: null,
-    impostorIds: new Set(),
-    usedClues: [],
-    clueLog: [],
-    clueOrder: [],
-    clueTurnIndex: 0,
-    cluePhaseEnding: false,
-    votes: new Map(),
-    roundNumber: 0,
+    // El Impostor
+    impostorConfig: { impostorCount: 1, mangaCount: 3, categories: ALL_CATEGORIES.slice() },
+    mangaNumber: 0, concept: null, impostorIds: new Set(),
+    usedClues: [], clueLog: [], clueOrder: [], clueTurnIndex: 0,
+    cluePhaseEnding: false, votes: new Map(), roundNumber: 0,
 
-    // --- Mentiroso ---
-    mentirosoConfig: {
-      roundCount: 5,
-      mode: 'texto', // 'texto' | 'voz'
-    },
-    lie: {
-      roundNumber: 0,
-      turnStartIndex: 0,
-      category: null,
-      turnOrder: [],
-      currentTurnIndex: 0,
-      currentClaim: 0,
-      lastClaimerId: null,
-      challenge: null, // { accusedId, accuserId, target, count, namedSoFar, deadlineAt, timeoutHandle, finalVotes }
+    // Mentiroso
+    mentirosoConfig: { roundCount: 5, mode: 'texto' },
+    lie: { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [],
+           currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null },
+
+    // Subasta
+    subastaConfig: { budget: 100, timerSeconds: 30, skipLimit: 5 },
+    subasta: {
+      phase: 'config',
+      formation: null,
+      formationVotes: new Map(),
+      formationVoteTimer: null,
+      deck: [],
+      currentCardIndex: -1,
+      currentCard: null,
+      bidDeadline: null,
+      bidTimer: null,
+      bids: new Map(),
+      playerState: new Map(),
+      resolvedCards: [],
     },
   };
 }
 
-function alivePlayers(room) {
-  return [...room.players.values()].filter((p) => p.alive);
-}
-
-function connectedAlivePlayers(room) {
-  return alivePlayers(room).filter((p) => p.connected);
-}
-
-function connectedPlayers(room) {
-  return [...room.players.values()].filter((p) => p.connected);
-}
+function alivePlayers(room) { return [...room.players.values()].filter(p => p.alive); }
+function connectedAlivePlayers(room) { return alivePlayers(room).filter(p => p.connected); }
+function connectedPlayers(room) { return [...room.players.values()].filter(p => p.connected); }
 
 function publicPlayerList(room) {
-  return [...room.players.values()].map((p) => ({
-    id: p.id,
-    name: p.name,
-    score: p.score,
-    alive: p.alive,
-    connected: p.connected,
+  return [...room.players.values()].map(p => ({
+    id: p.id, name: p.name, score: p.score, alive: p.alive, connected: p.connected,
   }));
 }
 
+function minPlayersFor(gameType) {
+  if (gameType === 'mentiroso') return MIN_PLAYERS_MENTIROSO;
+  if (gameType === 'subasta') return MIN_PLAYERS_SUBASTA;
+  return MIN_PLAYERS_IMPOSTOR;
+}
+
 function emitRoomState(room) {
-  const minPlayers = room.gameType === 'mentiroso' ? 2 : MIN_PLAYERS;
   io.to(room.code).emit('room:players_update', {
     players: publicPlayerList(room),
     status: room.status,
     gameType: room.gameType,
     impostorConfig: room.impostorConfig,
     mentirosoConfig: room.mentirosoConfig,
+    subastaConfig: room.subastaConfig,
     maxImpostors: maxImpostorsFor(room.players.size),
-    minPlayers,
+    minPlayers: minPlayersFor(room.gameType),
+    subastaPhase: room.subasta.phase,
+    formation: room.subasta.formation,
   });
 }
 
 /* =========================================================
-   EL IMPOSTOR
+   EL IMPOSTOR — logica
    ========================================================= */
-
 function startNewManga(room) {
-  const pool = CONCEPTS.filter((c) => room.impostorConfig.categories.includes(c.category));
-  const usablePool = pool.length > 0 ? pool : CONCEPTS;
-  room.concept = usablePool[Math.floor(Math.random() * usablePool.length)];
-
+  const pool = CONCEPTS.filter(c => room.impostorConfig.categories.includes(c.category));
+  room.concept = (pool.length > 0 ? pool : CONCEPTS)[Math.floor(Math.random() * (pool.length || CONCEPTS.length))];
   const ids = shuffle([...room.players.keys()]);
-  const impostorCount = Math.min(room.impostorConfig.impostorCount, maxImpostorsFor(room.players.size));
-  room.impostorIds = new Set(ids.slice(0, impostorCount));
+  const cnt = Math.min(room.impostorConfig.impostorCount, maxImpostorsFor(room.players.size));
+  room.impostorIds = new Set(ids.slice(0, cnt));
   room.usedClues = [];
   room.roundNumber = 0;
-
-  for (const p of room.players.values()) {
-    p.alive = true;
-  }
-
-  for (const [id, p] of room.players.entries()) {
-    const isImpostor = room.impostorIds.has(id);
+  for (const p of room.players.values()) p.alive = true;
+  for (const [id] of room.players.entries()) {
+    const isI = room.impostorIds.has(id);
     io.to(id).emit('match:your_role', {
-      isImpostor,
-      impostorCount: room.impostorIds.size,
-      category: isImpostor ? null : room.concept.category,
-      concept: isImpostor ? null : room.concept.name,
+      isImpostor: isI, impostorCount: room.impostorIds.size,
+      category: isI ? null : room.concept.category,
+      concept: isI ? null : room.concept.name,
     });
   }
-
   emitRoomState(room);
   io.to(room.code).emit('manga:started', {
-    mangaNumber: room.mangaNumber,
-    mangaCount: room.impostorConfig.mangaCount,
+    mangaNumber: room.mangaNumber, mangaCount: room.impostorConfig.mangaCount,
     impostorCount: room.impostorIds.size,
   });
   startClueRound(room);
@@ -186,35 +204,28 @@ function startNewManga(room) {
 
 function startClueRound(room) {
   room.status = 'clue';
-  room.roundNumber += 1;
+  room.roundNumber++;
   room.clueLog = [];
   room.votes = new Map();
-  room.clueOrder = shuffle(alivePlayers(room)).map((p) => p.id);
+  room.clueOrder = shuffle(alivePlayers(room)).map(p => p.id);
   room.clueTurnIndex = 0;
-
   io.to(room.code).emit('round:started', {
     roundNumber: room.roundNumber,
-    turnOrder: room.clueOrder.map((id) => room.players.get(id)?.name),
+    turnOrder: room.clueOrder.map(id => room.players.get(id)?.name),
     currentTurnPlayerId: room.clueOrder[0] || null,
   });
-
   advanceClueTurnIfDisconnected(room);
 }
 
 function advanceClueTurnIfDisconnected(room) {
-  while (
-    room.status === 'clue' &&
-    room.clueTurnIndex < room.clueOrder.length &&
-    !room.players.get(room.clueOrder[room.clueTurnIndex])?.connected
-  ) {
-    room.clueTurnIndex += 1;
+  while (room.status === 'clue' && room.clueTurnIndex < room.clueOrder.length &&
+         !room.players.get(room.clueOrder[room.clueTurnIndex])?.connected) {
+    room.clueTurnIndex++;
   }
   if (room.status === 'clue' && room.clueTurnIndex >= room.clueOrder.length) {
     finishCluePhase(room);
   } else if (room.status === 'clue') {
-    io.to(room.code).emit('round:turn_changed', {
-      currentTurnPlayerId: room.clueOrder[room.clueTurnIndex],
-    });
+    io.to(room.code).emit('round:turn_changed', { currentTurnPlayerId: room.clueOrder[room.clueTurnIndex] });
   }
 }
 
@@ -231,177 +242,107 @@ function finishCluePhase(room) {
 function startVotingPhase(room) {
   room.status = 'voting';
   room.votes = new Map();
-  io.to(room.code).emit('round:voting_started', {
-    candidates: alivePlayers(room).map((p) => ({ id: p.id, name: p.name })),
-  });
+  io.to(room.code).emit('round:voting_started', { candidates: alivePlayers(room).map(p => ({ id: p.id, name: p.name })) });
 }
 
 function resolveVotes(room) {
   const tally = new Map();
-  for (const targetId of room.votes.values()) {
-    tally.set(targetId, (tally.get(targetId) || 0) + 1);
-  }
-
-  let maxVotes = 0;
-  for (const count of tally.values()) maxVotes = Math.max(maxVotes, count);
-
-  const topVoted = [...tally.entries()]
-    .filter(([, count]) => count === maxVotes)
-    .map(([id]) => id);
-
-  if (topVoted.length !== 1) {
-    io.to(room.code).emit('round:tie', {
-      tiedPlayers: topVoted.map((id) => room.players.get(id)?.name),
-    });
+  for (const t of room.votes.values()) tally.set(t, (tally.get(t) || 0) + 1);
+  let max = 0;
+  for (const v of tally.values()) max = Math.max(max, v);
+  const top = [...tally.entries()].filter(([, c]) => c === max).map(([id]) => id);
+  if (top.length !== 1) {
+    io.to(room.code).emit('round:tie', { tiedPlayers: top.map(id => room.players.get(id)?.name) });
     setTimeout(() => startClueRound(room), TIE_DISPLAY_DELAY_MS);
     return;
   }
-
-  const eliminatedId = topVoted[0];
-  const eliminated = room.players.get(eliminatedId);
-  eliminated.alive = false;
-  const wasImpostor = room.impostorIds.has(eliminatedId);
-
-  const votersForImpostorThisRound = [...room.votes.entries()]
-    .filter(([, targetId]) => room.impostorIds.has(targetId))
-    .map(([voterId]) => voterId);
-
-  io.to(room.code).emit('round:elimination', {
-    eliminatedId,
-    eliminatedName: eliminated.name,
-    wasImpostor,
-  });
-
+  const elId = top[0];
+  const el = room.players.get(elId);
+  el.alive = false;
+  const wasI = room.impostorIds.has(elId);
+  const votersForI = [...room.votes.entries()].filter(([, t]) => room.impostorIds.has(t)).map(([v]) => v);
+  io.to(room.code).emit('round:elimination', { eliminatedId: elId, eliminatedName: el.name, wasImpostor: wasI });
   room.status = 'reveal';
-
-  const aliveImpostors = alivePlayers(room).filter((p) => room.impostorIds.has(p.id));
-  const aliveInnocentsCount = alivePlayers(room).length - aliveImpostors.length;
-
-  if (aliveImpostors.length === 0) {
-    setTimeout(() => endManga(room, 'impostors_caught', votersForImpostorThisRound), RESULT_DISPLAY_DELAY_MS);
-    return;
-  }
-
-  if (aliveImpostors.length >= aliveInnocentsCount) {
-    setTimeout(() => endManga(room, 'impostors_win', []), RESULT_DISPLAY_DELAY_MS);
-    return;
-  }
-
-  aliveImpostors.forEach((imp) => {
-    imp.score += 1;
-  });
-
+  const aliveI = alivePlayers(room).filter(p => room.impostorIds.has(p.id));
+  const aliveInnocents = alivePlayers(room).length - aliveI.length;
+  if (aliveI.length === 0) { setTimeout(() => endManga(room, 'impostors_caught', votersForI), RESULT_DISPLAY_DELAY_MS); return; }
+  if (aliveI.length >= aliveInnocents) { setTimeout(() => endManga(room, 'impostors_win', []), RESULT_DISPLAY_DELAY_MS); return; }
+  aliveI.forEach(imp => imp.score++);
   setTimeout(() => startClueRound(room), RESULT_DISPLAY_DELAY_MS);
 }
 
-function endManga(room, result, votersForFinalImpostor) {
+function endManga(room, result, votersForFinal) {
   room.status = 'manga_over';
-  const impostorNames = [...room.impostorIds]
-    .map((id) => room.players.get(id)?.name)
-    .filter(Boolean);
-
+  const impostorNames = [...room.impostorIds].map(id => room.players.get(id)?.name).filter(Boolean);
   if (result === 'impostors_caught') {
     for (const p of room.players.values()) {
       if (room.impostorIds.has(p.id)) continue;
-      p.score += 1;
-      if (votersForFinalImpostor.includes(p.id)) p.score += 1;
+      p.score++;
+      if (votersForFinal.includes(p.id)) p.score++;
     }
   } else if (result === 'impostors_win') {
-    for (const id of room.impostorIds) {
-      const p = room.players.get(id);
-      if (p && p.alive) p.score += 3;
-    }
+    for (const id of room.impostorIds) { const p = room.players.get(id); if (p?.alive) p.score += 3; }
   }
-
-  const isLastManga = room.mangaNumber >= room.impostorConfig.mangaCount;
-
+  const isLast = room.mangaNumber >= room.impostorConfig.mangaCount;
   io.to(room.code).emit('manga:over', {
-    result,
-    concept: room.concept,
-    impostorNames,
-    mangaNumber: room.mangaNumber,
-    mangaCount: room.impostorConfig.mangaCount,
-    isLastManga,
-    scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
+    result, concept: room.concept, impostorNames,
+    mangaNumber: room.mangaNumber, mangaCount: room.impostorConfig.mangaCount,
+    isLastManga: isLast, scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
   });
 }
 
 /* =========================================================
-   MENTIROSO
+   MENTIROSO — logica
    ========================================================= */
-
-function pickLieCategory(room) {
-  return LIE_CATEGORIES[Math.floor(Math.random() * LIE_CATEGORIES.length)];
-}
-
-function startLieSession(room) {
-  room.lie.roundNumber = 0;
-  room.lie.turnStartIndex = 0;
-  startLieRound(room);
-}
+function startLieSession(room) { room.lie.roundNumber = 0; room.lie.turnStartIndex = 0; startLieRound(room); }
 
 function startLieRound(room) {
-  room.lie.roundNumber += 1;
-  room.lie.category = pickLieCategory(room);
-
+  room.lie.roundNumber++;
+  room.lie.category = LIE_CATEGORIES[Math.floor(Math.random() * LIE_CATEGORIES.length)];
   const allIds = [...room.players.keys()];
   const start = room.lie.turnStartIndex % allIds.length;
   room.lie.turnOrder = [...allIds.slice(start), ...allIds.slice(0, start)];
   room.lie.turnStartIndex = (room.lie.turnStartIndex + 1) % allIds.length;
-
   room.lie.currentTurnIndex = 0;
   room.lie.currentClaim = 0;
   room.lie.lastClaimerId = null;
   clearLieChallengeTimer(room);
   room.lie.challenge = null;
   room.status = 'lie_claim';
-
   emitRoomState(room);
   io.to(room.code).emit('lie:round_started', {
-    roundNumber: room.lie.roundNumber,
-    roundCount: room.mentirosoConfig.roundCount,
-    category: room.lie.category,
-    mode: room.mentirosoConfig.mode,
-    currentTurnPlayerId: currentLieTurnPlayerId(room),
+    roundNumber: room.lie.roundNumber, roundCount: room.mentirosoConfig.roundCount,
+    category: room.lie.category, mode: room.mentirosoConfig.mode,
+    currentTurnPlayerId: currentLieTurnId(room),
   });
 }
 
-function currentLieTurnPlayerId(room) {
-  return room.lie.turnOrder[room.lie.currentTurnIndex] || null;
-}
+function currentLieTurnId(room) { return room.lie.turnOrder[room.lie.currentTurnIndex] || null; }
 
 function advanceLieTurn(room) {
   const order = room.lie.turnOrder;
-  if (order.length === 0) return;
+  if (!order.length) return;
   let tries = 0;
   do {
     room.lie.currentTurnIndex = (room.lie.currentTurnIndex + 1) % order.length;
-    tries += 1;
+    tries++;
   } while (!room.players.get(order[room.lie.currentTurnIndex])?.connected && tries <= order.length);
-
-  io.to(room.code).emit('lie:turn_changed', {
-    currentTurnPlayerId: currentLieTurnPlayerId(room),
-  });
+  io.to(room.code).emit('lie:turn_changed', { currentTurnPlayerId: currentLieTurnId(room) });
 }
 
 function clearLieChallengeTimer(room) {
-  if (room.lie.challenge && room.lie.challenge.timeoutHandle) {
-    clearTimeout(room.lie.challenge.timeoutHandle);
-    room.lie.challenge.timeoutHandle = null;
-  }
+  if (room.lie.challenge?.timeoutHandle) { clearTimeout(room.lie.challenge.timeoutHandle); room.lie.challenge.timeoutHandle = null; }
 }
 
 function restartLieAnswerTimer(room) {
   clearLieChallengeTimer(room);
   const ch = room.lie.challenge;
-  if (!ch) return;
-  const duration = room.mentirosoConfig.mode === 'voz' ? VOICE_ANSWER_TIMEOUT_MS : TEXT_ANSWER_TIMEOUT_MS;
-  ch.deadlineAt = Date.now() + duration;
+  if (!ch) return null;
+  const dur = room.mentirosoConfig.mode === 'voz' ? VOICE_ANSWER_TIMEOUT_MS : TEXT_ANSWER_TIMEOUT_MS;
+  ch.deadlineAt = Date.now() + dur;
   ch.timeoutHandle = setTimeout(() => {
-    if (room.status === 'lie_naming' && room.lie.challenge === ch) {
-      resolveLieChallenge(room, false, 'timeout');
-    }
-  }, duration);
+    if (room.status === 'lie_naming' && room.lie.challenge === ch) resolveLieChallenge(room, false, 'timeout');
+  }, dur);
   return ch.deadlineAt;
 }
 
@@ -410,14 +351,11 @@ function transitionToFinalVote(room) {
   const ch = room.lie.challenge;
   room.status = 'lie_final_vote';
   ch.finalVotes = new Map();
-
-  const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
+  const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
   io.to(room.code).emit('lie:final_vote_needed', {
-    target: ch.target,
-    mode: room.mentirosoConfig.mode,
+    target: ch.target, mode: room.mentirosoConfig.mode,
     namedSoFar: room.mentirosoConfig.mode === 'texto' ? ch.namedSoFar : null,
-    votesNeeded: eligible.length,
-    eligibleVoterIds: eligible.map((p) => p.id),
+    votesNeeded: eligible.length, eligibleVoterIds: eligible.map(p => p.id),
   });
 }
 
@@ -427,95 +365,219 @@ function resolveLieChallenge(room, success, reason) {
   if (!ch) return;
   const accused = room.players.get(ch.accusedId);
   const accuser = room.players.get(ch.accuserId);
-
-  if (success) {
-    if (accused) accused.score += 1;
-    if (accuser) accuser.score -= 1;
-  } else {
-    if (accuser) accuser.score += 1;
-    if (accused) accused.score -= 1;
-  }
-
+  if (success) { if (accused) accused.score++; if (accuser) accuser.score--; }
+  else { if (accuser) accuser.score++; if (accused) accused.score--; }
   room.status = 'lie_round_over';
-  const isLastRound = room.lie.roundNumber >= room.mentirosoConfig.roundCount;
-
+  const isLast = room.lie.roundNumber >= room.mentirosoConfig.roundCount;
   io.to(room.code).emit('lie:challenge_resolved', {
-    success,
-    reason: reason || (success ? 'completed' : 'rejected'),
-    accusedName: accused ? accused.name : '???',
-    accuserName: accuser ? accuser.name : '???',
-    category: room.lie.category,
-    target: ch.target,
-    count: ch.count,
-    namedSoFar: ch.namedSoFar,
-    mode: room.mentirosoConfig.mode,
-    roundNumber: room.lie.roundNumber,
-    roundCount: room.mentirosoConfig.roundCount,
-    isLastRound,
-    scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
+    success, reason: reason || (success ? 'completed' : 'rejected'),
+    accusedName: accused?.name || '???', accuserName: accuser?.name || '???',
+    category: room.lie.category, target: ch.target, count: ch.count,
+    namedSoFar: ch.namedSoFar, mode: room.mentirosoConfig.mode,
+    roundNumber: room.lie.roundNumber, roundCount: room.mentirosoConfig.roundCount,
+    isLastRound: isLast, scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
   });
 }
 
 /* =========================================================
-   Socket.io
+   SUBASTA FUTBOLERA — logica
    ========================================================= */
+function subastaPlayerState(budget, skipLimit) {
+  return { budget, skipsLeft: skipLimit, team: { portero: [], defensa: [], mediocampista: [], delantero: [] }, totalRealValue: 0 };
+}
 
-io.on('connection', (socket) => {
-  socket.on('host:create_room', (_payload, callback) => {
+async function buildSubastaDeck(room) {
+  const formation = room.subasta.formation;
+  const slots = FORMATIONS[formation];
+  const playerCount = room.players.size;
+  const pool = { portero: [], defensa: [], mediocampista: [], delantero: [] };
+  for (const card of SUBASTA_CARDS) pool[card.position].push(card);
+  const selected = [];
+  for (const [pos, count] of Object.entries(slots)) {
+    const needed = count * playerCount;
+    const available = shuffle(pool[pos]);
+    selected.push(...available.slice(0, Math.min(needed, available.length)));
+  }
+  const deck = [];
+  for (const card of shuffle(selected)) {
+    const imageUrl = await getWikiImageUrl(card.wikiTitle);
+    deck.push({ ...card, imageUrl });
+  }
+  return deck;
+}
+
+function getPositionsFilled(ps, slots) {
+  const filled = {};
+  for (const [pos, count] of Object.entries(slots)) {
+    filled[pos] = ps.team[pos].length >= count;
+  }
+  return filled;
+}
+
+function showSubastaCard(room) {
+  const sub = room.subasta;
+  const card = sub.deck[sub.currentCardIndex];
+  sub.currentCard = card;
+  sub.bids = new Map();
+  const slots = FORMATIONS[sub.formation];
+  const deadline = Date.now() + room.subastaConfig.timerSeconds * 1000;
+  sub.bidDeadline = deadline;
+
+  // Determine eligibility per player
+  for (const [pid] of room.players.entries()) {
+    const ps = sub.playerState.get(pid);
+    if (!ps) { sub.bids.set(pid, { amount: null, skip: false, eligible: false, responded: true }); continue; }
+    const posNeeded = ps.team[card.position].length < slots[card.position];
+    const canAfford = ps.budget >= card.startingPrice;
+    const eligible = posNeeded && canAfford;
+    sub.bids.set(pid, { amount: null, skip: false, eligible, responded: !eligible });
+  }
+
+  // Send to each player their eligibility privately
+  for (const [pid, bid] of sub.bids.entries()) {
+    io.to(pid).emit('subasta:card_shown_private', { eligible: bid.eligible, skipsLeft: sub.playerState.get(pid)?.skipsLeft ?? 0 });
+  }
+
+  room.status = 'subasta_bidding';
+  io.to(room.code).emit('subasta:card_shown', {
+    cardIndex: sub.currentCardIndex,
+    totalCards: sub.deck.length,
+    position: card.position,
+    startingPrice: card.startingPrice,
+    imageUrl: card.imageUrl,
+    deadlineAt: deadline,
+    bidsIn: 0,
+    totalEligible: [...sub.bids.values()].filter(b => b.eligible).length,
+  });
+
+  // Start timer
+  clearSubastaBidTimer(room);
+  sub.bidTimer = setTimeout(() => resolveSubastaCard(room), room.subastaConfig.timerSeconds * 1000);
+}
+
+function clearSubastaBidTimer(room) {
+  if (room.subasta.bidTimer) { clearTimeout(room.subasta.bidTimer); room.subasta.bidTimer = null; }
+}
+
+function checkAllEligibleResponded(room) {
+  for (const bid of room.subasta.bids.values()) {
+    if (bid.eligible && !bid.responded) return false;
+  }
+  return true;
+}
+
+function resolveSubastaCard(room) {
+  clearSubastaBidTimer(room);
+  const sub = room.subasta;
+  const card = sub.currentCard;
+  const bids = sub.bids;
+
+  const validBids = [];
+  const noResponse = [];
+
+  for (const [pid, bid] of bids.entries()) {
+    if (!bid.eligible) continue;
+    if (bid.skip) continue;
+    if (bid.amount !== null && bid.amount >= card.startingPrice) {
+      validBids.push({ playerId: pid, amount: bid.amount });
+    } else if (!bid.responded || bid.amount === null) {
+      noResponse.push(pid);
+    }
+  }
+
+  let result;
+
+  if (validBids.length > 0) {
+    const maxAmt = Math.max(...validBids.map(b => b.amount));
+    const tied = validBids.filter(b => b.amount === maxAmt);
+    const winner = tied[Math.floor(Math.random() * tied.length)];
+    assignSubastaCard(room, winner.playerId, winner.amount);
+    result = { type: 'bid', winnerId: winner.playerId, amount: winner.amount, allBids: validBids };
+  } else if (noResponse.length > 0) {
+    const winnerId = noResponse[Math.floor(Math.random() * noResponse.length)];
+    assignSubastaCard(room, winnerId, card.startingPrice);
+    result = { type: 'lottery', winnerId, amount: card.startingPrice, pool: noResponse };
+  } else {
+    result = { type: 'discard' };
+  }
+
+  room.status = 'subasta_card_result';
+  sub.resolvedCards.push({ card, result });
+
+  const allBidsMap = {};
+  for (const [pid, bid] of bids.entries()) {
+    const name = room.players.get(pid)?.name;
+    if (name) allBidsMap[name] = bid.skip ? 'skip' : bid.amount !== null ? `$${bid.amount}M` : 'sin respuesta';
+  }
+
+  io.to(room.code).emit('subasta:card_resolved', {
+    card,
+    result,
+    winnerName: result.winnerId ? room.players.get(result.winnerId)?.name : null,
+    allBids: allBidsMap,
+    isLastCard: sub.currentCardIndex >= sub.deck.length - 1,
+  });
+}
+
+function assignSubastaCard(room, playerId, amount) {
+  const sub = room.subasta;
+  const card = sub.currentCard;
+  const ps = sub.playerState.get(playerId);
+  if (!ps) return;
+  ps.budget -= amount;
+  ps.team[card.position].push({ cardId: card.id, amountPaid: amount, realValue: null }); // realValue hidden until reveal
+  ps.totalRealValue += card.realValue;
+}
+
+function buildFinalScores(room) {
+  const sub = room.subasta;
+  const scores = [];
+  for (const [pid, ps] of sub.playerState.entries()) {
+    const player = room.players.get(pid);
+    if (!player) continue;
+    scores.push({
+      id: pid,
+      name: player.name,
+      totalRealValue: ps.totalRealValue,
+      budgetLeft: ps.budget,
+      team: ps.team,
+    });
+  }
+  return scores.sort((a, b) => b.totalRealValue - a.totalRealValue);
+}
+
+/* =========================================================
+   SOCKET.IO
+   ========================================================= */
+io.on('connection', socket => {
+  socket.on('host:create_room', (_p, cb) => {
     const code = generateRoomCode();
     const room = newRoom(code, socket.id);
     rooms.set(code, room);
     socket.join(code);
-    callback({
-      ok: true,
-      code,
-      impostorConfig: room.impostorConfig,
-      mentirosoConfig: room.mentirosoConfig,
-      categories: ALL_CATEGORIES,
-    });
+    cb({ ok: true, code, impostorConfig: room.impostorConfig, mentirosoConfig: room.mentirosoConfig, subastaConfig: room.subastaConfig, categories: ALL_CATEGORIES, formations: ALL_FORMATIONS });
   });
 
-  socket.on('player:join_room', ({ code, name }, callback) => {
+  socket.on('player:join_room', ({ code, name }, cb) => {
     const room = rooms.get((code || '').toUpperCase());
-    if (!room) {
-      callback({ ok: false, error: 'Sala no encontrada. Revisa el código.' });
-      return;
+    if (!room) { cb({ ok: false, error: 'Sala no encontrada. Revisa el código.' }); return; }
+    if (room.status !== 'lobby') { cb({ ok: false, error: 'La partida ya empezó, espera a la siguiente.' }); return; }
+    const trimmed = (name || '').trim().slice(0, 20);
+    if (!trimmed) { cb({ ok: false, error: 'Ingresa un nombre.' }); return; }
+    if ([...room.players.values()].some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
+      cb({ ok: false, error: 'Ese nombre ya está en uso.' }); return;
     }
-    if (room.status !== 'lobby') {
-      callback({ ok: false, error: 'La partida ya empezó, espera a la siguiente.' });
-      return;
-    }
-    const trimmedName = (name || '').trim().slice(0, 20);
-    if (!trimmedName) {
-      callback({ ok: false, error: 'Ingresa un nombre.' });
-      return;
-    }
-    const nameTaken = [...room.players.values()].some(
-      (p) => p.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-    if (nameTaken) {
-      callback({ ok: false, error: 'Ese nombre ya está en uso en la sala.' });
-      return;
-    }
-
-    room.players.set(socket.id, {
-      id: socket.id,
-      name: trimmedName,
-      score: 0,
-      alive: true,
-      connected: true,
-    });
+    room.players.set(socket.id, { id: socket.id, name: trimmed, score: 0, alive: true, connected: true });
     socket.join(room.code);
     socket.data.roomCode = room.code;
-
-    callback({ ok: true, code: room.code, playerId: socket.id });
+    cb({ ok: true, code: room.code, playerId: socket.id });
     emitRoomState(room);
   });
 
   socket.on('host:select_game', ({ code, gameType }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-    if (gameType !== 'impostor' && gameType !== 'mentiroso') return;
+    if (!['impostor','mentiroso','subasta'].includes(gameType)) return;
     room.gameType = gameType;
     emitRoomState(room);
   });
@@ -523,91 +585,61 @@ io.on('connection', (socket) => {
   socket.on('host:update_impostor_config', ({ code, impostorCount, mangaCount, categories }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-
-    if (Number.isInteger(impostorCount)) {
-      const max = maxImpostorsFor(room.players.size);
-      room.impostorConfig.impostorCount = Math.min(Math.max(1, impostorCount), max);
-    }
-    if (Number.isInteger(mangaCount)) {
-      room.impostorConfig.mangaCount = Math.min(Math.max(1, mangaCount), 20);
-    }
-    if (Array.isArray(categories)) {
-      const valid = categories.filter((c) => ALL_CATEGORIES.includes(c));
-      room.impostorConfig.categories = valid.length > 0 ? valid : ALL_CATEGORIES.slice();
-    }
-
+    if (Number.isInteger(impostorCount)) room.impostorConfig.impostorCount = Math.min(Math.max(1, impostorCount), maxImpostorsFor(room.players.size));
+    if (Number.isInteger(mangaCount)) room.impostorConfig.mangaCount = Math.min(Math.max(1, mangaCount), 20);
+    if (Array.isArray(categories)) { const v = categories.filter(c => ALL_CATEGORIES.includes(c)); room.impostorConfig.categories = v.length ? v : ALL_CATEGORIES.slice(); }
     emitRoomState(room);
   });
 
   socket.on('host:update_mentiroso_config', ({ code, roundCount, mode }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
+    if (Number.isInteger(roundCount)) room.mentirosoConfig.roundCount = Math.min(Math.max(1, roundCount), 20);
+    if (mode === 'voz' || mode === 'texto') room.mentirosoConfig.mode = mode;
+    emitRoomState(room);
+  });
 
-    if (Number.isInteger(roundCount)) {
-      room.mentirosoConfig.roundCount = Math.min(Math.max(1, roundCount), 20);
-    }
-    if (mode === 'voz' || mode === 'texto') {
-      room.mentirosoConfig.mode = mode;
-    }
-
+  socket.on('host:update_subasta_config', ({ code, budget, timerSeconds, skipLimit }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
+    if (Number.isInteger(budget) && budget >= 10) room.subastaConfig.budget = Math.min(budget, 999);
+    if (Number.isInteger(timerSeconds) && timerSeconds >= 5) room.subastaConfig.timerSeconds = Math.min(timerSeconds, 120);
+    if (Number.isInteger(skipLimit) && skipLimit >= 0) room.subastaConfig.skipLimit = Math.min(skipLimit, 20);
     emitRoomState(room);
   });
 
   socket.on('host:start_match', ({ code }) => {
     const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId) return;
-    if (!room.gameType) return;
+    if (!room || socket.id !== room.hostId || !room.gameType) return;
+    const min = minPlayersFor(room.gameType);
+    if (room.players.size < min) return;
 
-    const minPlayers = room.gameType === 'mentiroso' ? 2 : MIN_PLAYERS;
-    if (room.players.size < minPlayers) return;
-
-    if (room.gameType === 'impostor') {
-      room.mangaNumber = 1;
-      startNewManga(room);
-    } else if (room.gameType === 'mentiroso') {
-      startLieSession(room);
-    }
+    if (room.gameType === 'impostor') { room.mangaNumber = 1; startNewManga(room); }
+    else if (room.gameType === 'mentiroso') { startLieSession(room); }
+    else if (room.gameType === 'subasta') { startFormationVote(room); }
   });
 
+  // ---- El Impostor ----
   socket.on('host:next_manga', ({ code }) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId || room.gameType !== 'impostor') return;
     if (room.mangaNumber >= room.impostorConfig.mangaCount) return;
-    room.mangaNumber += 1;
+    room.mangaNumber++;
     startNewManga(room);
-  });
-
-  socket.on('host:next_lie_round', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.gameType !== 'mentiroso') return;
-    if (room.lie.roundNumber >= room.mentirosoConfig.roundCount) return;
-    startLieRound(room);
   });
 
   socket.on('player:submit_clue', ({ code, word }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'clue') return;
-    if (room.clueOrder[room.clueTurnIndex] !== socket.id) return;
-
+    if (!room || room.status !== 'clue' || room.clueOrder[room.clueTurnIndex] !== socket.id) return;
     const clean = (word || '').trim();
     if (!clean) return;
     const norm = normalizeWord(clean);
-    if (room.usedClues.includes(norm)) {
-      socket.emit('round:clue_rejected', { reason: 'Esa palabra ya se usó en esta partida.' });
-      return;
-    }
-
+    if (room.usedClues.includes(norm)) { socket.emit('round:clue_rejected', { reason: 'Esa palabra ya se usó en esta partida.' }); return; }
     room.usedClues.push(norm);
     const player = room.players.get(socket.id);
     room.clueLog.push({ playerId: socket.id, name: player.name, word: clean });
-
-    io.to(room.code).emit('round:clue_submitted', {
-      playerId: socket.id,
-      name: player.name,
-      word: clean,
-    });
-
-    room.clueTurnIndex += 1;
+    io.to(room.code).emit('round:clue_submitted', { playerId: socket.id, name: player.name, word: clean });
+    room.clueTurnIndex++;
     advanceClueTurnIfDisconnected(room);
   });
 
@@ -615,147 +647,160 @@ io.on('connection', (socket) => {
     const room = rooms.get(code);
     if (!room || room.status !== 'voting') return;
     const voter = room.players.get(socket.id);
-    if (!voter || !voter.alive) return;
-    if (!room.players.get(targetId)?.alive) return;
-
+    if (!voter?.alive || !room.players.get(targetId)?.alive) return;
     room.votes.set(socket.id, targetId);
-    io.to(room.code).emit('round:vote_registered', {
-      votesIn: room.votes.size,
-      votesNeeded: connectedAlivePlayers(room).length,
-    });
-
-    if (room.votes.size >= connectedAlivePlayers(room).length) {
-      resolveVotes(room);
-    }
+    io.to(room.code).emit('round:vote_registered', { votesIn: room.votes.size, votesNeeded: connectedAlivePlayers(room).length });
+    if (room.votes.size >= connectedAlivePlayers(room).length) resolveVotes(room);
   });
 
-  // ---------- Mentiroso ----------
+  // ---- Mentiroso ----
+  socket.on('host:next_lie_round', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.gameType !== 'mentiroso') return;
+    if (room.lie.roundNumber >= room.mentirosoConfig.roundCount) return;
+    startLieRound(room);
+  });
 
   socket.on('player:make_claim', ({ code, amount }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'lie_claim') return;
-    if (currentLieTurnPlayerId(room) !== socket.id) return;
-
+    if (!room || room.status !== 'lie_claim' || currentLieTurnId(room) !== socket.id) return;
     const n = Number(amount);
     if (!Number.isInteger(n) || n <= room.lie.currentClaim || n < 1 || n > MAX_CLAIM) {
-      socket.emit('lie:claim_rejected', {
-        reason: `Debes decir un número entero mayor a ${room.lie.currentClaim}.`,
-      });
-      return;
+      socket.emit('lie:claim_rejected', { reason: `Debes decir un número entero mayor a ${room.lie.currentClaim}.` }); return;
     }
-
     room.lie.currentClaim = n;
     room.lie.lastClaimerId = socket.id;
-    const player = room.players.get(socket.id);
-
-    io.to(room.code).emit('lie:claim_made', {
-      playerId: socket.id,
-      name: player.name,
-      amount: n,
-    });
-
+    io.to(room.code).emit('lie:claim_made', { playerId: socket.id, name: room.players.get(socket.id)?.name, amount: n });
     advanceLieTurn(room);
   });
 
   socket.on('player:accuse_liar', ({ code }) => {
     const room = rooms.get(code);
-    if (!room || room.status !== 'lie_claim') return;
-    if (currentLieTurnPlayerId(room) !== socket.id) return;
+    if (!room || room.status !== 'lie_claim' || currentLieTurnId(room) !== socket.id) return;
     if (room.lie.currentClaim <= 0 || !room.lie.lastClaimerId) return;
-
     const accuserId = socket.id;
     const accusedId = room.lie.lastClaimerId;
-    room.lie.challenge = {
-      accusedId,
-      accuserId,
-      target: room.lie.currentClaim,
-      count: 0,
-      namedSoFar: [],
-      deadlineAt: null,
-      timeoutHandle: null,
-      finalVotes: new Map(),
-    };
+    room.lie.challenge = { accusedId, accuserId, target: room.lie.currentClaim, count: 0, namedSoFar: [], deadlineAt: null, timeoutHandle: null, finalVotes: new Map() };
     room.status = 'lie_naming';
     const deadlineAt = restartLieAnswerTimer(room);
-
     io.to(room.code).emit('lie:accused', {
-      accuserId,
-      accuserName: room.players.get(accuserId)?.name,
-      accusedId,
-      accusedName: room.players.get(accusedId)?.name,
-      target: room.lie.currentClaim,
-      category: room.lie.category,
-      mode: room.mentirosoConfig.mode,
-      deadlineAt,
+      accuserId, accuserName: room.players.get(accuserId)?.name,
+      accusedId, accusedName: room.players.get(accusedId)?.name,
+      target: room.lie.currentClaim, category: room.lie.category,
+      mode: room.mentirosoConfig.mode, deadlineAt,
     });
   });
 
-  // Modo VOZ: el acusador marca cada respuesta correcta que escucha en voz alta
   socket.on('player:mark_answer_valid', ({ code }) => {
     const room = rooms.get(code);
     if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'voz') return;
     const ch = room.lie.challenge;
     if (!ch || socket.id !== ch.accuserId) return;
-
-    ch.count += 1;
-
-    if (ch.count >= ch.target) {
-      io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt: null });
-      transitionToFinalVote(room);
-      return;
-    }
-
+    ch.count++;
+    if (ch.count >= ch.target) { io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt: null }); transitionToFinalVote(room); return; }
     const deadlineAt = restartLieAnswerTimer(room);
     io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt });
   });
 
-  // Modo TEXTO: el acusado escribe y envía cada respuesta
   socket.on('player:name_item', ({ code, text }) => {
     const room = rooms.get(code);
     if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'texto') return;
     const ch = room.lie.challenge;
     if (!ch || socket.id !== ch.accusedId) return;
-
     const clean = (text || '').trim();
     if (!clean) return;
-
     ch.namedSoFar.push(clean);
-    ch.count += 1;
-
-    if (ch.count >= ch.target) {
-      io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt: null });
-      transitionToFinalVote(room);
-      return;
-    }
-
+    ch.count++;
+    if (ch.count >= ch.target) { io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt: null }); transitionToFinalVote(room); return; }
     const deadlineAt = restartLieAnswerTimer(room);
     io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt });
   });
 
-  // Voto final único: ¿la lista completa de respuestas fue válida?
   socket.on('player:vote_final_validity', ({ code, valid }) => {
     const room = rooms.get(code);
     if (!room || room.status !== 'lie_final_vote') return;
     const ch = room.lie.challenge;
     if (!ch || socket.id === ch.accusedId) return;
-
     ch.finalVotes.set(socket.id, !!valid);
-
-    const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
-    io.to(room.code).emit('lie:final_vote_progress', {
-      votesIn: ch.finalVotes.size,
-      votesNeeded: eligible.length,
-    });
-
+    const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
+    io.to(room.code).emit('lie:final_vote_progress', { votesIn: ch.finalVotes.size, votesNeeded: eligible.length });
     if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
-      let validCount = 0;
-      let invalidCount = 0;
-      for (const v of ch.finalVotes.values()) {
-        if (v) validCount += 1;
-        else invalidCount += 1;
-      }
-      const accepted = validCount >= invalidCount; // empate = válido
-      resolveLieChallenge(room, accepted, 'vote');
+      let yes = 0, no = 0;
+      for (const v of ch.finalVotes.values()) { if (v) yes++; else no++; }
+      resolveLieChallenge(room, yes >= no, 'vote');
+    }
+  });
+
+  // ---- Subasta ----
+  socket.on('player:vote_formation', ({ code, formation }) => {
+    const room = rooms.get(code);
+    if (!room || room.subasta.phase !== 'formation_vote' || !FORMATIONS[formation]) return;
+    room.subasta.formationVotes.set(socket.id, formation);
+    io.to(room.code).emit('subasta:formation_vote_cast', {
+      playerId: socket.id, name: room.players.get(socket.id)?.name, formation,
+      votesIn: room.subasta.formationVotes.size, totalPlayers: room.players.size,
+    });
+    if (room.subasta.formationVotes.size >= room.players.size) resolveFormationVote(room);
+  });
+
+  socket.on('player:submit_bid', ({ code, amount }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'subasta_bidding') return;
+    const bid = room.subasta.bids.get(socket.id);
+    if (!bid || !bid.eligible || bid.responded) return;
+    const n = Number(amount);
+    const card = room.subasta.currentCard;
+    const ps = room.subasta.playerState.get(socket.id);
+    if (!Number.isInteger(n) || n < card.startingPrice || n > (ps?.budget ?? 0)) {
+      socket.emit('subasta:bid_rejected', { reason: `La puja debe ser entre $${card.startingPrice}M y $${ps?.budget ?? 0}M.` }); return;
+    }
+    bid.amount = n;
+    bid.responded = true;
+    const bidsIn = [...room.subasta.bids.values()].filter(b => b.responded && b.eligible).length;
+    const totalEligible = [...room.subasta.bids.values()].filter(b => b.eligible).length;
+    io.to(room.code).emit('subasta:bid_in', { bidsIn, totalEligible });
+    if (checkAllEligibleResponded(room)) resolveSubastaCard(room);
+  });
+
+  socket.on('player:skip_card', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || room.status !== 'subasta_bidding') return;
+    const bid = room.subasta.bids.get(socket.id);
+    if (!bid || !bid.eligible || bid.responded) return;
+    const ps = room.subasta.playerState.get(socket.id);
+    if (ps && ps.skipsLeft <= 0) { socket.emit('subasta:bid_rejected', { reason: 'Ya no tienes skips disponibles.' }); return; }
+    bid.skip = true;
+    bid.responded = true;
+    if (ps) ps.skipsLeft--;
+    const bidsIn = [...room.subasta.bids.values()].filter(b => b.responded && b.eligible).length;
+    const totalEligible = [...room.subasta.bids.values()].filter(b => b.eligible).length;
+    io.to(room.code).emit('subasta:bid_in', { bidsIn, totalEligible });
+    socket.emit('subasta:skip_confirmed', { skipsLeft: ps?.skipsLeft ?? 0 });
+    if (checkAllEligibleResponded(room)) resolveSubastaCard(room);
+  });
+
+  socket.on('host:next_subasta_card', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId) return;
+    const sub = room.subasta;
+    if (sub.currentCardIndex >= sub.deck.length - 1) {
+      startFinalReveal(room);
+    } else {
+      sub.currentCardIndex++;
+      showSubastaCard(room);
+    }
+  });
+
+  socket.on('host:next_reveal', ({ code }) => {
+    const room = rooms.get(code);
+    if (!room || socket.id !== room.hostId || room.subasta.phase !== 'final_reveal') return;
+    const sub = room.subasta;
+    sub.revealIndex = (sub.revealIndex || 0) + 1;
+    const entry = sub.resolvedCards[sub.revealIndex];
+    if (!entry) {
+      endSubasta(room);
+    } else {
+      io.to(room.code).emit('subasta:reveal_next', { entry, revealIndex: sub.revealIndex, totalCards: sub.resolvedCards.length });
     }
   });
 
@@ -763,28 +808,17 @@ io.on('connection', (socket) => {
     const room = rooms.get(code);
     if (!room || socket.id !== room.hostId) return;
     clearLieChallengeTimer(room);
+    clearSubastaBidTimer(room);
     room.status = 'lobby';
     room.gameType = null;
     room.concept = null;
     room.impostorIds = new Set();
     room.usedClues = [];
-    room.clueLog = [];
     room.roundNumber = 0;
     room.mangaNumber = 0;
-    room.lie = {
-      roundNumber: 0,
-      turnStartIndex: 0,
-      category: null,
-      turnOrder: [],
-      currentTurnIndex: 0,
-      currentClaim: 0,
-      lastClaimerId: null,
-      challenge: null,
-    };
-    for (const p of room.players.values()) {
-      p.alive = true;
-      p.score = 0;
-    }
+    room.lie = { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [], currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null };
+    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, bidDeadline: null, bidTimer: null, bids: new Map(), playerState: new Map(), resolvedCards: [] };
+    for (const p of room.players.values()) { p.alive = true; p.score = 0; }
     emitRoomState(room);
   });
 
@@ -793,59 +827,109 @@ io.on('connection', (socket) => {
     if (!code) return;
     const room = rooms.get(code);
     if (!room) return;
-
     const player = room.players.get(socket.id);
     if (player) {
-      if (room.status === 'lobby') {
-        room.players.delete(socket.id);
-      } else {
+      if (room.status === 'lobby') { room.players.delete(socket.id); }
+      else {
         player.connected = false;
-        if (room.status === 'clue' && room.clueOrder[room.clueTurnIndex] === socket.id) {
-          advanceClueTurnIfDisconnected(room);
-        }
-        if (
-          room.status === 'voting' &&
-          room.votes.size >= connectedAlivePlayers(room).length &&
-          connectedAlivePlayers(room).length > 0
-        ) {
-          resolveVotes(room);
-        }
-        if (room.status === 'lie_claim' && currentLieTurnPlayerId(room) === socket.id) {
-          advanceLieTurn(room);
-        }
+        if (room.status === 'clue' && room.clueOrder[room.clueTurnIndex] === socket.id) advanceClueTurnIfDisconnected(room);
+        if (room.status === 'voting' && room.votes.size >= connectedAlivePlayers(room).length && connectedAlivePlayers(room).length > 0) resolveVotes(room);
+        if (room.status === 'lie_claim' && currentLieTurnId(room) === socket.id) advanceLieTurn(room);
         if (room.status === 'lie_final_vote' && room.lie.challenge) {
           const ch = room.lie.challenge;
-          const eligible = connectedPlayers(room).filter((p) => p.id !== ch.accusedId);
+          const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
           if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
-            let validCount = 0;
-            let invalidCount = 0;
-            for (const v of ch.finalVotes.values()) {
-              if (v) validCount += 1;
-              else invalidCount += 1;
-            }
-            resolveLieChallenge(room, validCount >= invalidCount, 'vote');
+            let yes = 0, no = 0;
+            for (const v of ch.finalVotes.values()) { if (v) yes++; else no++; }
+            resolveLieChallenge(room, yes >= no, 'vote');
           }
         }
+        if (room.status === 'subasta_bidding' && checkAllEligibleResponded(room)) resolveSubastaCard(room);
       }
       emitRoomState(room);
     }
-
-    if (socket.id === room.hostId && room.players.size === 0) {
-      rooms.delete(code);
-    }
+    if (socket.id === room.hostId && room.players.size === 0) rooms.delete(code);
   });
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+/* =========================================================
+   SUBASTA — funciones auxiliares de fase
+   ========================================================= */
+function startFormationVote(room) {
+  const sub = room.subasta;
+  sub.phase = 'formation_vote';
+  sub.formationVotes = new Map();
+  room.status = 'subasta_formation_vote';
+  emitRoomState(room);
+  io.to(room.code).emit('subasta:formation_vote_started', {
+    formations: ALL_FORMATIONS,
+    timeoutMs: FORMATION_VOTE_TIMEOUT_MS,
+    deadlineAt: Date.now() + FORMATION_VOTE_TIMEOUT_MS,
+  });
+  sub.formationVoteTimer = setTimeout(() => resolveFormationVote(room), FORMATION_VOTE_TIMEOUT_MS);
+}
 
-app.get('/host', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'host', 'index.html'));
-});
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'player', 'index.html'));
-});
+function resolveFormationVote(room) {
+  const sub = room.subasta;
+  if (sub.formationVoteTimer) { clearTimeout(sub.formationVoteTimer); sub.formationVoteTimer = null; }
+  const tally = new Map();
+  for (const f of sub.formationVotes.values()) tally.set(f, (tally.get(f) || 0) + 1);
+  let maxV = 0;
+  for (const v of tally.values()) maxV = Math.max(maxV, v);
+  const top = [...tally.keys()].filter(f => tally.get(f) === maxV);
+  const formation = top.length ? top[Math.floor(Math.random() * top.length)] : ALL_FORMATIONS[Math.floor(Math.random() * ALL_FORMATIONS.length)];
+  sub.formation = formation;
+  room.subasta.phase = 'building_deck';
+  io.to(room.code).emit('subasta:formation_decided', { formation, votes: Object.fromEntries(tally) });
+  // Init player states
+  for (const [pid] of room.players.entries()) {
+    sub.playerState.set(pid, subastaPlayerState(room.subastaConfig.budget, room.subastaConfig.skipLimit));
+  }
+  buildSubastaDeck(room).then(deck => {
+    sub.deck = deck;
+    sub.currentCardIndex = 0;
+    sub.phase = 'auction';
+    showSubastaCard(room);
+  });
+}
+
+function startFinalReveal(room) {
+  clearSubastaBidTimer(room);
+  const sub = room.subasta;
+  sub.phase = 'final_reveal';
+  sub.revealIndex = 0;
+  room.status = 'subasta_reveal';
+  const scores = buildFinalScores(room);
+  const firstEntry = sub.resolvedCards[0];
+  io.to(room.code).emit('subasta:final_reveal_started', {
+    totalCards: sub.resolvedCards.length,
+    scores,
+    firstEntry,
+  });
+}
+
+function endSubasta(room) {
+  room.subasta.phase = 'over';
+  room.status = 'subasta_over';
+  const scores = buildFinalScores(room);
+  // Give points to players based on rank
+  scores.forEach((s, idx) => {
+    const p = room.players.get(s.id);
+    if (p) p.score += Math.max(0, scores.length - idx);
+  });
+  io.to(room.code).emit('subasta:game_over', {
+    scores,
+    finalScores: publicPlayerList(room).sort((a, b) => b.score - a.score),
+  });
+}
+
+/* =========================================================
+   EXPRESS + ARRANQUE
+   ========================================================= */
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/host', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'host', 'index.html')));
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'player', 'index.html')));
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`412 corriendo en http://localhost:${PORT}`);
-  console.log(`Host: http://localhost:${PORT}/host`);
 });

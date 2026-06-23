@@ -495,3 +495,175 @@ socket.on('lie:challenge_resolved', ({ success, reason, accusedName, accuserName
 
   showScreen('lieRoundOverPlayer');
 });
+
+
+/* =========================================================
+   SUBASTA FUTBOLERA — player
+   ========================================================= */
+
+screens.subastaFormationVotePlayer = document.getElementById('screen-subasta-formation-vote-player');
+screens.subastaWaitingDeck = document.getElementById('screen-subasta-waiting-deck');
+screens.subastaBiddingPlayer = document.getElementById('screen-subasta-bidding-player');
+screens.subastaCardResultPlayer = document.getElementById('screen-subasta-card-result-player');
+screens.subastaRevealPlayer = document.getElementById('screen-subasta-reveal-player');
+screens.subastaOverPlayer = document.getElementById('screen-subasta-over-player');
+
+let mySubastaState = { budget: 100, skipsLeft: 5, team: { portero: [], defensa: [], mediocampista: [], delantero: [] } };
+const FORMATIONS_INFO = {
+  '4-3-3': 'portero, 4 defensas, 3 medios, 3 delanteros',
+  '4-4-2': 'portero, 4 defensas, 4 medios, 2 delanteros',
+  '4-2-3-1': 'portero, 4 defensas, 5 medios, 1 delantero',
+  '3-5-2': 'portero, 3 defensas, 5 medios, 2 delanteros',
+  '3-4-3': 'portero, 3 defensas, 4 medios, 3 delanteros',
+  '5-3-2': 'portero, 5 defensas, 3 medios, 2 delanteros',
+};
+
+function positionLabelP(pos) {
+  return { portero: 'Portero', defensa: 'Defensa', mediocampista: 'Mediocampista', delantero: 'Delantero' }[pos] || pos;
+}
+
+socket.on('subasta:formation_vote_started', ({ formations, deadlineAt }) => {
+  const btns = document.getElementById('sub-p-formation-buttons');
+  btns.innerHTML = '';
+  document.getElementById('sub-p-voted-text').classList.add('hidden');
+  formations.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-secondary';
+    btn.style.textAlign = 'left';
+    btn.innerHTML = `<strong>${f}</strong><br><span style="font-size:0.8rem; color:var(--text-dim);">${FORMATIONS_INFO[f] || ''}</span>`;
+    btn.addEventListener('click', () => {
+      btns.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      socket.emit('player:vote_formation', { code: roomCode, formation: f });
+      btns.querySelectorAll('button').forEach(b => b.disabled = true);
+      document.getElementById('sub-p-voted-text').classList.remove('hidden');
+    });
+    btns.appendChild(btn);
+  });
+  showScreen('subastaFormationVotePlayer');
+});
+
+socket.on('subasta:formation_decided', ({ formation }) => {
+  document.getElementById('sub-p-formation-decided').textContent = 'Formación: ' + formation;
+  showScreen('subastaWaitingDeck');
+});
+
+socket.on('subasta:card_shown_private', ({ eligible, skipsLeft }) => {
+  mySubastaState.skipsLeft = skipsLeft;
+  updateSubastaStats();
+
+  document.getElementById('sub-p-can-bid').classList.toggle('hidden', !eligible);
+  document.getElementById('sub-p-bid-sent').classList.add('hidden');
+  document.getElementById('sub-p-ineligible').classList.toggle('hidden', eligible);
+
+  if (eligible) {
+    document.getElementById('input-bid').value = '';
+    document.getElementById('bid-error').classList.add('hidden');
+    document.getElementById('btn-submit-bid').disabled = false;
+    document.getElementById('btn-skip-card').disabled = skipsLeft <= 0;
+    document.getElementById('sub-p-skips-btn').textContent = skipsLeft;
+  }
+});
+
+socket.on('subasta:card_shown', ({ cardIndex, totalCards, position, startingPrice }) => {
+  document.getElementById('sub-p-card-counter').textContent = `${cardIndex + 1}/${totalCards}`;
+  const badge = document.getElementById('sub-p-position-badge');
+  badge.textContent = positionLabelP(position);
+  badge.className = 'position-badge ' + position;
+  document.getElementById('sub-p-starting-price').textContent = `$${startingPrice}M precio inicial`;
+  showScreen('subastaBiddingPlayer');
+});
+
+function updateSubastaStats() {
+  document.getElementById('sub-p-budget').textContent = `$${mySubastaState.budget}M`;
+  document.getElementById('sub-p-skips').textContent = mySubastaState.skipsLeft;
+  document.getElementById('sub-p-budget-result').textContent = `$${mySubastaState.budget}M`;
+  document.getElementById('sub-p-skips-result').textContent = mySubastaState.skipsLeft;
+}
+
+document.getElementById('btn-submit-bid').addEventListener('click', () => {
+  const amount = Number(document.getElementById('input-bid').value);
+  const errEl = document.getElementById('bid-error');
+  if (!amount || amount < 1) {
+    errEl.textContent = 'Ingresa un monto válido.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+  document.getElementById('sub-p-can-bid').classList.add('hidden');
+  document.getElementById('sub-p-bid-sent').classList.remove('hidden');
+  document.getElementById('sub-p-bid-sent-msg').textContent = `Puja de $${amount}M enviada. Esperando...`;
+  socket.emit('player:submit_bid', { code: roomCode, amount });
+});
+
+document.getElementById('btn-skip-card').addEventListener('click', () => {
+  document.getElementById('sub-p-can-bid').classList.add('hidden');
+  document.getElementById('sub-p-bid-sent').classList.remove('hidden');
+  document.getElementById('sub-p-bid-sent-msg').textContent = 'Skip enviado. Esperando...';
+  socket.emit('player:skip_card', { code: roomCode });
+});
+
+socket.on('subasta:bid_rejected', ({ reason }) => {
+  const errEl = document.getElementById('bid-error');
+  errEl.textContent = reason;
+  errEl.classList.remove('hidden');
+  document.getElementById('sub-p-can-bid').classList.remove('hidden');
+  document.getElementById('sub-p-bid-sent').classList.add('hidden');
+});
+
+socket.on('subasta:skip_confirmed', ({ skipsLeft }) => {
+  mySubastaState.skipsLeft = skipsLeft;
+});
+
+socket.on('subasta:card_resolved', ({ card, result, winnerName }) => {
+  const isWinner = result.winnerId === myId;
+  if (isWinner) {
+    mySubastaState.budget -= result.amount;
+    mySubastaState.team[card.position].push({ name: '???', amountPaid: result.amount });
+  }
+  updateSubastaStats();
+
+  const eyebrow = document.getElementById('sub-p-result-eyebrow');
+  const title = document.getElementById('sub-p-result-title');
+  const sub = document.getElementById('sub-p-result-subtitle');
+
+  if (result.type === 'discard') {
+    eyebrow.textContent = 'Descartada';
+    title.textContent = 'Nadie se llevó esta carta';
+    sub.textContent = '';
+  } else if (isWinner) {
+    eyebrow.textContent = '¡La conseguiste!';
+    title.textContent = `${positionLabelP(card.position)} por $${result.amount}M`;
+    sub.textContent = 'La identidad se revela al final.';
+  } else {
+    eyebrow.textContent = result.type === 'lottery' ? 'Ruleta' : 'Vendida';
+    title.textContent = winnerName ? `${winnerName} se la llevó` : '—';
+    sub.textContent = result.amount ? `Por $${result.amount}M` : '';
+  }
+
+  showScreen('subastaCardResultPlayer');
+});
+
+socket.on('subasta:final_reveal_started', () => {
+  showScreen('subastaRevealPlayer');
+});
+
+socket.on('subasta:game_over', ({ scores }) => {
+  const me = scores.find(s => s.id === myId);
+  document.getElementById('sub-p-total-value').textContent = `$${me?.totalRealValue ?? 0}M`;
+  const teamDiv = document.getElementById('sub-p-final-team');
+  teamDiv.innerHTML = '';
+  if (me) {
+    for (const [pos, cards] of Object.entries(me.team)) {
+      cards.forEach(c => {
+        const slot = document.createElement('div');
+        slot.className = 'team-slot filled';
+        slot.innerHTML = `<div class="pos-label">${positionLabelP(pos)}</div>
+          <div class="player-name">${escapeHtml(c.name || '???')}</div>
+          <div class="player-price">$${c.amountPaid}M pagados</div>`;
+        teamDiv.appendChild(slot);
+      });
+    }
+  }
+  showScreen('subastaOverPlayer');
+});
