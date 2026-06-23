@@ -263,7 +263,7 @@ async function loadSil(imgEl,phEl,phPosEl,wikiTitle,posName,revealed){
 function applySil(img,ph,url,rev){ img.className=rev?'silhouette-img revealed':'silhouette-img'; img.onerror=()=>{img.classList.add('hidden');if(ph)ph.classList.remove('hidden');}; img.src=url; img.classList.remove('hidden'); if(ph)ph.classList.add('hidden'); }
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
-let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null;
+let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false;
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
@@ -301,7 +301,7 @@ socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-vote
 socket.on('sub:formation_decided',({formation})=>{ if(subFormCd){clearInterval(subFormCd);subFormCd=null;} $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,position,positionLabel,startingPrice,wikiTitle,secondsLeft})=>{
-  subHighest=0; subStart=startingPrice; subEligible=false;
+  subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
   $('sub-counter').textContent=`${cardIndex+1}/${totalCards}`;
   const badge=$('sub-pos-badge'); badge.textContent=positionLabel; badge.className='position-badge '+posGroup(position);
   $('sub-price').textContent=`$${startingPrice}M precio base`;
@@ -333,13 +333,35 @@ socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
     $('sub-ineligible').classList.remove('hidden');
   }
 });
-socket.on('sub:bid_public',({name,amount,highestBid})=>{ subHighest=highestBid.amount; $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`; updBidBtns(); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--lime);font-family:var(--mono);">$${amount}M</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
+socket.on('sub:bid_public',({name,amount,highestBid})=>{
+  subHighest=highestBid.amount;
+  const iAmHighest = highestBid.playerId === myId;
+  $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;
+  updBidBtns();
+  // Registrar en el log de pujas
+  const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--lime);font-family:var(--mono);">$${amount}M</span><span class="who">${esc(name)}</span>`;log.prepend(it);
+  // Si soy elegible y NO pasé (skip), gestionar mis botones
+  if(subEligible && !iSkipped){
+    if(iAmHighest){
+      // Voy ganando: ocultar botones, mostrar mensaje
+      $('sub-can-bid').classList.add('hidden');
+      $('sub-bid-sent').classList.remove('hidden');
+      $('sub-bid-sent-msg').textContent=`Vas ganando con $${amount}M`;
+    } else {
+      // Otro me superó: vuelvo a poder pujar
+      $('sub-bid-sent').classList.add('hidden');
+      $('sub-can-bid').classList.remove('hidden');
+      $('btn-skip').disabled=subState.skipsLeft<=0;
+      updBidBtns();
+    }
+  }
+});
 socket.on('sub:skip_public',({name})=>{ const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--text-dim);">skip</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
 socket.on('sub:timer_extended',({secondsLeft})=>{ setSubCount(secondsLeft); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span style="color:var(--red);">⏱ +5s</span>';log.prepend(it); });
-function sendBid(inc){ const base=Math.max(subHighest,subStart); $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=`Puja de $${base+inc}M enviada...`; socket.emit('player:submit_bid',{code:roomCode,amount:base+inc}); }
+function sendBid(inc){ const base=Math.max(subHighest,subStart); $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=`Pujando $${base+inc}M...`; socket.emit('player:submit_bid',{code:roomCode,amount:base+inc}); }
 $('btn-bid-1').addEventListener('click',()=>sendBid(1)); $('btn-bid-5').addEventListener('click',()=>sendBid(5)); $('btn-bid-10').addEventListener('click',()=>sendBid(10));
-$('btn-skip').addEventListener('click',()=>{ $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent='Pasaste.'; socket.emit('player:skip_card',{code:roomCode}); });
-socket.on('sub:bid_rejected',({reason})=>{ $('bid-error').textContent=reason; $('bid-error').classList.remove('hidden'); $('sub-can-bid').classList.remove('hidden'); $('sub-bid-sent').classList.add('hidden'); updBidBtns(); });
+$('btn-skip').addEventListener('click',()=>{ iSkipped=true; $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent='Pasaste esta carta.'; socket.emit('player:skip_card',{code:roomCode}); });
+socket.on('sub:bid_rejected',({reason})=>{ $('bid-error').textContent=reason; $('bid-error').classList.remove('hidden'); if(!iSkipped){$('sub-can-bid').classList.remove('hidden'); $('sub-bid-sent').classList.add('hidden');} updBidBtns(); setTimeout(()=>$('bid-error').classList.add('hidden'),3000); });
 socket.on('sub:skip_confirmed',({skipsLeft})=>{ subState.skipsLeft=skipsLeft; updSubStats(); });
 socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHighest=highestBid.amount;$('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;} setSubCount(secondsLeft); updBidBtns(); if(phase==='bidding'&&subEligible)$('sub-can-bid').classList.remove('hidden'); });
 let subLast=false;

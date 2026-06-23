@@ -478,7 +478,11 @@ io.on('connection', socket => {
   });
   socket.on('player:submit_bid', ({code,amount}) => {
     const r=rooms.get(code); if(!r||r.status!=='subasta_play'||r.subasta.auctionPhase!=='bidding')return;
-    const s=r.subasta, bid=s.bids.get(socket.id); if(!bid||!bid.eligible||bid.responded)return;
+    const s=r.subasta, bid=s.bids.get(socket.id);
+    // Puedes pujar varias veces. Solo te bloquea si NO eres elegible o si ya pasaste (skip).
+    if(!bid||!bid.eligible||bid.skip)return;
+    // No tiene sentido pujar si ya tienes la puja más alta (no compites contra ti mismo).
+    if(s.highestBid&&s.highestBid.playerId===socket.id){socket.emit('sub:bid_rejected',{reason:'Ya tienes la puja más alta.'});return;}
     const n=Number(amount), card=s.currentCard, ps=s.playerState.get(socket.id);
     const minBid=s.highestBid?s.highestBid.amount+1:card.startingPrice, maxBid=ps?.budget??0;
     if(!Number.isInteger(n)||n<minBid||n>maxBid){socket.emit('sub:bid_rejected',{reason:`Mínimo $${minBid}M, tienes $${maxBid}M.`});return;}
