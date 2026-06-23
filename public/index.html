@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0b1410" />
+<title>412</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div id="conn-banner" class="conn-banner hidden">Conectando...</div>
+<div class="wrap">
+
+  <!-- ===== HOME: crear o unirse ===== -->
+  <section id="s-home" class="center-flex">
+    <div>
+      <p class="eyebrow">Juegos de fútbol para jugar con amigos</p>
+      <h1 style="font-size:4rem;line-height:0.9;margin-top:6px;">412</h1>
+    </div>
+    <div class="card" style="width:100%;">
+      <input type="text" id="inp-name" placeholder="Tu nombre" maxlength="20" />
+      <button class="btn-primary" id="btn-create" style="width:100%;margin-top:12px;">Crear sala</button>
+      <div class="divider"></div>
+      <div class="row">
+        <input type="text" id="inp-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;flex:1;" />
+        <button class="btn-secondary" id="btn-join">Unirme</button>
+      </div>
+      <p class="error-text hidden" id="home-error" style="margin-top:10px;"></p>
+    </div>
+  </section>
+
+  <!-- ===== LOBBY ===== -->
+  <section id="s-lobby" class="hidden">
+    <p class="eyebrow">Comparte este código</p>
+    <div class="code-display" id="lobby-code">----</div>
+    <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;">📋 Copiar / compartir código</button>
+
+    <div class="divider"></div>
+    <div class="between">
+      <h2 style="font-size:1.3rem;">Jugadores (<span id="player-count">0</span>)</h2>
+      <span class="pill" id="tv-hint">Vista TV: /tv</span>
+    </div>
+    <div class="player-grid" id="lobby-players" style="margin-top:12px;"></div>
+
+    <!-- Solo el anfitrión ve esto -->
+    <div id="host-controls" class="hidden">
+      <div class="divider"></div>
+      <h2 style="font-size:1.3rem;margin-bottom:12px;">¿Qué van a jugar?</h2>
+      <div class="game-pick-grid">
+        <button class="game-pick-card" id="pick-impostor"><span class="game-pick-title">El Impostor</span><span class="game-pick-desc">Descubre quién no conoce el concepto secreto.</span></button>
+        <button class="game-pick-card" id="pick-mentiroso"><span class="game-pick-title">Mentiroso</span><span class="game-pick-desc">Sube la apuesta o acusa de mentiroso.</span></button>
+        <button class="game-pick-card" id="pick-subasta"><span class="game-pick-title">Subasta Futbolera</span><span class="game-pick-desc">Puja por siluetas y arma el mejor equipo.</span></button>
+      </div>
+
+      <!-- Config Impostor -->
+      <div id="cfg-impostor" class="hidden card" style="margin-top:14px;">
+        <div class="config-row"><label>Impostores</label><select id="cfg-imp-count"></select></div>
+        <div class="config-row"><label>Mangas</label><select id="cfg-imp-mangas"><option>1</option><option selected>3</option><option>5</option><option>7</option><option>10</option></select></div>
+        <div class="config-row" style="flex-direction:column;align-items:flex-start;"><label>Categorías</label><div class="category-checks" id="cfg-imp-cats"></div></div>
+      </div>
+      <!-- Config Mentiroso -->
+      <div id="cfg-mentiroso" class="hidden card" style="margin-top:14px;">
+        <div class="config-row"><label>Rondas</label><select id="cfg-lie-rounds"><option>3</option><option selected>5</option><option>8</option><option>10</option></select></div>
+        <div class="config-row" style="flex-direction:column;align-items:flex-start;">
+          <label>Modo de respuesta</label>
+          <div class="category-checks" style="margin-top:8px;">
+            <label class="category-chip checked" id="lie-mode-texto"><input type="radio" name="lm" value="texto" checked/> Texto</label>
+            <label class="category-chip" id="lie-mode-voz"><input type="radio" name="lm" value="voz"/> Voz</label>
+          </div>
+        </div>
+      </div>
+      <!-- Config Subasta -->
+      <div id="cfg-subasta" class="hidden card" style="margin-top:14px;">
+        <div class="config-row"><label>Presupuesto</label><select id="cfg-sub-budget"><option value="300">$300M</option><option value="500" selected>$500M</option><option value="750">$750M</option><option value="1000">$1000M</option><option value="1500">$1500M</option></select></div>
+        <div class="config-row"><label>Skips por jugador</label><select id="cfg-sub-skips"><option>2</option><option>3</option><option selected>5</option><option>8</option></select></div>
+        <p style="font-size:0.78rem;margin-top:8px;">Análisis 15s + puja 15s por carta. Las pujas son públicas.</p>
+      </div>
+
+      <button class="btn-primary hidden" id="btn-start" style="width:100%;margin-top:16px;">Iniciar partida</button>
+      <p id="start-hint" style="text-align:center;margin-top:10px;font-size:0.85rem;">Elige un juego</p>
+    </div>
+    <div id="guest-wait" class="hidden center-flex" style="margin-top:24px;">
+      <p>Esperando a que el anfitrión inicie la partida...</p>
+    </div>
+  </section>
+
+  <!-- ===== EL IMPOSTOR ===== -->
+  <section id="s-imp-role" class="hidden center-flex">
+    <div class="role-card" id="imp-role-card" style="width:100%;">
+      <p class="label" id="imp-role-label">—</p>
+      <p class="concept" id="imp-role-concept">—</p>
+    </div>
+    <p id="imp-role-hint"></p>
+    <button class="btn-primary" id="btn-imp-role-ok">Entendido</button>
+  </section>
+
+  <section id="s-imp-clue" class="hidden">
+    <p class="eyebrow"><span id="imp-manga-label">Manga 1/3</span> · Ronda <span id="imp-round">1</span></p>
+    <div class="player-grid" id="imp-players" style="margin:14px 0;"></div>
+    <div id="imp-my-turn" class="hidden card">
+      <h2 style="font-size:1.2rem;">¡Tu turno!</h2>
+      <p style="margin:6px 0 12px;">Di una palabra relacionada (sin repetir).</p>
+      <input type="text" id="inp-clue" placeholder="Tu pista..." />
+      <p class="error-text hidden" id="clue-error" style="margin-top:8px;"></p>
+      <button class="btn-primary" id="btn-clue" style="width:100%;margin-top:10px;">Enviar pista</button>
+    </div>
+    <div id="imp-wait-turn" class="hidden center-flex" style="padding:14px;">
+      <p class="eyebrow">Turno de</p><h2 id="imp-turn-name" style="font-size:1.5rem;">—</h2>
+    </div>
+    <div class="divider"></div>
+    <h3 style="font-size:1rem;margin-bottom:8px;">Pistas</h3>
+    <div class="clue-log" id="imp-clue-log"></div>
+  </section>
+
+  <section id="s-imp-vote" class="hidden">
+    <p class="eyebrow">Votación</p>
+    <h2 style="font-size:1.6rem;margin-bottom:16px;">¿Quién es el impostor?</h2>
+    <div class="vote-grid" id="imp-vote-grid"></div>
+    <p id="imp-vote-status" style="text-align:center;margin-top:14px;"></p>
+  </section>
+
+  <section id="s-imp-reveal" class="hidden center-flex">
+    <div class="reveal-banner" id="imp-reveal-banner" style="width:100%;">
+      <p class="eyebrow" id="imp-reveal-eyebrow">—</p>
+      <h1 style="font-size:2rem;" id="imp-reveal-title">—</h1>
+      <p id="imp-reveal-sub"></p>
+    </div>
+  </section>
+
+  <section id="s-imp-over" class="hidden">
+    <div class="reveal-banner" id="imp-over-banner" style="width:100%;">
+      <p class="eyebrow" id="imp-over-eyebrow">—</p>
+      <h1 style="font-size:1.8rem;" id="imp-over-title">—</h1>
+      <p id="imp-over-sub"></p>
+    </div>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:8px;">Marcador</h3>
+    <div class="card" id="imp-scoreboard"></div>
+    <button class="btn-primary hidden" id="btn-imp-next" style="width:100%;margin-top:18px;">Siguiente</button>
+    <p id="imp-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+  </section>
+
+  <!-- ===== MENTIROSO ===== -->
+  <section id="s-lie-claim" class="hidden">
+    <p class="eyebrow">Ronda <span id="lie-round">1</span>/<span id="lie-round-count">5</span></p>
+    <div class="card" style="margin:12px 0;">
+      <p style="font-size:0.72rem;font-family:var(--mono);text-transform:uppercase;color:var(--text-dim);">Categoría</p>
+      <p style="font-size:1.2rem;font-weight:800;margin-top:6px;color:var(--text);" id="lie-category">—</p>
+    </div>
+    <p style="text-align:center;font-family:var(--mono);color:var(--text-dim);">Apuesta actual</p>
+    <p style="text-align:center;font-family:var(--mono);font-size:2.4rem;color:var(--lime);" id="lie-claim-amount">0</p>
+    <div id="lie-my-turn" class="hidden card" style="margin-top:14px;">
+      <h2 style="font-size:1.1rem;">¡Tu turno!</h2>
+      <input type="number" inputmode="numeric" id="inp-claim" placeholder="Sube la apuesta..." style="margin-top:10px;" />
+      <p class="error-text hidden" id="claim-error" style="margin-top:8px;"></p>
+      <button class="btn-primary" id="btn-claim" style="width:100%;margin-top:10px;">Subir apuesta</button>
+      <button class="btn-secondary" id="btn-accuse" style="width:100%;margin-top:8px;">¡Mentiroso!</button>
+    </div>
+    <div id="lie-wait-turn" class="hidden center-flex" style="padding:14px;">
+      <p class="eyebrow">Turno de</p><h2 id="lie-turn-name" style="font-size:1.5rem;">—</h2>
+    </div>
+  </section>
+
+  <section id="s-lie-naming" class="hidden">
+    <p class="eyebrow">¡Mentiroso!</p>
+    <h2 style="font-size:1.2rem;margin-bottom:12px;" id="lie-naming-heading">—</h2>
+    <div class="countdown-row"><div class="countdown-circle" id="lie-countdown">10</div>
+      <p style="font-family:var(--mono);color:var(--lime);font-size:1.2rem;"><span id="lie-named-count">0</span> / <span id="lie-target">0</span></p></div>
+    <button class="big-tap-btn hidden" id="btn-mark" style="margin-top:18px;">Marcar respuesta ✓</button>
+    <div id="lie-am-accused" class="hidden card" style="margin-top:14px;">
+      <input type="text" id="inp-name-item" placeholder="Escribe una respuesta..." />
+      <button class="btn-primary" id="btn-name-item" style="width:100%;margin-top:10px;">Enviar</button>
+    </div>
+    <p id="lie-naming-wait" class="hidden center-flex" style="margin-top:14px;"></p>
+    <div class="clue-log" id="lie-named-log" style="margin-top:14px;"></div>
+  </section>
+
+  <section id="s-lie-final" class="hidden">
+    <p class="eyebrow">¿El grupo le cree?</p>
+    <h2 style="font-size:1.3rem;margin-bottom:14px;" id="lie-final-title">—</h2>
+    <div class="clue-log" id="lie-final-list" style="margin-bottom:14px;"></div>
+    <div id="lie-can-vote" class="hidden vote-grid">
+      <button class="vote-btn" id="btn-lie-valid">Válido ✓</button>
+      <button class="vote-btn" id="btn-lie-invalid">No válido ✗</button>
+    </div>
+    <p id="lie-final-status" style="text-align:center;margin-top:14px;"></p>
+  </section>
+
+  <section id="s-lie-over" class="hidden center-flex">
+    <p class="eyebrow" id="lie-over-eyebrow">—</p>
+    <h1 style="font-size:1.7rem;" id="lie-over-title">—</h1>
+    <p id="lie-over-sub"></p>
+    <div class="card" style="width:100%;"><p style="font-size:0.85rem;">Tu puntaje</p><p style="font-family:var(--mono);font-size:2rem;color:var(--lime);margin-top:4px;" id="lie-my-score">0</p></div>
+    <button class="btn-primary hidden" id="btn-lie-next" style="width:100%;">Siguiente ronda</button>
+    <p id="lie-over-wait" class="hidden">Esperando al anfitrión...</p>
+  </section>
+
+  <!-- ===== SUBASTA ===== -->
+  <section id="s-sub-formation" class="hidden">
+    <p class="eyebrow">Subasta Futbolera</p>
+    <h2 style="font-size:1.5rem;margin-bottom:6px;">Voten la formación</h2>
+    <div class="countdown-row" style="margin-bottom:14px;"><div class="countdown-circle" id="sub-form-countdown">45</div><p id="sub-form-votes">0 votos</p></div>
+    <div id="sub-form-buttons" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <p id="sub-form-voted" class="hidden" style="text-align:center;margin-top:14px;color:var(--lime);font-weight:700;">¡Voto enviado!</p>
+  </section>
+
+  <section id="s-sub-wait-deck" class="hidden center-flex">
+    <h2 id="sub-formation-decided" style="font-size:1.5rem;">Formación: —</h2>
+    <p>Preparando las siluetas...</p>
+  </section>
+
+  <section id="s-sub-play" class="hidden">
+    <div class="budget-bar">
+      <div class="sub-stat"><div class="val" id="sub-budget">$500M</div><div class="lbl">presupuesto</div></div>
+      <div class="sub-stat"><div class="val" id="sub-skips">5</div><div class="lbl">skips</div></div>
+      <div class="sub-stat"><div class="val" id="sub-counter">1/30</div><div class="lbl">carta</div></div>
+    </div>
+    <div class="silhouette-container">
+      <img id="sub-img" class="silhouette-img" src="" alt="silueta" />
+      <div id="sub-img-placeholder" class="silhouette-placeholder hidden"><span id="sub-img-pos">?</span></div>
+    </div>
+    <div style="text-align:center;margin-bottom:10px;">
+      <span class="position-badge" id="sub-pos-badge">Portero</span>
+      <p style="font-family:var(--mono);color:var(--lime);font-size:1.15rem;margin-top:8px;" id="sub-price">$—M precio base</p>
+      <p id="sub-highest" style="font-size:0.82rem;margin-top:4px;">Sin pujas aún</p>
+    </div>
+    <div class="countdown-row" style="justify-content:center;margin-bottom:12px;">
+      <div class="countdown-circle" id="sub-countdown">15</div>
+      <p id="sub-phase-label" style="font-weight:700;">Analizando...</p>
+    </div>
+    <div id="sub-can-bid" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
+      <p class="error-text hidden" id="bid-error"></p>
+      <button class="btn-primary" id="btn-bid-1">+1M → $<span id="bp1">—</span>M</button>
+      <button class="btn-primary" id="btn-bid-5" style="background:var(--grass-light);">+5M → $<span id="bp5">—</span>M</button>
+      <button class="btn-primary" id="btn-bid-10" style="background:#2c6fa3;color:#fff;">+10M → $<span id="bp10">—</span>M</button>
+      <button class="btn-secondary" id="btn-skip">Pasar (<span id="sub-skip-n">5</span> skips)</button>
+    </div>
+    <div id="sub-bid-sent" class="hidden center-flex"><p style="color:var(--lime);font-weight:700;" id="sub-bid-sent-msg">Esperando...</p></div>
+    <div id="sub-ineligible" class="hidden center-flex"><p>Ya cubriste esta posición o no te alcanza el presupuesto.</p></div>
+    <div class="divider"></div>
+    <div class="clue-log" id="sub-bid-log" style="max-height:140px;"></div>
+  </section>
+
+  <section id="s-sub-result" class="hidden center-flex">
+    <div class="silhouette-container" style="max-width:180px;">
+      <img id="sub-result-img" class="silhouette-img revealed" src="" alt="" />
+      <div id="sub-result-placeholder" class="silhouette-placeholder hidden"><span>?</span></div>
+    </div>
+    <p class="eyebrow" id="sub-result-eyebrow">—</p>
+    <h2 style="font-size:1.4rem;" id="sub-result-name">—</h2>
+    <p id="sub-result-label" style="font-size:0.82rem;"></p>
+    <p id="sub-result-troll" class="hidden" style="color:var(--red);font-weight:800;">🎭 ¡Carta TROLL!</p>
+    <p id="sub-result-sub" style="margin-top:6px;"></p>
+    <button class="btn-primary hidden" id="btn-sub-next" style="width:100%;">Siguiente carta</button>
+    <p id="sub-result-wait" class="hidden">Esperando al anfitrión...</p>
+  </section>
+
+  <section id="s-sub-over" class="hidden">
+    <p class="eyebrow">Resultado Final</p>
+    <h2 style="font-size:1.4rem;margin-bottom:6px;">Tu equipo</h2>
+    <div class="card" style="margin-bottom:10px;"><p style="font-size:0.85rem;">Valor real total</p><p style="font-family:var(--mono);font-size:2rem;color:var(--lime);" id="sub-my-total">$0M</p></div>
+    <div class="team-grid" id="sub-my-team"></div>
+    <div class="divider"></div>
+    <h3 style="margin-bottom:8px;">Clasificación</h3>
+    <div class="card" id="sub-scoreboard"></div>
+    <button class="btn-primary hidden" id="btn-sub-new" style="width:100%;margin-top:18px;">Nueva partida</button>
+    <p id="sub-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+  </section>
+
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

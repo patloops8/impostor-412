@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>412 — Vista TV</title>
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="wrap wrap-tv">
+  <section id="tv-join" class="center-flex">
+    <h1 style="font-size:3rem;">412 · Vista TV</h1>
+    <p>Esta pantalla muestra la partida en grande. Entra el código de la sala.</p>
+    <div class="row" style="max-width:340px;">
+      <input type="text" id="tv-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;" />
+      <button class="btn-primary" id="tv-connect">Ver</button>
+    </div>
+    <p class="error-text hidden" id="tv-error"></p>
+  </section>
+
+  <section id="tv-live" class="hidden">
+    <div class="between">
+      <p class="eyebrow">412 · Sala <span id="tv-room-code"></span></p>
+      <p class="eyebrow" id="tv-status-label"></p>
+    </div>
+    <div id="tv-content" style="margin-top:20px;"></div>
+  </section>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();
+const $=id=>document.getElementById(id);
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+let players=[];
+const params=new URLSearchParams(location.search);
+const preCode=params.get('c')||params.get('codigo');
+if(preCode){ $('tv-code').value=preCode.toUpperCase(); }
+
+$('tv-connect').addEventListener('click',connect);
+function connect(){
+  const code=$('tv-code').value.trim().toUpperCase();
+  if(!code)return;
+  socket.emit('tv:watch',{code},(res)=>{
+    if(!res||!res.ok){ $('tv-error').textContent='Sala no encontrada.'; $('tv-error').classList.remove('hidden'); return; }
+    $('tv-room-code').textContent=code;
+    $('tv-join').classList.add('hidden'); $('tv-live').classList.remove('hidden');
+  });
+}
+if(preCode){ setTimeout(connect,400); }
+
+socket.on('room:update',(st)=>{
+  players=st.players;
+  if(st.status==='lobby'){
+    $('tv-status-label').textContent='En el lobby';
+    let h=`<h1 style="font-size:2.5rem;text-align:center;">Entren con el código <span style="color:var(--lime);">${st.code}</span></h1>`;
+    h+='<div class="player-grid" style="margin-top:24px;">';
+    st.players.forEach(p=>h+=`<div class="player-chip"><div class="name">${esc(p.name)}</div><div class="meta">${p.isHost?'★ anfitrión':''}</div></div>`);
+    h+='</div>';
+    $('tv-content').innerHTML=h;
+  }
+});
+
+// El Impostor
+socket.on('imp:round',({roundNumber})=>{ $('tv-status-label').textContent='El Impostor · Ronda '+roundNumber; });
+socket.on('imp:clue',({name,word})=>{
+  const c=$('tv-content');
+  if(!c.querySelector('#tv-clue-log')) c.innerHTML='<h2 style="font-size:1.6rem;margin-bottom:14px;">Pistas</h2><div class="clue-log" id="tv-clue-log"></div>';
+  const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span style="font-size:1.2rem;">${esc(word)}</span><span class="who">${esc(name)}</span>`;
+  $('tv-clue-log').prepend(it);
+});
+socket.on('imp:voting',()=>{ $('tv-content').innerHTML='<div class="center-flex"><h1 style="font-size:2.5rem;">Votación en curso</h1><p>Los jugadores votan desde su celular</p></div>'; });
+socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ $('tv-content').innerHTML=`<div class="reveal-banner ${wasImpostor?'caught':'escaped'}"><p class="eyebrow">${wasImpostor?'¡Atrapado!':'Era inocente'}</p><h1 style="font-size:2.5rem;">${esc(eliminatedName)}</h1></div>`; });
+socket.on('imp:manga_over',({impostorNames,concept,scores})=>{
+  let h=`<div class="reveal-banner caught"><h1 style="font-size:2rem;">${impostorNames.join(', ')} ${impostorNames.length>1?'eran':'era'} impostor</h1><p>Concepto: ${esc(concept.name)}</p></div><div class="card" style="margin-top:16px;">`;
+  scores.forEach((p,i)=>h+=`<div class="score-row"><span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span></div>`);
+  h+='</div>'; $('tv-content').innerHTML=h;
+});
+
+// Mentiroso
+socket.on('lie:round',({roundNumber,category})=>{ $('tv-status-label').textContent='Mentiroso · Ronda '+roundNumber; $('tv-content').innerHTML=`<div class="card center-flex" style="padding:40px;"><p class="eyebrow">Categoría</p><h1 style="font-size:2.2rem;text-align:center;">${esc(category)}</h1></div>`; });
+socket.on('lie:claim',({name,amount})=>{ $('tv-content').innerHTML=`<div class="center-flex"><p class="eyebrow">${esc(name)} dice poder nombrar</p><h1 style="font-size:5rem;color:var(--lime);">${amount}</h1></div>`; });
+socket.on('lie:accused',({accuserName,accusedName,target})=>{ $('tv-content').innerHTML=`<div class="center-flex"><p class="eyebrow">¡Mentiroso!</p><h1 style="font-size:2rem;">${esc(accusedName)} debe nombrar ${target}</h1><p>${esc(accuserName)} no le creyó</p></div>`; });
+socket.on('lie:resolved',({success,accusedName,scores})=>{
+  let h=`<div class="reveal-banner ${success?'caught':'escaped'}"><h1 style="font-size:2rem;">${esc(accusedName)} ${success?'sí pudo':'falló'}</h1></div><div class="card" style="margin-top:16px;">`;
+  scores.forEach((p,i)=>h+=`<div class="score-row"><span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span></div>`);
+  h+='</div>'; $('tv-content').innerHTML=h;
+});
+
+// Subasta
+socket.on('sub:formation_decided',({formation})=>{ $('tv-status-label').textContent='Subasta · '+formation; });
+socket.on('sub:card',({cardIndex,totalCards,positionLabel,startingPrice,wikiTitle,position})=>{
+  $('tv-status-label').textContent=`Subasta · Carta ${cardIndex+1}/${totalCards}`;
+  $('tv-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+    <div class="silhouette-container" style="max-width:320px;"><img id="tv-sil" class="silhouette-img" src=""/><div id="tv-sil-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
+    <div><span class="position-badge ${posGroup(position)}">${positionLabel}</span><p style="font-family:var(--mono);font-size:2rem;color:var(--lime);margin-top:12px;">$${startingPrice}M</p><div class="countdown-circle" id="tv-sub-cd" style="width:90px;height:90px;font-size:2rem;margin-top:16px;">15</div><div class="clue-log" id="tv-sub-bids" style="margin-top:16px;"></div></div></div>`;
+  loadTvSil(wikiTitle);
+});
+socket.on('sub:tick',({secondsLeft})=>{ const el=$('tv-sub-cd'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
+socket.on('sub:timer_extended',({secondsLeft})=>{ const el=$('tv-sub-cd'); if(el)el.textContent=secondsLeft; });
+socket.on('sub:bid_public',({name,amount})=>{ const l=$('tv-sub-bids'); if(l){const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--lime);">$${amount}M</span><span class="who">${esc(name)}</span>`;l.prepend(it);} });
+socket.on('sub:card_resolved',({cardName,positionLabel,cardWikiTitle,cardTroll,result,winnerName})=>{
+  let txt=result.type==='discard'?'Nadie se la llevó':(winnerName?`${winnerName} la ganó por $${result.amount}M`:'');
+  $('tv-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+    <div class="silhouette-container" style="max-width:320px;"><img id="tv-sil-r" class="silhouette-img revealed" src=""/></div>
+    <div><p class="eyebrow">${cardTroll?'🎭 ¡TROLL!':positionLabel}</p><h1 style="font-size:2.2rem;">${esc(cardName)}</h1><p style="margin-top:10px;">${esc(txt)}</p></div></div>`;
+  loadTvSilReveal(cardWikiTitle);
+});
+socket.on('sub:game_over',({scores})=>{
+  let h='<h1 style="font-size:2rem;text-align:center;margin-bottom:20px;">Resultado Final</h1><div class="card">';
+  scores.forEach((s,i)=>h+=`<div class="score-row"><span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">$${s.totalRealValue}M</span></div>`);
+  h+='</div>'; $('tv-content').innerHTML=h;
+});
+
+function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
+async function loadTvSil(wt){ const img=$('tv-sil'),ph=$('tv-sil-ph'); if(!wt||!img){return;} try{const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wt)}`);const d=await r.json();const u=d.thumbnail?.source;if(u){img.src=u;img.onerror=()=>{img.classList.add('hidden');ph.classList.remove('hidden');};}else{img.classList.add('hidden');ph.classList.remove('hidden');}}catch{img.classList.add('hidden');ph.classList.remove('hidden');} }
+async function loadTvSilReveal(wt){ const img=$('tv-sil-r'); if(!wt||!img)return; try{const r=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wt)}`);const d=await r.json();const u=d.thumbnail?.source;if(u)img.src=u;}catch{} }
+</script>
+</body>
+</html>

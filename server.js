@@ -1,4 +1,3 @@
-
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -10,22 +9,18 @@ const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
-/* =========================================================
-   DATOS
-   ========================================================= */
+/* ===================== DATOS ===================== */
 const CONCEPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'concepts.json'), 'utf-8'));
 const ALL_CATEGORIES = [...new Set(CONCEPTS.map(c => c.category))];
 const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8'));
 const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
 
-// Posiciones específicas. Orden de subasta de atrás hacia adelante.
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
-  POR: 'Portero', LD: 'Lateral Derecho', DFC: 'Defensa Central', LI: 'Lateral Izquierdo',
-  MCD: 'Mediocentro Defensivo', MC: 'Mediocentro', MCO: 'Mediocentro Ofensivo',
-  ED: 'Extremo Derecho', EI: 'Extremo Izquierdo', DC: 'Delantero Centro',
+  POR:'Portero', LD:'Lateral Derecho', DFC:'Defensa Central', LI:'Lateral Izquierdo',
+  MCD:'Mediocentro Defensivo', MC:'Mediocentro', MCO:'Mediocentro Ofensivo',
+  ED:'Extremo Derecho', EI:'Extremo Izquierdo', DC:'Delantero Centro',
 };
-// Cada formación define cuántos jugadores por posición específica (deben sumar 11)
 const FORMATIONS = {
   '4-3-3':   { POR:1, LD:1, DFC:2, LI:1, MCD:1, MC:2, MCO:0, ED:1, EI:1, DC:1 },
   '4-4-2':   { POR:1, LD:1, DFC:2, LI:1, MCD:0, MC:2, MCO:0, ED:1, EI:1, DC:2 },
@@ -36,1092 +31,525 @@ const FORMATIONS = {
 };
 const ALL_FORMATIONS = Object.keys(FORMATIONS);
 
-/* =========================================================
-   WIKIPEDIA IMAGE CACHE
-   ========================================================= */
-const imageCache = new Map();
-
-async function getWikiImageUrl(wikiTitle) {
-  if (imageCache.has(wikiTitle)) return imageCache.get(wikiTitle);
-  try {
-    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) { imageCache.set(wikiTitle, null); return null; }
-    const data = await res.json();
-    const imgUrl = data.thumbnail?.source || null;
-    imageCache.set(wikiTitle, imgUrl);
-    return imgUrl;
-  } catch {
-    imageCache.set(wikiTitle, null);
-    return null;
-  }
-}
-
-async function prewarmImageCache() {
-  const titles = [...new Set(SUBASTA_CARDS.map(c => c.wikiTitle))];
-  let loaded = 0;
-  // Lotes de 8 con 150ms entre lotes para no sobrecargar Wikipedia
-  for (let i = 0; i < titles.length; i += 8) {
-    const batch = titles.slice(i, i + 8);
-    await Promise.all(batch.map(async t => {
-      try { await getWikiImageUrl(t); } catch {}
-    }));
-    loaded += batch.length;
-    if (i + 8 < titles.length) await new Promise(r => setTimeout(r, 150));
-  }
-  const found = [...imageCache.values()].filter(Boolean).length;
-  console.log(`[Subasta] Cache lista: ${found}/${loaded} imagenes encontradas`);
-}
-prewarmImageCache().catch(() => {});
-
-/* =========================================================
-   CONSTANTES
-   ========================================================= */
-const MIN_PLAYERS_IMPOSTOR = 3;
-const MIN_PLAYERS_MENTIROSO = 2;
-const MIN_PLAYERS_SUBASTA = 2;
-const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const CLUE_PHASE_END_DELAY_MS = 4500;
-const RESULT_DISPLAY_DELAY_MS = 3500;
-const TIE_DISPLAY_DELAY_MS = 4000;
-const MAX_CLAIM = 300;
-const VOICE_ANSWER_TIMEOUT_MS = 10000;
-const TEXT_ANSWER_TIMEOUT_MS = 15000;
-const FORMATION_VOTE_TIMEOUT_MS = 45000;
-
-/* =========================================================
-   ESTADO EN MEMORIA
-   ========================================================= */
+/* ===================== ESTADO ===================== */
 const rooms = new Map();
-const subastaTimers = new Map(); // code -> intervalId
+const timers = new Map(); // code -> intervalId (reloj único por sala)
 
-function generateRoomCode() {
-  let code;
-  do {
-    code = '';
-    for (let i = 0; i < 4; i++) code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
-  } while (rooms.has(code));
-  return code;
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2 };
+
+function genCode() {
+  let c;
+  do { c = ''; for (let i=0;i<4;i++) c += ROOM_CODE_CHARS[Math.floor(Math.random()*ROOM_CODE_CHARS.length)]; }
+  while (rooms.has(c));
+  return c;
 }
-
-function normalizeWord(word) {
-  return word.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
-function shuffle(array) {
-  const arr = array.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function maxImpostorsFor(n) { return Math.max(1, Math.floor((n - 1) / 2)); }
+function norm(w){ return w.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function shuffle(a){ const r=a.slice(); for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+function maxImpostorsFor(n){ return Math.max(1, Math.floor((n-1)/2)); }
 
 function newRoom(code, hostId) {
   return {
-    code, hostId,
+    code, hostId,                 // hostId = jugador anfitrión (también juega)
     players: new Map(),
     gameType: null,
     status: 'lobby',
-
-    // El Impostor
     impostorConfig: { impostorCount: 1, mangaCount: 3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
-    usedClues: [], clueLog: [], clueOrder: [], clueTurnIndex: 0,
-    cluePhaseEnding: false, votes: new Map(), roundNumber: 0,
-
-    // Mentiroso
+    usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
+    votes: new Map(), roundNumber: 0,
     mentirosoConfig: { roundCount: 5, mode: 'texto' },
-    lie: { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [],
-           currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null },
-
-    // Subasta
-    subastaConfig: { budget: 500, timerSeconds: 30, skipLimit: 5 },
+    lie: { roundNumber:0, turnStartIndex:0, category:null, turnOrder:[], currentTurnIndex:0, currentClaim:0, lastClaimerId:null, challenge:null },
+    subastaConfig: { budget: 500, skipLimit: 5 },
     subasta: {
-      phase: 'config',
-      formation: null,
-      formationVotes: new Map(),
-      formationVoteTimer: null,
-      deck: [],
-      currentCardIndex: -1,
-      currentCard: null,
-      auctionPhase: null, secondsLeft: 0, totalEligible: 0,
-      analysisTimer: null,
-      bidDeadline: null,
-      bidTimer: null,
-      bids: new Map(),
-      playerState: new Map(),
-      resolvedCards: [],
+      phase:'config', formation:null, formationVotes:new Map(),
+      deck:[], currentCardIndex:-1, currentCard:null,
+      auctionPhase:null, secondsLeft:0, totalEligible:0,
+      bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[],
     },
   };
 }
 
-function alivePlayers(room) { return [...room.players.values()].filter(p => p.alive); }
-function connectedAlivePlayers(room) { return alivePlayers(room).filter(p => p.connected); }
-function connectedPlayers(room) { return [...room.players.values()].filter(p => p.connected); }
+const playersArr = r => [...r.players.values()];
+const alive = r => playersArr(r).filter(p=>p.alive);
+const connectedAlive = r => alive(r).filter(p=>p.connected);
+const connected = r => playersArr(r).filter(p=>p.connected);
 
-function publicPlayerList(room) {
-  return [...room.players.values()].map(p => ({
-    id: p.id, name: p.name, score: p.score, alive: p.alive, connected: p.connected,
-  }));
+function publicPlayers(r){
+  return playersArr(r).map(p=>({ id:p.id, name:p.name, score:p.score, alive:p.alive, connected:p.connected, isHost: p.id===r.hostId }));
 }
 
-function minPlayersFor(gameType) {
-  if (gameType === 'mentiroso') return MIN_PLAYERS_MENTIROSO;
-  if (gameType === 'subasta') return MIN_PLAYERS_SUBASTA;
-  return MIN_PLAYERS_IMPOSTOR;
-}
-
-function emitRoomState(room) {
-  io.to(room.code).emit('room:players_update', {
-    players: publicPlayerList(room),
-    status: room.status,
-    gameType: room.gameType,
-    impostorConfig: room.impostorConfig,
-    mentirosoConfig: room.mentirosoConfig,
-    subastaConfig: room.subastaConfig,
-    maxImpostors: maxImpostorsFor(room.players.size),
-    minPlayers: minPlayersFor(room.gameType),
-    subastaPhase: room.subasta.phase,
-    formation: room.subasta.formation,
+function emitRoom(r){
+  io.to(r.code).emit('room:update', {
+    code: r.code,
+    players: publicPlayers(r),
+    status: r.status,
+    gameType: r.gameType,
+    hostId: r.hostId,
+    impostorConfig: r.impostorConfig,
+    mentirosoConfig: r.mentirosoConfig,
+    subastaConfig: r.subastaConfig,
+    maxImpostors: maxImpostorsFor(r.players.size),
+    minPlayers: r.gameType ? MIN_PLAYERS[r.gameType] : 3,
   });
 }
 
-/* =========================================================
-   EL IMPOSTOR — logica
-   ========================================================= */
-function startNewManga(room) {
-  const pool = CONCEPTS.filter(c => room.impostorConfig.categories.includes(c.category));
-  room.concept = (pool.length > 0 ? pool : CONCEPTS)[Math.floor(Math.random() * (pool.length || CONCEPTS.length))];
-  const ids = shuffle([...room.players.keys()]);
-  const cnt = Math.min(room.impostorConfig.impostorCount, maxImpostorsFor(room.players.size));
-  room.impostorIds = new Set(ids.slice(0, cnt));
-  room.usedClues = [];
-  room.roundNumber = 0;
-  for (const p of room.players.values()) p.alive = true;
-  for (const [id] of room.players.entries()) {
-    const isI = room.impostorIds.has(id);
-    io.to(id).emit('match:your_role', {
-      isImpostor: isI, impostorCount: room.impostorIds.size,
-      category: isI ? null : room.concept.category,
-      concept: isI ? null : room.concept.name,
-    });
-  }
-  emitRoomState(room);
-  io.to(room.code).emit('manga:started', {
-    mangaNumber: room.mangaNumber, mangaCount: room.impostorConfig.mangaCount,
-    impostorCount: room.impostorIds.size,
-  });
-  startClueRound(room);
-}
-
-function startClueRound(room) {
-  room.status = 'clue';
-  room.roundNumber++;
-  room.clueLog = [];
-  room.votes = new Map();
-  room.clueOrder = shuffle(alivePlayers(room)).map(p => p.id);
-  room.clueTurnIndex = 0;
-  io.to(room.code).emit('round:started', {
-    roundNumber: room.roundNumber,
-    turnOrder: room.clueOrder.map(id => room.players.get(id)?.name),
-    currentTurnPlayerId: room.clueOrder[0] || null,
-  });
-  advanceClueTurnIfDisconnected(room);
-}
-
-function advanceClueTurnIfDisconnected(room) {
-  while (room.status === 'clue' && room.clueTurnIndex < room.clueOrder.length &&
-         !room.players.get(room.clueOrder[room.clueTurnIndex])?.connected) {
-    room.clueTurnIndex++;
-  }
-  if (room.status === 'clue' && room.clueTurnIndex >= room.clueOrder.length) {
-    finishCluePhase(room);
-  } else if (room.status === 'clue') {
-    io.to(room.code).emit('round:turn_changed', { currentTurnPlayerId: room.clueOrder[room.clueTurnIndex] });
+function reassignHostIfNeeded(r){
+  if (!r.players.has(r.hostId)) {
+    const first = connected(r)[0] || playersArr(r)[0];
+    if (first) r.hostId = first.id;
   }
 }
 
-function finishCluePhase(room) {
-  if (room.cluePhaseEnding) return;
-  room.cluePhaseEnding = true;
-  io.to(room.code).emit('round:clue_phase_ending');
-  setTimeout(() => {
-    room.cluePhaseEnding = false;
-    if (room.status === 'clue') startVotingPhase(room);
-  }, CLUE_PHASE_END_DELAY_MS);
-}
-
-function startVotingPhase(room) {
-  room.status = 'voting';
-  room.votes = new Map();
-  io.to(room.code).emit('round:voting_started', { candidates: alivePlayers(room).map(p => ({ id: p.id, name: p.name })) });
-}
-
-function resolveVotes(room) {
-  const tally = new Map();
-  for (const t of room.votes.values()) tally.set(t, (tally.get(t) || 0) + 1);
-  let max = 0;
-  for (const v of tally.values()) max = Math.max(max, v);
-  const top = [...tally.entries()].filter(([, c]) => c === max).map(([id]) => id);
-  if (top.length !== 1) {
-    io.to(room.code).emit('round:tie', { tiedPlayers: top.map(id => room.players.get(id)?.name) });
-    setTimeout(() => startClueRound(room), TIE_DISPLAY_DELAY_MS);
-    return;
+/* ===================== EL IMPOSTOR ===================== */
+function startManga(r){
+  const pool = CONCEPTS.filter(c=>r.impostorConfig.categories.includes(c.category));
+  const usable = pool.length?pool:CONCEPTS;
+  r.concept = usable[Math.floor(Math.random()*usable.length)];
+  const ids = shuffle([...r.players.keys()]);
+  const cnt = Math.min(r.impostorConfig.impostorCount, maxImpostorsFor(r.players.size));
+  r.impostorIds = new Set(ids.slice(0,cnt));
+  r.usedClues = []; r.roundNumber = 0;
+  for (const p of r.players.values()) p.alive = true;
+  for (const [id] of r.players.entries()){
+    const isI = r.impostorIds.has(id);
+    io.to(id).emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:isI?null:r.concept.category, concept:isI?null:r.concept.name });
   }
-  const elId = top[0];
-  const el = room.players.get(elId);
-  el.alive = false;
-  const wasI = room.impostorIds.has(elId);
-  const votersForI = [...room.votes.entries()].filter(([, t]) => room.impostorIds.has(t)).map(([v]) => v);
-  io.to(room.code).emit('round:elimination', { eliminatedId: elId, eliminatedName: el.name, wasImpostor: wasI });
-  room.status = 'reveal';
-  const aliveI = alivePlayers(room).filter(p => room.impostorIds.has(p.id));
-  const aliveInnocents = alivePlayers(room).length - aliveI.length;
-  if (aliveI.length === 0) { setTimeout(() => endManga(room, 'impostors_caught', votersForI), RESULT_DISPLAY_DELAY_MS); return; }
-  if (aliveI.length >= aliveInnocents) { setTimeout(() => endManga(room, 'impostors_win', []), RESULT_DISPLAY_DELAY_MS); return; }
-  aliveI.forEach(imp => imp.score++);
-  setTimeout(() => startClueRound(room), RESULT_DISPLAY_DELAY_MS);
+  emitRoom(r);
+  io.to(r.code).emit('imp:manga_started', { mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, impostorCount:r.impostorIds.size });
+  startClue(r);
+}
+function startClue(r){
+  r.status='imp_clue'; r.roundNumber++; r.votes=new Map();
+  r.clueOrder = shuffle(alive(r)).map(p=>p.id); r.clueTurnIndex=0;
+  io.to(r.code).emit('imp:round', { roundNumber:r.roundNumber, currentTurnPlayerId:r.clueOrder[0]||null });
+  advClue(r);
+}
+function advClue(r){
+  while (r.status==='imp_clue' && r.clueTurnIndex<r.clueOrder.length && !r.players.get(r.clueOrder[r.clueTurnIndex])?.connected) r.clueTurnIndex++;
+  if (r.status==='imp_clue' && r.clueTurnIndex>=r.clueOrder.length) endClue(r);
+  else if (r.status==='imp_clue') io.to(r.code).emit('imp:turn', { currentTurnPlayerId:r.clueOrder[r.clueTurnIndex] });
+}
+function endClue(r){
+  if (r.cluePhaseEnding) return;
+  r.cluePhaseEnding = true;
+  io.to(r.code).emit('imp:clue_phase_ending');
+  setTimeout(()=>{ r.cluePhaseEnding=false; if(r.status==='imp_clue') startVote(r); }, 4500);
+}
+function startVote(r){
+  r.status='imp_vote'; r.votes=new Map();
+  io.to(r.code).emit('imp:voting', { candidates: alive(r).map(p=>({id:p.id,name:p.name})) });
+}
+function resolveVotes(r){
+  const tally=new Map();
+  for (const t of r.votes.values()) tally.set(t,(tally.get(t)||0)+1);
+  let mx=0; for (const c of tally.values()) mx=Math.max(mx,c);
+  const top=[...tally.entries()].filter(([,c])=>c===mx).map(([id])=>id);
+  if (top.length!==1){ io.to(r.code).emit('imp:tie',{tiedPlayers:top.map(id=>r.players.get(id)?.name)}); setTimeout(()=>startClue(r),4000); return; }
+  const elId=top[0], el=r.players.get(elId); el.alive=false;
+  const wasI=r.impostorIds.has(elId);
+  const voters=[...r.votes.entries()].filter(([,t])=>r.impostorIds.has(t)).map(([v])=>v);
+  io.to(r.code).emit('imp:elimination',{eliminatedName:el.name,wasImpostor:wasI});
+  r.status='imp_reveal';
+  const aliveI=alive(r).filter(p=>r.impostorIds.has(p.id));
+  const aliveInn=alive(r).length-aliveI.length;
+  if (aliveI.length===0){ setTimeout(()=>endManga(r,'impostors_caught',voters),3500); return; }
+  if (aliveI.length>=aliveInn){ setTimeout(()=>endManga(r,'impostors_win',[]),3500); return; }
+  aliveI.forEach(i=>i.score++);
+  setTimeout(()=>startClue(r),3500);
+}
+function endManga(r,result,voters){
+  r.status='imp_manga_over';
+  const names=[...r.impostorIds].map(id=>r.players.get(id)?.name).filter(Boolean);
+  if (result==='impostors_caught'){ for(const p of r.players.values()){ if(r.impostorIds.has(p.id))continue; p.score++; if(voters.includes(p.id))p.score++; } }
+  else if (result==='impostors_win'){ for(const id of r.impostorIds){const p=r.players.get(id); if(p?.alive)p.score+=3;} }
+  const isLast=r.mangaNumber>=r.impostorConfig.mangaCount;
+  io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
 }
 
-function endManga(room, result, votersForFinal) {
-  room.status = 'manga_over';
-  const impostorNames = [...room.impostorIds].map(id => room.players.get(id)?.name).filter(Boolean);
-  if (result === 'impostors_caught') {
-    for (const p of room.players.values()) {
-      if (room.impostorIds.has(p.id)) continue;
-      p.score++;
-      if (votersForFinal.includes(p.id)) p.score++;
-    }
-  } else if (result === 'impostors_win') {
-    for (const id of room.impostorIds) { const p = room.players.get(id); if (p?.alive) p.score += 3; }
-  }
-  const isLast = room.mangaNumber >= room.impostorConfig.mangaCount;
-  io.to(room.code).emit('manga:over', {
-    result, concept: room.concept, impostorNames,
-    mangaNumber: room.mangaNumber, mangaCount: room.impostorConfig.mangaCount,
-    isLastManga: isLast, scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
-  });
+/* ===================== MENTIROSO ===================== */
+function startLieSession(r){ r.lie.roundNumber=0; r.lie.turnStartIndex=0; startLieRound(r); }
+function startLieRound(r){
+  r.lie.roundNumber++;
+  r.lie.category=LIE_CATEGORIES[Math.floor(Math.random()*LIE_CATEGORIES.length)];
+  const ids=[...r.players.keys()]; const st=r.lie.turnStartIndex%ids.length;
+  r.lie.turnOrder=[...ids.slice(st),...ids.slice(0,st)];
+  r.lie.turnStartIndex=(r.lie.turnStartIndex+1)%ids.length;
+  r.lie.currentTurnIndex=0; r.lie.currentClaim=0; r.lie.lastClaimerId=null;
+  clearLieTimer(r); r.lie.challenge=null; r.status='lie_claim';
+  emitRoom(r);
+  io.to(r.code).emit('lie:round',{ roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, category:r.lie.category, mode:r.mentirosoConfig.mode, currentTurnPlayerId:lieTurnId(r) });
 }
-
-/* =========================================================
-   MENTIROSO — logica
-   ========================================================= */
-function startLieSession(room) { room.lie.roundNumber = 0; room.lie.turnStartIndex = 0; startLieRound(room); }
-
-function startLieRound(room) {
-  room.lie.roundNumber++;
-  room.lie.category = LIE_CATEGORIES[Math.floor(Math.random() * LIE_CATEGORIES.length)];
-  const allIds = [...room.players.keys()];
-  const start = room.lie.turnStartIndex % allIds.length;
-  room.lie.turnOrder = [...allIds.slice(start), ...allIds.slice(0, start)];
-  room.lie.turnStartIndex = (room.lie.turnStartIndex + 1) % allIds.length;
-  room.lie.currentTurnIndex = 0;
-  room.lie.currentClaim = 0;
-  room.lie.lastClaimerId = null;
-  clearLieChallengeTimer(room);
-  room.lie.challenge = null;
-  room.status = 'lie_claim';
-  emitRoomState(room);
-  io.to(room.code).emit('lie:round_started', {
-    roundNumber: room.lie.roundNumber, roundCount: room.mentirosoConfig.roundCount,
-    category: room.lie.category, mode: room.mentirosoConfig.mode,
-    currentTurnPlayerId: currentLieTurnId(room),
-  });
+const lieTurnId = r => r.lie.turnOrder[r.lie.currentTurnIndex]||null;
+function advLie(r){
+  const o=r.lie.turnOrder; if(!o.length)return; let t=0;
+  do{ r.lie.currentTurnIndex=(r.lie.currentTurnIndex+1)%o.length; t++; } while(!r.players.get(o[r.lie.currentTurnIndex])?.connected && t<=o.length);
+  io.to(r.code).emit('lie:turn',{currentTurnPlayerId:lieTurnId(r)});
 }
-
-function currentLieTurnId(room) { return room.lie.turnOrder[room.lie.currentTurnIndex] || null; }
-
-function advanceLieTurn(room) {
-  const order = room.lie.turnOrder;
-  if (!order.length) return;
-  let tries = 0;
-  do {
-    room.lie.currentTurnIndex = (room.lie.currentTurnIndex + 1) % order.length;
-    tries++;
-  } while (!room.players.get(order[room.lie.currentTurnIndex])?.connected && tries <= order.length);
-  io.to(room.code).emit('lie:turn_changed', { currentTurnPlayerId: currentLieTurnId(room) });
-}
-
-function clearLieChallengeTimer(room) {
-  if (room.lie.challenge?.timeoutHandle) { clearTimeout(room.lie.challenge.timeoutHandle); room.lie.challenge.timeoutHandle = null; }
-}
-
-function restartLieAnswerTimer(room) {
-  clearLieChallengeTimer(room);
-  const ch = room.lie.challenge;
-  if (!ch) return null;
-  const dur = room.mentirosoConfig.mode === 'voz' ? VOICE_ANSWER_TIMEOUT_MS : TEXT_ANSWER_TIMEOUT_MS;
-  ch.deadlineAt = Date.now() + dur;
-  ch.timeoutHandle = setTimeout(() => {
-    if (room.status === 'lie_naming' && room.lie.challenge === ch) resolveLieChallenge(room, false, 'timeout');
-  }, dur);
+function clearLieTimer(r){ if(r.lie.challenge?.timeoutHandle){clearTimeout(r.lie.challenge.timeoutHandle);r.lie.challenge.timeoutHandle=null;} }
+function restartLieTimer(r){
+  clearLieTimer(r); const ch=r.lie.challenge; if(!ch)return null;
+  const dur=r.mentirosoConfig.mode==='voz'?10000:15000;
+  ch.deadlineAt=Date.now()+dur;
+  ch.timeoutHandle=setTimeout(()=>{ if(r.status==='lie_naming'&&r.lie.challenge===ch) resolveLie(r,false,'timeout'); },dur);
   return ch.deadlineAt;
 }
-
-function transitionToFinalVote(room) {
-  clearLieChallengeTimer(room);
-  const ch = room.lie.challenge;
-  room.status = 'lie_final_vote';
-  ch.finalVotes = new Map();
-  const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
-  io.to(room.code).emit('lie:final_vote_needed', {
-    target: ch.target, mode: room.mentirosoConfig.mode,
-    namedSoFar: room.mentirosoConfig.mode === 'texto' ? ch.namedSoFar : null,
-    votesNeeded: eligible.length, eligibleVoterIds: eligible.map(p => p.id),
-  });
+function toFinalVote(r){
+  clearLieTimer(r); const ch=r.lie.challenge; r.status='lie_final_vote'; ch.finalVotes=new Map();
+  const elig=connected(r).filter(p=>p.id!==ch.accusedId);
+  io.to(r.code).emit('lie:final_vote',{ target:ch.target, mode:r.mentirosoConfig.mode, namedSoFar:r.mentirosoConfig.mode==='texto'?ch.namedSoFar:null, votesNeeded:elig.length, eligibleVoterIds:elig.map(p=>p.id) });
+}
+function resolveLie(r,success,reason){
+  clearLieTimer(r); const ch=r.lie.challenge; if(!ch)return;
+  const accused=r.players.get(ch.accusedId), accuser=r.players.get(ch.accuserId);
+  if(success){ if(accused)accused.score++; if(accuser)accuser.score--; }
+  else { if(accuser)accuser.score++; if(accused)accused.score--; }
+  r.status='lie_round_over';
+  const isLast=r.lie.roundNumber>=r.mentirosoConfig.roundCount;
+  io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
 }
 
-function resolveLieChallenge(room, success, reason) {
-  clearLieChallengeTimer(room);
-  const ch = room.lie.challenge;
-  if (!ch) return;
-  const accused = room.players.get(ch.accusedId);
-  const accuser = room.players.get(ch.accuserId);
-  if (success) { if (accused) accused.score++; if (accuser) accuser.score--; }
-  else { if (accuser) accuser.score++; if (accused) accused.score--; }
-  room.status = 'lie_round_over';
-  const isLast = room.lie.roundNumber >= room.mentirosoConfig.roundCount;
-  io.to(room.code).emit('lie:challenge_resolved', {
-    success, reason: reason || (success ? 'completed' : 'rejected'),
-    accusedName: accused?.name || '???', accuserName: accuser?.name || '???',
-    category: room.lie.category, target: ch.target, count: ch.count,
-    namedSoFar: ch.namedSoFar, mode: room.mentirosoConfig.mode,
-    roundNumber: room.lie.roundNumber, roundCount: room.mentirosoConfig.roundCount,
-    isLastRound: isLast, scores: publicPlayerList(room).sort((a, b) => b.score - a.score),
-  });
+/* ===================== SUBASTA ===================== */
+const ANALYSIS_S=15, BIDDING_S=15, EXT_S=5;
+function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
+function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,totalRealValue:0}; }
+function buildDeck(r){
+  const slots=FORMATIONS[r.subasta.formation], pc=r.players.size, pool={};
+  for(const p of POSITION_ORDER)pool[p]=[];
+  for(const c of SUBASTA_CARDS) if(pool[c.position])pool[c.position].push(c);
+  const deck=[];
+  for(const pos of POSITION_ORDER){ const n=(slots[pos]||0)*pc; if(!n)continue; deck.push(...shuffle(pool[pos]).slice(0,Math.min(n,pool[pos].length))); }
+  return deck.map(c=>({...c}));
 }
-
-/* =========================================================
-   SUBASTA FUTBOLERA — logica
-   ========================================================= */
-function subastaPlayerState(budget, skipLimit) {
-  const team = {};
-  for (const pos of POSITION_ORDER) team[pos] = [];
-  return { budget, skipsLeft: skipLimit, team, totalRealValue: 0 };
-}
-
-function buildSubastaDeck(room) {
-  // Las cartas se agrupan y ordenan POR POSICIÓN (orden de POSITION_ORDER).
-  // Dentro de cada posición van barajadas. No se avanza de posición hasta terminar la anterior.
-  const formation = room.subasta.formation;
-  const slots = FORMATIONS[formation];
-  const playerCount = room.players.size;
-  const pool = {};
-  for (const pos of POSITION_ORDER) pool[pos] = [];
-  for (const card of SUBASTA_CARDS) {
-    if (pool[card.position]) pool[card.position].push(card);
+function showCard(r){
+  const s=r.subasta, card=s.deck[s.currentCardIndex];
+  if(!card){console.error('[Subasta] sin carta',s.currentCardIndex);return;}
+  clearSubTimer(r);
+  s.currentCard=card; s.bids=new Map(); s.highestBid=null; s.auctionPhase='analysis'; s.secondsLeft=ANALYSIS_S;
+  const slots=FORMATIONS[s.formation]; let elig=0;
+  for(const [pid] of r.players.entries()){
+    const ps=s.playerState.get(pid);
+    if(!ps){s.bids.set(pid,{amount:null,skip:false,eligible:false,responded:true});continue;}
+    const need=ps.team[card.position].length<slots[card.position];
+    const afford=ps.budget>=card.startingPrice;
+    const e=need&&afford;
+    s.bids.set(pid,{amount:null,skip:false,eligible:e,responded:!e});
+    if(e)elig++;
   }
-  const deck = [];
-  for (const pos of POSITION_ORDER) {
-    const count = slots[pos] || 0;
-    if (count === 0) continue;
-    const needed = count * playerCount;
-    const available = shuffle(pool[pos]);
-    const chosen = available.slice(0, Math.min(needed, available.length));
-    deck.push(...chosen); // ya en orden de posición; dentro barajadas
-  }
-  const result = deck.map(card => ({ ...card }));
-  console.log('[Subasta] Deck por posición:', result.length, 'cartas,', playerCount, 'jugadores,', formation);
-  return result;
+  r.status='subasta_play'; s.totalEligible=elig;
+  for(const [pid,bid] of s.bids.entries())
+    io.to(pid).emit('sub:eligibility',{ eligible:bid.eligible, skipsLeft:s.playerState.get(pid)?.skipsLeft??0 });
+  io.to(r.code).emit('sub:card',{ cardIndex:s.currentCardIndex, totalCards:s.deck.length, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:'analysis', secondsLeft:s.secondsLeft, totalEligible:elig });
+  startSubClock(r);
 }
-
-function getPositionsFilled(ps, slots) {
-  const filled = {};
-  for (const [pos, count] of Object.entries(slots)) {
-    filled[pos] = ps.team[pos].length >= count;
-  }
-  return filled;
+function subSnapshot(r){
+  const s=r.subasta, card=s.currentCard; if(!card)return null;
+  return { cardIndex:s.currentCardIndex, totalCards:s.deck.length, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:s.auctionPhase, secondsLeft:s.secondsLeft, highestBid:s.highestBid, totalEligible:s.totalEligible };
 }
-
-const ANALYSIS_DURATION = 15; // segundos
-const BIDDING_DURATION = 15;  // segundos
-const LAST_SECOND_EXTENSION = 5; // segundos
-
-// ============================================================
-//  RELOJ AUTORITATIVO DEL SERVIDOR
-//  Un solo interval por sala. Cada segundo emite la fase y los
-//  segundos restantes. Los clientes SOLO muestran lo que llega.
-// ============================================================
-function clearSubastaBidTimer(room) {
-  if (subastaTimers.has(room.code)) {
-    clearInterval(subastaTimers.get(room.code));
-    subastaTimers.delete(room.code);
-  }
-}
-
-function showSubastaCard(room) {
-  const sub = room.subasta;
-  const card = sub.deck[sub.currentCardIndex];
-  if (!card) { console.error('[Subasta] Carta no encontrada:', sub.currentCardIndex); return; }
-
-  clearSubastaBidTimer(room);
-  sub.currentCard = card;
-  sub.bids = new Map();
-  sub.highestBid = null;
-  sub.auctionPhase = 'analysis';
-  sub.secondsLeft = ANALYSIS_DURATION;
-
-  const slots = FORMATIONS[sub.formation];
-  let totalEligible = 0;
-  for (const [pid] of room.players.entries()) {
-    const ps = sub.playerState.get(pid);
-    if (!ps) { sub.bids.set(pid, { amount: null, skip: false, eligible: false, responded: true }); continue; }
-    const posNeeded = ps.team[card.position].length < slots[card.position];
-    const canAfford = ps.budget >= card.startingPrice;
-    const eligible = posNeeded && canAfford;
-    sub.bids.set(pid, { amount: null, skip: false, eligible, responded: !eligible });
-    if (eligible) totalEligible++;
-  }
-
-  room.status = 'subasta_bidding'; // un solo status para toda la subasta de la carta
-  sub.totalEligible = totalEligible;
-
-  // Info privada para cada jugador (elegibilidad)
-  for (const [pid, bid] of sub.bids.entries()) {
-    io.to(pid).emit('subasta:card_shown_private', {
-      eligible: bid.eligible,
-      skipsLeft: sub.playerState.get(pid)?.skipsLeft ?? 0,
-      wikiTitle: card.wikiTitle,
-      position: card.position,
-      startingPrice: card.startingPrice,
-    });
-  }
-
-  // Broadcast inicial de la carta
-  io.to(room.code).emit('subasta:card_shown', {
-    cardIndex: sub.currentCardIndex,
-    totalCards: sub.deck.length,
-    position: card.position,
-    startingPrice: card.startingPrice,
-    wikiTitle: card.wikiTitle,
-    phase: 'analysis',
-    secondsLeft: sub.secondsLeft,
-    totalEligible,
-  });
-
-  startSubastaClock(room);
-}
-
-// Devuelve un snapshot del estado actual de la carta (para re-sincronizar clientes)
-function subastaCardSnapshot(room) {
-  const sub = room.subasta;
-  const card = sub.currentCard;
-  if (!card) return null;
-  return {
-    cardIndex: sub.currentCardIndex,
-    totalCards: sub.deck.length,
-    position: card.position,
-    startingPrice: card.startingPrice,
-    wikiTitle: card.wikiTitle,
-    phase: sub.auctionPhase,
-    secondsLeft: sub.secondsLeft,
-    highestBid: sub.highestBid,
-    totalEligible: sub.totalEligible,
-  };
-}
-
-function startSubastaClock(room) {
-  clearSubastaBidTimer(room);
-  const code = room.code;
-  const iv = setInterval(() => {
-    const r = rooms.get(code);
-    if (!r || r.status !== 'subasta_bidding') {
-      clearInterval(iv);
-      subastaTimers.delete(code);
-      return;
-    }
-    const sub = r.subasta;
-    sub.secondsLeft -= 1;
-
-    // Emitir tick a TODOS: misma fuente de verdad para host y celulares
-    io.to(code).emit('subasta:tick', {
-      phase: sub.auctionPhase,
-      secondsLeft: Math.max(0, sub.secondsLeft),
-    });
-
-    if (sub.secondsLeft <= 0) {
-      if (sub.auctionPhase === 'analysis') {
-        // Pasar a fase de puja
-        sub.auctionPhase = 'bidding';
-        sub.secondsLeft = BIDDING_DURATION;
-        io.to(code).emit('subasta:bidding_phase', {
-          secondsLeft: sub.secondsLeft,
-          highestBid: sub.highestBid,
-        });
+function startSubClock(r){
+  clearSubTimer(r); const code=r.code;
+  const iv=setInterval(()=>{
+    const room=rooms.get(code);
+    if(!room||room.status!=='subasta_play'){clearInterval(iv);timers.delete(code);return;}
+    const s=room.subasta; s.secondsLeft--;
+    io.to(code).emit('sub:tick',{phase:s.auctionPhase,secondsLeft:Math.max(0,s.secondsLeft)});
+    if(s.secondsLeft<=0){
+      if(s.auctionPhase==='analysis'){
+        s.auctionPhase='bidding'; s.secondsLeft=BIDDING_S;
+        io.to(code).emit('sub:bidding_open',{secondsLeft:s.secondsLeft});
       } else {
-        // Fin de la puja: resolver
-        clearInterval(iv);
-        subastaTimers.delete(code);
-        try { resolveSubastaCard(r); }
-        catch(e) { console.error('[Subasta] resolveSubastaCard error:', e); }
+        clearInterval(iv); timers.delete(code);
+        try{ resolveCard(room); }catch(e){console.error('[Subasta]',e);}
       }
     }
-  }, 1000);
-  subastaTimers.set(code, iv);
+  },1000);
+  timers.set(code,iv);
 }
-
-function checkAllEligibleResponded(room) {
-  for (const bid of room.subasta.bids.values()) {
-    if (bid.eligible && !bid.responded) return false;
+function checkAllResponded(r){ for(const b of r.subasta.bids.values()) if(b.eligible&&!b.responded)return false; return true; }
+function resolveCard(r){
+  if(r.status!=='subasta_play')return;
+  clearSubTimer(r);
+  const s=r.subasta, card=s.currentCard, bids=s.bids;
+  const valid=[], noResp=[];
+  for(const [pid,b] of bids.entries()){
+    if(!b.eligible||b.skip)continue;
+    if(b.amount!==null&&b.amount>=card.startingPrice) valid.push({playerId:pid,amount:b.amount});
+    else if(!b.responded||b.amount===null) noResp.push(pid);
   }
-  return true;
-}
-
-function resolveSubastaCard(room) {
-  // Guard: evitar doble resolución (timer + todos-respondieron)
-  if (room.status !== 'subasta_bidding') {
-    console.log('[Subasta] resolveSubastaCard ignorado: status=' + room.status);
-    return;
-  }
-  clearSubastaBidTimer(room);
-  const sub = room.subasta;
-  const card = sub.currentCard;
-  if (!card) {
-    console.error('[Subasta] resolveSubastaCard: currentCard es null, abortando');
-    return;
-  }
-  const bids = sub.bids;
-
-  const validBids = [];
-  const noResponse = [];
-
-  for (const [pid, bid] of bids.entries()) {
-    if (!bid.eligible) continue;
-    if (bid.skip) continue;
-    if (bid.amount !== null && bid.amount >= card.startingPrice) {
-      validBids.push({ playerId: pid, amount: bid.amount });
-    } else if (!bid.responded || bid.amount === null) {
-      noResponse.push(pid);
-    }
-  }
-
   let result;
-
-  if (validBids.length > 0) {
-    const maxAmt = Math.max(...validBids.map(b => b.amount));
-    const tied = validBids.filter(b => b.amount === maxAmt);
-    const winner = tied[Math.floor(Math.random() * tied.length)];
-    assignSubastaCard(room, winner.playerId, winner.amount);
-    result = { type: 'bid', winnerId: winner.playerId, amount: winner.amount, allBids: validBids };
-  } else if (noResponse.length > 0) {
-    const winnerId = noResponse[Math.floor(Math.random() * noResponse.length)];
-    assignSubastaCard(room, winnerId, card.startingPrice);
-    result = { type: 'lottery', winnerId, amount: card.startingPrice, pool: noResponse };
-  } else {
-    result = { type: 'discard' };
+  if(valid.length>0){
+    const mx=Math.max(...valid.map(b=>b.amount));
+    const tied=valid.filter(b=>b.amount===mx);
+    const w=tied[Math.floor(Math.random()*tied.length)];
+    assignCard(r,w.playerId,w.amount); result={type:'bid',winnerId:w.playerId,amount:w.amount};
+  } else if(noResp.length>0){
+    const w=noResp[Math.floor(Math.random()*noResp.length)];
+    assignCard(r,w,card.startingPrice); result={type:'lottery',winnerId:w,amount:card.startingPrice};
+  } else result={type:'discard'};
+  r.status='subasta_card_result'; s.resolvedCards.push({card,result});
+  const bidLog=[];
+  for(const [pid,b] of bids.entries()){
+    const nm=r.players.get(pid)?.name; if(!nm||!b.eligible)continue;
+    bidLog.push({name:nm, action:b.skip?'skip':b.amount!==null?`$${b.amount}M`:'sin pujar', isWinner:result.winnerId===pid});
   }
-
-  room.status = 'subasta_card_result';
-  sub.resolvedCards.push({ card, result });
-
-  // Construir log de pujas para mostrar
-  const bidLog = [];
-  for (const [pid, bid] of bids.entries()) {
-    const name = room.players.get(pid)?.name;
-    if (!name) continue;
-    if (!bid.eligible) continue;
-    bidLog.push({
-      name,
-      action: bid.skip ? 'skip' : bid.amount !== null ? `$${bid.amount}M` : 'sin respuesta',
-      isWinner: result.winnerId === pid,
-    });
+  bidLog.sort((a,b)=>(b.isWinner?1:0)-(a.isWinner?1:0));
+  io.to(r.code).emit('sub:card_resolved',{ cardName:card.name, cardLabel:card.label, cardPosition:card.position, positionLabel:POSITION_LABELS[card.position], cardWikiTitle:card.wikiTitle, cardTroll:card.troll, result, winnerName:result.winnerId?r.players.get(result.winnerId)?.name:null, bidLog, isLastCard:s.currentCardIndex>=s.deck.length-1 });
+}
+function assignCard(r,pid,amount){
+  const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return;
+  ps.budget-=amount; ps.team[card.position].push({cardId:card.id,amountPaid:amount}); ps.totalRealValue+=card.realValue;
+}
+function endSubasta(r){
+  r.subasta.phase='over'; r.status='subasta_over';
+  const s=r.subasta;
+  const teamCards=new Map(); for(const [pid] of r.players.entries())teamCards.set(pid,[]);
+  for(const {card,result} of s.resolvedCards){
+    if(result.winnerId&&teamCards.has(result.winnerId))
+      teamCards.get(result.winnerId).push({name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],realValue:card.realValue,amountPaid:result.amount,troll:card.troll});
   }
-  bidLog.sort((a, b) => {
-    if (a.isWinner) return -1;
-    if (b.isWinner) return 1;
-    return 0;
-  });
-
-  io.to(room.code).emit('subasta:card_resolved', {
-    // Identidad del jugador revelada inmediatamente
-    cardName: card.name,
-    cardLabel: card.label,
-    cardPosition: card.position,
-    cardWikiTitle: card.wikiTitle, // cliente carga imagen revelada
-    cardTroll: card.troll,
-    cardStartingPrice: card.startingPrice,
-    // Valor real OCULTO hasta el final
-    result,
-    winnerName: result.winnerId ? room.players.get(result.winnerId)?.name : null,
-    bidLog,
-    isLastCard: sub.currentCardIndex >= sub.deck.length - 1,
-  });
+  const scores=[];
+  for(const [pid,ps] of s.playerState.entries()){
+    const pl=r.players.get(pid); if(!pl)continue;
+    const cards=teamCards.get(pid)||[];
+    scores.push({id:pid,name:pl.name,totalRealValue:cards.reduce((a,c)=>a+c.realValue,0),budgetLeft:ps.budget,cards});
+  }
+  scores.sort((a,b)=>b.totalRealValue-a.totalRealValue);
+  scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
+  io.to(r.code).emit('sub:game_over',{scores,formation:s.formation});
+}
+function startFormationVote(r){
+  const s=r.subasta; s.phase='formation_vote'; s.formationVotes=new Map(); r.status='subasta_formation';
+  emitRoom(r);
+  io.to(r.code).emit('sub:formation_vote',{formations:ALL_FORMATIONS,deadlineAt:Date.now()+45000});
+  s.formationTimer=setTimeout(()=>resolveFormationVote(r),45000);
+}
+function resolveFormationVote(r){
+  const s=r.subasta; if(s.formationTimer){clearTimeout(s.formationTimer);s.formationTimer=null;}
+  if (s.phase!=='formation_vote') return;
+  const tally=new Map();
+  for(const f of s.formationVotes.values())tally.set(f,(tally.get(f)||0)+1);
+  let mx=0; for(const v of tally.values())mx=Math.max(mx,v);
+  const top=[...tally.keys()].filter(f=>tally.get(f)===mx);
+  s.formation = top.length?top[Math.floor(Math.random()*top.length)]:ALL_FORMATIONS[Math.floor(Math.random()*ALL_FORMATIONS.length)];
+  s.phase='auction';
+  io.to(r.code).emit('sub:formation_decided',{formation:s.formation});
+  for(const [pid] of r.players.entries()) s.playerState.set(pid,subPlayerState(r.subastaConfig.budget,r.subastaConfig.skipLimit));
+  s.deck=buildDeck(r); s.currentCardIndex=0;
+  setTimeout(()=>showCard(r),1500);
 }
 
-function assignSubastaCard(room, playerId, amount) {
-  const sub = room.subasta;
-  const card = sub.currentCard;
-  const ps = sub.playerState.get(playerId);
-  if (!ps) return;
-  ps.budget -= amount;
-  ps.team[card.position].push({ cardId: card.id, amountPaid: amount, realValue: null }); // realValue hidden until reveal
-  ps.totalRealValue += card.realValue;
-}
-
-function buildFinalScores(room) {
-  const sub = room.subasta;
-  const scores = [];
-  for (const [pid, ps] of sub.playerState.entries()) {
-    const player = room.players.get(pid);
-    if (!player) continue;
-    scores.push({
-      id: pid,
-      name: player.name,
-      totalRealValue: ps.totalRealValue,
-      budgetLeft: ps.budget,
-      team: ps.team,
-    });
-  }
-  return scores.sort((a, b) => b.totalRealValue - a.totalRealValue);
-}
-
-/* =========================================================
-   SOCKET.IO
-   ========================================================= */
+/* ===================== SOCKET.IO ===================== */
 io.on('connection', socket => {
-  socket.on('host:create_room', (_p, cb) => {
-    const code = generateRoomCode();
-    const room = newRoom(code, socket.id);
-    rooms.set(code, room);
-    socket.join(code);
-    cb({ ok: true, code, impostorConfig: room.impostorConfig, mentirosoConfig: room.mentirosoConfig, subastaConfig: room.subastaConfig, categories: ALL_CATEGORIES, formations: ALL_FORMATIONS });
+
+  socket.on('tv:watch', ({ code }, cb) => {
+    const r=rooms.get((code||'').toUpperCase());
+    if(!r){cb&&cb({ok:false});return;}
+    socket.join(r.code);
+    cb&&cb({ok:true});
+    emitRoom(r); // mandar estado actual inmediatamente
+  });
+
+  socket.on('player:create_room', ({ name }, cb) => {
+    const trimmed=(name||'').trim().slice(0,20);
+    if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
+    const code=genCode();
+    const room=newRoom(code,socket.id);
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
+    rooms.set(code,room);
+    socket.join(code); socket.data.roomCode=code;
+    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
+    emitRoom(room);
   });
 
   socket.on('player:join_room', ({ code, name }, cb) => {
-    const room = rooms.get((code || '').toUpperCase());
-    if (!room) { cb({ ok: false, error: 'Sala no encontrada. Revisa el código.' }); return; }
-    if (room.status !== 'lobby') { cb({ ok: false, error: 'La partida ya empezó, espera a la siguiente.' }); return; }
-    const trimmed = (name || '').trim().slice(0, 20);
-    if (!trimmed) { cb({ ok: false, error: 'Ingresa un nombre.' }); return; }
-    if ([...room.players.values()].some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      cb({ ok: false, error: 'Ese nombre ya está en uso.' }); return;
-    }
-    room.players.set(socket.id, { id: socket.id, name: trimmed, score: 0, alive: true, connected: true });
-    socket.join(room.code);
-    socket.data.roomCode = room.code;
-    cb({ ok: true, code: room.code, playerId: socket.id });
-    emitRoomState(room);
+    const room=rooms.get((code||'').toUpperCase());
+    if(!room){cb({ok:false,error:'Sala no encontrada.'});return;}
+    if(room.status!=='lobby'){cb({ok:false,error:'La partida ya empezó.'});return;}
+    const trimmed=(name||'').trim().slice(0,20);
+    if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
+    if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
+    socket.join(room.code); socket.data.roomCode=room.code;
+    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
+    emitRoom(room);
   });
 
-  socket.on('host:select_game', ({ code, gameType }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-    if (!['impostor','mentiroso','subasta'].includes(gameType)) return;
-    room.gameType = gameType;
-    emitRoomState(room);
+  socket.on('host:select_game', ({code,gameType}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(!['impostor','mentiroso','subasta'].includes(gameType))return;
+    r.gameType=gameType; emitRoom(r);
+  });
+  socket.on('host:update_impostor_config', ({code,impostorCount,mangaCount,categories}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(Number.isInteger(impostorCount))r.impostorConfig.impostorCount=Math.min(Math.max(1,impostorCount),maxImpostorsFor(r.players.size));
+    if(Number.isInteger(mangaCount))r.impostorConfig.mangaCount=Math.min(Math.max(1,mangaCount),20);
+    if(Array.isArray(categories)){const v=categories.filter(c=>ALL_CATEGORIES.includes(c));r.impostorConfig.categories=v.length?v:ALL_CATEGORIES.slice();}
+    emitRoom(r);
+  });
+  socket.on('host:update_mentiroso_config', ({code,roundCount,mode}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(Number.isInteger(roundCount))r.mentirosoConfig.roundCount=Math.min(Math.max(1,roundCount),20);
+    if(mode==='voz'||mode==='texto')r.mentirosoConfig.mode=mode;
+    emitRoom(r);
+  });
+  socket.on('host:update_subasta_config', ({code,budget,skipLimit}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(Number.isInteger(budget)&&budget>=10)r.subastaConfig.budget=Math.min(budget,9999);
+    if(Number.isInteger(skipLimit)&&skipLimit>=0)r.subastaConfig.skipLimit=Math.min(skipLimit,20);
+    emitRoom(r);
   });
 
-  socket.on('host:update_impostor_config', ({ code, impostorCount, mangaCount, categories }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-    if (Number.isInteger(impostorCount)) room.impostorConfig.impostorCount = Math.min(Math.max(1, impostorCount), maxImpostorsFor(room.players.size));
-    if (Number.isInteger(mangaCount)) room.impostorConfig.mangaCount = Math.min(Math.max(1, mangaCount), 20);
-    if (Array.isArray(categories)) { const v = categories.filter(c => ALL_CATEGORIES.includes(c)); room.impostorConfig.categories = v.length ? v : ALL_CATEGORIES.slice(); }
-    emitRoomState(room);
+  socket.on('host:start_match', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||!r.gameType)return;
+    if(r.players.size<MIN_PLAYERS[r.gameType])return;
+    if(r.gameType==='impostor'){r.mangaNumber=1;startManga(r);}
+    else if(r.gameType==='mentiroso'){startLieSession(r);}
+    else if(r.gameType==='subasta'){startFormationVote(r);}
   });
 
-  socket.on('host:update_mentiroso_config', ({ code, roundCount, mode }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-    if (Number.isInteger(roundCount)) room.mentirosoConfig.roundCount = Math.min(Math.max(1, roundCount), 20);
-    if (mode === 'voz' || mode === 'texto') room.mentirosoConfig.mode = mode;
-    emitRoomState(room);
+  // El Impostor
+  socket.on('host:next_manga', ({code}) => { const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.gameType!=='impostor')return; if(r.mangaNumber>=r.impostorConfig.mangaCount)return; r.mangaNumber++; startManga(r); });
+  socket.on('player:submit_clue', ({code,word}) => {
+    const r=rooms.get(code); if(!r||r.status!=='imp_clue'||r.clueOrder[r.clueTurnIndex]!==socket.id)return;
+    const clean=(word||'').trim(); if(!clean)return; const n=norm(clean);
+    if(r.usedClues.includes(n)){socket.emit('imp:clue_rejected',{reason:'Esa palabra ya se usó.'});return;}
+    r.usedClues.push(n); const pl=r.players.get(socket.id);
+    io.to(r.code).emit('imp:clue',{name:pl.name,word:clean});
+    r.clueTurnIndex++; advClue(r);
+  });
+  socket.on('player:submit_vote', ({code,targetId}) => {
+    const r=rooms.get(code); if(!r||r.status!=='imp_vote')return;
+    const v=r.players.get(socket.id); if(!v?.alive||!r.players.get(targetId)?.alive)return;
+    r.votes.set(socket.id,targetId);
+    io.to(r.code).emit('imp:vote_count',{votesIn:r.votes.size,votesNeeded:connectedAlive(r).length});
+    if(r.votes.size>=connectedAlive(r).length)resolveVotes(r);
   });
 
-  socket.on('host:update_subasta_config', ({ code, budget, timerSeconds, skipLimit }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.status !== 'lobby') return;
-    if (Number.isInteger(budget) && budget >= 10) room.subastaConfig.budget = Math.min(budget, 999);
-    if (Number.isInteger(timerSeconds) && timerSeconds >= 5) room.subastaConfig.timerSeconds = Math.min(timerSeconds, 120);
-    if (Number.isInteger(skipLimit) && skipLimit >= 0) room.subastaConfig.skipLimit = Math.min(skipLimit, 20);
-    emitRoomState(room);
+  // Mentiroso
+  socket.on('host:next_lie_round', ({code}) => { const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.gameType!=='mentiroso')return; if(r.lie.roundNumber>=r.mentirosoConfig.roundCount)return; startLieRound(r); });
+  socket.on('player:make_claim', ({code,amount}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_claim'||lieTurnId(r)!==socket.id)return;
+    const n=Number(amount); if(!Number.isInteger(n)||n<=r.lie.currentClaim||n<1||n>300){socket.emit('lie:claim_rejected',{reason:`Debe ser mayor a ${r.lie.currentClaim}.`});return;}
+    r.lie.currentClaim=n; r.lie.lastClaimerId=socket.id;
+    io.to(r.code).emit('lie:claim',{name:r.players.get(socket.id)?.name,amount:n});
+    advLie(r);
   });
-
-  socket.on('host:start_match', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || !room.gameType) return;
-    const min = minPlayersFor(room.gameType);
-    if (room.players.size < min) return;
-
-    if (room.gameType === 'impostor') { room.mangaNumber = 1; startNewManga(room); }
-    else if (room.gameType === 'mentiroso') { startLieSession(room); }
-    else if (room.gameType === 'subasta') { startFormationVote(room); }
+  socket.on('player:accuse_liar', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_claim'||lieTurnId(r)!==socket.id)return;
+    if(r.lie.currentClaim<=0||!r.lie.lastClaimerId)return;
+    r.lie.challenge={accusedId:r.lie.lastClaimerId,accuserId:socket.id,target:r.lie.currentClaim,count:0,namedSoFar:[],deadlineAt:null,timeoutHandle:null,finalVotes:new Map()};
+    r.status='lie_naming'; const dl=restartLieTimer(r);
+    io.to(r.code).emit('lie:accused',{accuserId:socket.id,accuserName:r.players.get(socket.id)?.name,accusedId:r.lie.challenge.accusedId,accusedName:r.players.get(r.lie.challenge.accusedId)?.name,target:r.lie.currentClaim,category:r.lie.category,mode:r.mentirosoConfig.mode,deadlineAt:dl});
   });
-
-  // ---- El Impostor ----
-  socket.on('host:next_manga', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.gameType !== 'impostor') return;
-    if (room.mangaNumber >= room.impostorConfig.mangaCount) return;
-    room.mangaNumber++;
-    startNewManga(room);
-  });
-
-  socket.on('player:submit_clue', ({ code, word }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'clue' || room.clueOrder[room.clueTurnIndex] !== socket.id) return;
-    const clean = (word || '').trim();
-    if (!clean) return;
-    const norm = normalizeWord(clean);
-    if (room.usedClues.includes(norm)) { socket.emit('round:clue_rejected', { reason: 'Esa palabra ya se usó en esta partida.' }); return; }
-    room.usedClues.push(norm);
-    const player = room.players.get(socket.id);
-    room.clueLog.push({ playerId: socket.id, name: player.name, word: clean });
-    io.to(room.code).emit('round:clue_submitted', { playerId: socket.id, name: player.name, word: clean });
-    room.clueTurnIndex++;
-    advanceClueTurnIfDisconnected(room);
-  });
-
-  socket.on('player:submit_vote', ({ code, targetId }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'voting') return;
-    const voter = room.players.get(socket.id);
-    if (!voter?.alive || !room.players.get(targetId)?.alive) return;
-    room.votes.set(socket.id, targetId);
-    io.to(room.code).emit('round:vote_registered', { votesIn: room.votes.size, votesNeeded: connectedAlivePlayers(room).length });
-    if (room.votes.size >= connectedAlivePlayers(room).length) resolveVotes(room);
-  });
-
-  // ---- Mentiroso ----
-  socket.on('host:next_lie_round', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.gameType !== 'mentiroso') return;
-    if (room.lie.roundNumber >= room.mentirosoConfig.roundCount) return;
-    startLieRound(room);
-  });
-
-  socket.on('player:make_claim', ({ code, amount }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'lie_claim' || currentLieTurnId(room) !== socket.id) return;
-    const n = Number(amount);
-    if (!Number.isInteger(n) || n <= room.lie.currentClaim || n < 1 || n > MAX_CLAIM) {
-      socket.emit('lie:claim_rejected', { reason: `Debes decir un número entero mayor a ${room.lie.currentClaim}.` }); return;
-    }
-    room.lie.currentClaim = n;
-    room.lie.lastClaimerId = socket.id;
-    io.to(room.code).emit('lie:claim_made', { playerId: socket.id, name: room.players.get(socket.id)?.name, amount: n });
-    advanceLieTurn(room);
-  });
-
-  socket.on('player:accuse_liar', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'lie_claim' || currentLieTurnId(room) !== socket.id) return;
-    if (room.lie.currentClaim <= 0 || !room.lie.lastClaimerId) return;
-    const accuserId = socket.id;
-    const accusedId = room.lie.lastClaimerId;
-    room.lie.challenge = { accusedId, accuserId, target: room.lie.currentClaim, count: 0, namedSoFar: [], deadlineAt: null, timeoutHandle: null, finalVotes: new Map() };
-    room.status = 'lie_naming';
-    const deadlineAt = restartLieAnswerTimer(room);
-    io.to(room.code).emit('lie:accused', {
-      accuserId, accuserName: room.players.get(accuserId)?.name,
-      accusedId, accusedName: room.players.get(accusedId)?.name,
-      target: room.lie.currentClaim, category: room.lie.category,
-      mode: room.mentirosoConfig.mode, deadlineAt,
-    });
-  });
-
-  socket.on('player:mark_answer_valid', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'voz') return;
-    const ch = room.lie.challenge;
-    if (!ch || socket.id !== ch.accuserId) return;
+  socket.on('player:mark_answer', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_naming'||r.mentirosoConfig.mode!=='voz')return;
+    const ch=r.lie.challenge; if(!ch||socket.id!==ch.accuserId)return;
     ch.count++;
-    if (ch.count >= ch.target) { io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt: null }); transitionToFinalVote(room); return; }
-    const deadlineAt = restartLieAnswerTimer(room);
-    io.to(room.code).emit('lie:answer_marked', { count: ch.count, target: ch.target, deadlineAt });
+    if(ch.count>=ch.target){io.to(r.code).emit('lie:answer_marked',{count:ch.count,target:ch.target,deadlineAt:null});toFinalVote(r);return;}
+    const dl=restartLieTimer(r); io.to(r.code).emit('lie:answer_marked',{count:ch.count,target:ch.target,deadlineAt:dl});
+  });
+  socket.on('player:name_item', ({code,text}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_naming'||r.mentirosoConfig.mode!=='texto')return;
+    const ch=r.lie.challenge; if(!ch||socket.id!==ch.accusedId)return;
+    const clean=(text||'').trim(); if(!clean)return;
+    ch.namedSoFar.push(clean); ch.count++;
+    if(ch.count>=ch.target){io.to(r.code).emit('lie:item',{text:clean,count:ch.count,target:ch.target,deadlineAt:null});toFinalVote(r);return;}
+    const dl=restartLieTimer(r); io.to(r.code).emit('lie:item',{text:clean,count:ch.count,target:ch.target,deadlineAt:dl});
+  });
+  socket.on('player:vote_final', ({code,valid}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_final_vote')return;
+    const ch=r.lie.challenge; if(!ch||socket.id===ch.accusedId)return;
+    ch.finalVotes.set(socket.id,!!valid);
+    const elig=connected(r).filter(p=>p.id!==ch.accusedId);
+    io.to(r.code).emit('lie:final_progress',{votesIn:ch.finalVotes.size,votesNeeded:elig.length});
+    if(ch.finalVotes.size>=elig.length&&elig.length>0){let y=0,n=0;for(const v of ch.finalVotes.values()){if(v)y++;else n++;}resolveLie(r,y>=n,'vote');}
   });
 
-  socket.on('player:name_item', ({ code, text }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'lie_naming' || room.mentirosoConfig.mode !== 'texto') return;
-    const ch = room.lie.challenge;
-    if (!ch || socket.id !== ch.accusedId) return;
-    const clean = (text || '').trim();
-    if (!clean) return;
-    ch.namedSoFar.push(clean);
-    ch.count++;
-    if (ch.count >= ch.target) { io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt: null }); transitionToFinalVote(room); return; }
-    const deadlineAt = restartLieAnswerTimer(room);
-    io.to(room.code).emit('lie:item_submitted', { text: clean, count: ch.count, target: ch.target, deadlineAt });
+  // Subasta
+  socket.on('player:vote_formation', ({code,formation}) => {
+    const r=rooms.get(code); if(!r||r.subasta.phase!=='formation_vote'||!FORMATIONS[formation])return;
+    r.subasta.formationVotes.set(socket.id,formation);
+    io.to(r.code).emit('sub:formation_vote_cast',{name:r.players.get(socket.id)?.name,formation,votesIn:r.subasta.formationVotes.size,totalPlayers:r.players.size});
+    if(r.subasta.formationVotes.size>=r.players.size)resolveFormationVote(r);
+  });
+  socket.on('player:submit_bid', ({code,amount}) => {
+    const r=rooms.get(code); if(!r||r.status!=='subasta_play'||r.subasta.auctionPhase!=='bidding')return;
+    const s=r.subasta, bid=s.bids.get(socket.id); if(!bid||!bid.eligible||bid.responded)return;
+    const n=Number(amount), card=s.currentCard, ps=s.playerState.get(socket.id);
+    const minBid=s.highestBid?s.highestBid.amount+1:card.startingPrice, maxBid=ps?.budget??0;
+    if(!Number.isInteger(n)||n<minBid||n>maxBid){socket.emit('sub:bid_rejected',{reason:`Mínimo $${minBid}M, tienes $${maxBid}M.`});return;}
+    bid.amount=n; bid.responded=true;
+    s.highestBid={playerId:socket.id,name:r.players.get(socket.id)?.name,amount:n};
+    if(s.secondsLeft<=EXT_S){s.secondsLeft=EXT_S;io.to(r.code).emit('sub:timer_extended',{secondsLeft:s.secondsLeft});}
+    io.to(r.code).emit('sub:bid_public',{name:r.players.get(socket.id)?.name,amount:n,highestBid:s.highestBid});
+  });
+  socket.on('player:skip_card', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='subasta_play')return;
+    const s=r.subasta, bid=s.bids.get(socket.id); if(!bid||!bid.eligible||bid.responded)return;
+    const ps=s.playerState.get(socket.id);
+    if(ps&&ps.skipsLeft<=0){socket.emit('sub:bid_rejected',{reason:'Sin skips disponibles.'});return;}
+    bid.skip=true; bid.responded=true; if(ps)ps.skipsLeft--;
+    socket.emit('sub:skip_confirmed',{skipsLeft:ps?.skipsLeft??0});
+    io.to(r.code).emit('sub:skip_public',{name:r.players.get(socket.id)?.name});
+    if(checkAllResponded(r)&&!s.highestBid){clearSubTimer(r);resolveCard(r);}
+  });
+  socket.on('player:request_sub_sync', ({code}) => { const r=rooms.get(code); if(!r||r.status!=='subasta_play')return; const snap=subSnapshot(r); if(snap)socket.emit('sub:resync',snap); });
+  socket.on('host:next_subasta_card', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    const s=r.subasta;
+    if(s.currentCardIndex>=s.deck.length-1)endSubasta(r);
+    else{s.currentCardIndex++;showCard(r);}
   });
 
-  socket.on('player:vote_final_validity', ({ code, valid }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'lie_final_vote') return;
-    const ch = room.lie.challenge;
-    if (!ch || socket.id === ch.accusedId) return;
-    ch.finalVotes.set(socket.id, !!valid);
-    const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
-    io.to(room.code).emit('lie:final_vote_progress', { votesIn: ch.finalVotes.size, votesNeeded: eligible.length });
-    if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
-      let yes = 0, no = 0;
-      for (const v of ch.finalVotes.values()) { if (v) yes++; else no++; }
-      resolveLieChallenge(room, yes >= no, 'vote');
-    }
+  socket.on('host:new_session', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    clearLieTimer(r); clearSubTimer(r);
+    r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
+    r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
+    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[]};
+    for(const p of r.players.values()){p.alive=true;p.score=0;}
+    emitRoom(r);
   });
 
-  // ---- Subasta ----
-  socket.on('player:vote_formation', ({ code, formation }) => {
-    const room = rooms.get(code);
-    if (!room || room.subasta.phase !== 'formation_vote' || !FORMATIONS[formation]) return;
-    room.subasta.formationVotes.set(socket.id, formation);
-    io.to(room.code).emit('subasta:formation_vote_cast', {
-      playerId: socket.id, name: room.players.get(socket.id)?.name, formation,
-      votesIn: room.subasta.formationVotes.size, totalPlayers: room.players.size,
-    });
-    if (room.subasta.formationVotes.size >= room.players.size) resolveFormationVote(room);
-  });
-
-  socket.on('player:submit_bid', ({ code, amount }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'subasta_bidding' || room.subasta.auctionPhase !== 'bidding') return;
-    const sub = room.subasta;
-    const bid = sub.bids.get(socket.id);
-    if (!bid || !bid.eligible || bid.responded) return;
-    const n = Number(amount);
-    const card = sub.currentCard;
-    const ps = sub.playerState.get(socket.id);
-    const minBid = sub.highestBid ? sub.highestBid.amount + 1 : card.startingPrice;
-    const maxBid = ps?.budget ?? 0;
-    if (!Number.isInteger(n) || n < minBid || n > maxBid) {
-      socket.emit('subasta:bid_rejected', { reason: `La puja mínima es $${minBid}M. Tienes $${maxBid}M disponibles.` }); return;
-    }
-    bid.amount = n;
-    bid.responded = true;
-    sub.highestBid = { playerId: socket.id, name: room.players.get(socket.id)?.name, amount: n };
-
-    // Si quedan 5 segundos o menos, devolver el reloj a 5 segundos
-    if (sub.auctionPhase === 'bidding' && sub.secondsLeft <= LAST_SECOND_EXTENSION) {
-      sub.secondsLeft = LAST_SECOND_EXTENSION;
-      io.to(room.code).emit('subasta:timer_extended', { secondsLeft: sub.secondsLeft });
-    }
-
-    // Emitir puja pública para que todos la vean
-    io.to(room.code).emit('subasta:bid_public', {
-      playerId: socket.id,
-      name: room.players.get(socket.id)?.name,
-      amount: n,
-      highestBid: sub.highestBid,
-    });
-    // NOTA: ya no se resuelve por "todos respondieron". La carta se resuelve
-    // SOLO cuando el reloj llega a 0, para dar siempre chance de contra-pujar.
-  });
-
-  socket.on('player:skip_card', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'subasta_bidding') return;
-    const sub = room.subasta;
-    const bid = sub.bids.get(socket.id);
-    if (!bid || !bid.eligible || bid.responded) return;
-    const ps = sub.playerState.get(socket.id);
-    if (ps && ps.skipsLeft <= 0) { socket.emit('subasta:bid_rejected', { reason: 'Ya no tienes skips disponibles.' }); return; }
-    bid.skip = true;
-    bid.responded = true;
-    if (ps) ps.skipsLeft--;
-    socket.emit('subasta:skip_confirmed', { skipsLeft: ps?.skipsLeft ?? 0 });
-    io.to(room.code).emit('subasta:skip_public', {
-      name: room.players.get(socket.id)?.name,
-    });
-    // Resolución temprana SOLO si todos los elegibles ya respondieron Y nadie pujó
-    // (es decir, todos pasaron → descarte inmediato, no hay nada que esperar).
-    if (checkAllEligibleResponded(room) && !sub.highestBid) {
-      clearSubastaBidTimer(room);
-      resolveSubastaCard(room);
-    }
-  });
-
-  socket.on('player:request_subasta_sync', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || room.status !== 'subasta_bidding') return;
-    const snap = subastaCardSnapshot(room);
-    if (snap) socket.emit('subasta:resync', snap);
-  });
-
-  socket.on('host:force_resolve_card', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.status !== 'subasta_bidding') return;
-    console.log('[Subasta] Force resolve por host');
-    resolveSubastaCard(room);
-  });
-
-  socket.on('host:next_subasta_card', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId) return;
-    const sub = room.subasta;
-    if (sub.currentCardIndex >= sub.deck.length - 1) {
-      startFinalReveal(room);
-    } else {
-      sub.currentCardIndex++;
-      showSubastaCard(room);
-    }
-  });
-
-  socket.on('host:next_reveal', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId || room.subasta.phase !== 'final_reveal') return;
-    const sub = room.subasta;
-    sub.revealIndex = (sub.revealIndex || 0) + 1;
-    const entry = sub.resolvedCards[sub.revealIndex];
-    if (!entry) {
-      endSubasta(room);
-    } else {
-      io.to(room.code).emit('subasta:reveal_next', { entry, revealIndex: sub.revealIndex, totalCards: sub.resolvedCards.length });
-    }
-  });
-
-  socket.on('host:new_session', ({ code }) => {
-    const room = rooms.get(code);
-    if (!room || socket.id !== room.hostId) return;
-    clearLieChallengeTimer(room);
-    clearSubastaBidTimer(room);
-    room.status = 'lobby';
-    room.gameType = null;
-    room.concept = null;
-    room.impostorIds = new Set();
-    room.usedClues = [];
-    room.roundNumber = 0;
-    room.mangaNumber = 0;
-    room.lie = { roundNumber: 0, turnStartIndex: 0, category: null, turnOrder: [], currentTurnIndex: 0, currentClaim: 0, lastClaimerId: null, challenge: null };
-    room.subasta = { phase: 'config', formation: null, formationVotes: new Map(), formationVoteTimer: null, deck: [], currentCardIndex: -1, currentCard: null, auctionPhase: null, secondsLeft: 0, totalEligible: 0, bids: new Map(), playerState: new Map(), resolvedCards: [] };
-    for (const p of room.players.values()) { p.alive = true; p.score = 0; }
-    emitRoomState(room);
+  socket.on('player:rejoin', ({code,playerId}, cb) => {
+    // Permite reconectarse a una sala tras perder conexión
+    const r=rooms.get((code||'').toUpperCase());
+    if(!r){cb&&cb({ok:false});return;}
+    const existing=r.players.get(playerId);
+    if(existing){
+      // reasignar el socket
+      r.players.delete(playerId);
+      existing.id=socket.id; existing.connected=true;
+      if(r.hostId===playerId)r.hostId=socket.id;
+      r.players.set(socket.id,existing);
+      socket.join(r.code); socket.data.roomCode=r.code;
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id});
+      emitRoom(r);
+      if(r.status==='subasta_play'){const snap=subSnapshot(r);if(snap)socket.emit('sub:resync',snap);}
+    } else { cb&&cb({ok:false}); }
   });
 
   socket.on('disconnect', () => {
-    const code = socket.data.roomCode;
-    if (!code) return;
-    const room = rooms.get(code);
-    if (!room) return;
-    const player = room.players.get(socket.id);
-    if (player) {
-      if (room.status === 'lobby') { room.players.delete(socket.id); }
+    const code=socket.data.roomCode; if(!code)return;
+    const r=rooms.get(code); if(!r)return;
+    const p=r.players.get(socket.id);
+    if(p){
+      if(r.status==='lobby'){ r.players.delete(socket.id); reassignHostIfNeeded(r); }
       else {
-        player.connected = false;
-        if (room.status === 'clue' && room.clueOrder[room.clueTurnIndex] === socket.id) advanceClueTurnIfDisconnected(room);
-        if (room.status === 'voting' && room.votes.size >= connectedAlivePlayers(room).length && connectedAlivePlayers(room).length > 0) resolveVotes(room);
-        if (room.status === 'lie_claim' && currentLieTurnId(room) === socket.id) advanceLieTurn(room);
-        if (room.status === 'lie_final_vote' && room.lie.challenge) {
-          const ch = room.lie.challenge;
-          const eligible = connectedPlayers(room).filter(p => p.id !== ch.accusedId);
-          if (ch.finalVotes.size >= eligible.length && eligible.length > 0) {
-            let yes = 0, no = 0;
-            for (const v of ch.finalVotes.values()) { if (v) yes++; else no++; }
-            resolveLieChallenge(room, yes >= no, 'vote');
-          }
-        }
-        // En subasta, si un jugador se desconecta, el reloj del servidor sigue corriendo
-        // y resuelve la carta al llegar a 0. No forzamos resolución aquí.
-        if (room.status === 'subasta_bidding' && checkAllEligibleResponded(room) && !room.subasta.highestBid) {
-          clearSubastaBidTimer(room);
-          resolveSubastaCard(room);
-        }
+        p.connected=false;
+        if(r.status==='imp_clue'&&r.clueOrder[r.clueTurnIndex]===socket.id)advClue(r);
+        if(r.status==='imp_vote'&&r.votes.size>=connectedAlive(r).length&&connectedAlive(r).length>0)resolveVotes(r);
+        if(r.status==='lie_claim'&&lieTurnId(r)===socket.id)advLie(r);
+        if(r.status==='subasta_play'&&checkAllResponded(r)&&!r.subasta.highestBid){clearSubTimer(r);resolveCard(r);}
       }
-      emitRoomState(room);
+      emitRoom(r);
     }
-    if (socket.id === room.hostId && room.players.size === 0) rooms.delete(code);
+    if(r.players.size===0){clearSubTimer(r);clearLieTimer(r);rooms.delete(code);}
   });
 });
 
-/* =========================================================
-   SUBASTA — funciones auxiliares de fase
-   ========================================================= */
-function startFormationVote(room) {
-  const sub = room.subasta;
-  sub.phase = 'formation_vote';
-  sub.formationVotes = new Map();
-  room.status = 'subasta_formation_vote';
-  emitRoomState(room);
-  io.to(room.code).emit('subasta:formation_vote_started', {
-    formations: ALL_FORMATIONS,
-    timeoutMs: FORMATION_VOTE_TIMEOUT_MS,
-    deadlineAt: Date.now() + FORMATION_VOTE_TIMEOUT_MS,
-  });
-  sub.formationVoteTimer = setTimeout(() => resolveFormationVote(room), FORMATION_VOTE_TIMEOUT_MS);
-}
-
-function resolveFormationVote(room) {
-  const sub = room.subasta;
-  if (sub.formationVoteTimer) { clearTimeout(sub.formationVoteTimer); sub.formationVoteTimer = null; }
-  const tally = new Map();
-  for (const f of sub.formationVotes.values()) tally.set(f, (tally.get(f) || 0) + 1);
-  let maxV = 0;
-  for (const v of tally.values()) maxV = Math.max(maxV, v);
-  const top = [...tally.keys()].filter(f => tally.get(f) === maxV);
-  const formation = top.length ? top[Math.floor(Math.random() * top.length)] : ALL_FORMATIONS[Math.floor(Math.random() * ALL_FORMATIONS.length)];
-  sub.formation = formation;
-  room.subasta.phase = 'building_deck';
-  io.to(room.code).emit('subasta:formation_decided', { formation, votes: Object.fromEntries(tally) });
-  // Init player states
-  for (const [pid] of room.players.entries()) {
-    sub.playerState.set(pid, subastaPlayerState(room.subastaConfig.budget, room.subastaConfig.skipLimit));
-  }
-  sub.deck = buildSubastaDeck(room);
-  sub.currentCardIndex = 0;
-  sub.phase = 'auction';
-  showSubastaCard(room);
-}
-
-function startFinalReveal(room) {
-  clearSubastaBidTimer(room);
-  endSubasta(room);
-}
-
-function endSubasta(room) {
-  room.subasta.phase = 'over';
-  room.status = 'subasta_over';
-  const sub = room.subasta;
-  const slots = FORMATIONS[sub.formation];
-
-  // Construir equipos con nombres reales (de las cartas resueltas)
-  const teamCards = new Map(); // playerId -> array of card info with realValue
-  for (const [pid] of room.players.entries()) {
-    teamCards.set(pid, []);
-  }
-  for (const { card, result } of sub.resolvedCards) {
-    if (result.winnerId && teamCards.has(result.winnerId)) {
-      teamCards.get(result.winnerId).push({
-        name: card.name,
-        label: card.label,
-        position: card.position,
-        realValue: card.realValue,
-        amountPaid: result.amount,
-        troll: card.troll,
-      });
-    }
-  }
-
-  const scores = [];
-  for (const [pid, ps] of sub.playerState.entries()) {
-    const player = room.players.get(pid);
-    if (!player) continue;
-    const cards = teamCards.get(pid) || [];
-    const totalRealValue = cards.reduce((sum, c) => sum + c.realValue, 0);
-    scores.push({
-      id: pid, name: player.name, totalRealValue,
-      budgetLeft: ps.budget, cards,
-      totalCards: cards.length, totalSlots: 11,
-    });
-  }
-  scores.sort((a, b) => b.totalRealValue - a.totalRealValue);
-
-  scores.forEach((s, idx) => {
-    const p = room.players.get(s.id);
-    if (p) p.score += Math.max(0, scores.length - idx);
-  });
-
-  io.to(room.code).emit('subasta:game_over', { scores, formation: sub.formation, slots });
-}
-
-/* =========================================================
-   EXPRESS + ARRANQUE
-   ========================================================= */
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/host', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'host', 'index.html')));
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'player', 'index.html')));
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`412 corriendo en http://localhost:${PORT}`);
-});
+/* ===================== EXPRESS ===================== */
+app.use(express.static(path.join(__dirname,'public')));
+app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
+app.get('/',(_q,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
+server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));
