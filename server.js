@@ -65,7 +65,7 @@ function newRoom(code, hostId) {
       phase:'config', formation:null, formationVotes:new Map(),
       deck:[], currentCardIndex:-1, currentCard:null,
       auctionPhase:null, secondsLeft:0, totalEligible:0,
-      bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[],
+      bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[], rps:null, rpsTimer:null,
     },
   };
 }
@@ -274,6 +274,7 @@ function resolveCard(r){
   if(r.status!=='subasta_play')return;
   clearSubTimer(r);
   const s=r.subasta, card=s.currentCard, bids=s.bids;
+  const slots=FORMATIONS[s.formation];
   const valid=[], noResp=[];
   for(const [pid,b] of bids.entries()){
     if(!b.eligible||b.skip)continue;
@@ -282,17 +283,88 @@ function resolveCard(r){
   }
   let result;
   if(valid.length>0){
+    // Hubo pujas: gana la más alta
     const mx=Math.max(...valid.map(b=>b.amount));
     const tied=valid.filter(b=>b.amount===mx);
     const w=tied[Math.floor(Math.random()*tied.length)];
     assignCard(r,w.playerId,w.amount); result={type:'bid',winnerId:w.playerId,amount:w.amount};
-  } else if(noResp.length>0){
-    const w=noResp[Math.floor(Math.random()*noResp.length)];
-    assignCard(r,w,card.startingPrice); result={type:'lottery',winnerId:w,amount:card.startingPrice};
-  } else result={type:'discard'};
-  r.status='subasta_card_result'; s.resolvedCards.push({card,result});
+    finishResolveCard(r,card,result);
+  } else if(noResp.length>=2){
+    // Nadie pujó pero 2+ siguen "vivos" (no skipearon): piedra-papel-tijera, pierde uno y se la queda
+    startRPS(r,noResp,card);
+    return; // se resuelve async tras el PPT
+  } else if(noResp.length===1){
+    // Solo uno quedó sin skipear: se la lleva al precio inicial
+    assignCard(r,noResp[0],card.startingPrice); result={type:'forced',winnerId:noResp[0],amount:card.startingPrice};
+    finishResolveCard(r,card,result);
+  } else {
+    // Todos skipearon. ¿Alguien AÚN necesita esta posición?
+    const needers=[];
+    for(const [pid] of r.players.entries()){
+      const ps=s.playerState.get(pid);
+      if(ps && ps.team[card.position].length<slots[card.position] && ps.budget>=card.startingPrice) needers.push(pid);
+    }
+    if(needers.length>=2){ startRPS(r,needers,card); return; }
+    else if(needers.length===1){ assignCard(r,needers[0],card.startingPrice); result={type:'forced',winnerId:needers[0],amount:card.startingPrice}; finishResolveCard(r,card,result); }
+    else { result={type:'discard'}; finishResolveCard(r,card,result); } // nadie la necesita o nadie puede pagarla
+  }
+}
+
+function startRPS(r,playerIds,card){
+  const s=r.subasta;
+  s.rps={ card, players:playerIds, choices:new Map() };
+  r.status='subasta_rps';
+  io.to(r.code).emit('sub:rps_start',{
+    playerIds, playerNames:playerIds.map(id=>r.players.get(id)?.name),
+    cardName:card.name, positionLabel:POSITION_LABELS[card.position],
+  });
+  // Por si alguien no elige en 12s, elegir aleatorio por él
+  s.rpsTimer=setTimeout(()=>resolveRPS(r),12000);
+}
+
+function resolveRPS(r){
+  const s=r.subasta;
+  if(s.rpsTimer){clearTimeout(s.rpsTimer);s.rpsTimer=null;}
+  if(!s.rps)return;
+  const { card, players:ids, choices } = s.rps;
+  const opts=['piedra','papel','tijera'];
+  // Rellenar elecciones faltantes al azar
+  for(const id of ids) if(!choices.has(id)) choices.set(id,opts[Math.floor(Math.random()*3)]);
+
+  // Determinar PERDEDOR. Jugamos rondas: el que pierde contra todos / queda último.
+  // Mecánica simple para N jugadores: contar "derrotas" de cada quien y el de más derrotas pierde.
+  // Si hay empate de derrotas, se repite el PPT entre los empatados.
+  const beats={ piedra:'tijera', papel:'piedra', tijera:'papel' }; // beats[a]=b → a le gana a b
+  const losses=new Map(); ids.forEach(id=>losses.set(id,0));
+  for(let i=0;i<ids.length;i++) for(let j=0;j<ids.length;j++){
+    if(i===j)continue;
+    const a=choices.get(ids[i]), b=choices.get(ids[j]);
+    if(beats[a]===b) losses.set(ids[j],losses.get(ids[j])+1); // a le gana a b → b pierde
+  }
+  let maxL=-1; for(const v of losses.values())maxL=Math.max(maxL,v);
+  const losers=ids.filter(id=>losses.get(id)===maxL);
+
+  const choiceMap={}; ids.forEach(id=>choiceMap[r.players.get(id)?.name]=choices.get(id));
+
+  if(losers.length===1){
+    // Hay un perdedor claro: se queda con la carta al precio inicial
+    assignCard(r,losers[0],card.startingPrice);
+    const result={type:'rps',winnerId:losers[0],amount:card.startingPrice,choices:choiceMap};
+    io.to(r.code).emit('sub:rps_result',{ choices:choiceMap, loserName:r.players.get(losers[0])?.name, decided:true });
+    r.status='subasta_play'; // restaurar para finishResolveCard
+    setTimeout(()=>finishResolveCard(r,card,result),2500);
+  } else {
+    // Empate: repetir PPT solo entre los empatados
+    io.to(r.code).emit('sub:rps_result',{ choices:choiceMap, decided:false });
+    setTimeout(()=>{ if(rooms.get(r.code)) startRPS(r,losers,card); },2500);
+  }
+}
+
+function finishResolveCard(r,card,result){
+  const s=r.subasta;
+  r.status='subasta_card_result'; s.resolvedCards.push({card,result}); s.rps=null;
   const bidLog=[];
-  for(const [pid,b] of bids.entries()){
+  for(const [pid,b] of s.bids.entries()){
     const nm=r.players.get(pid)?.name; if(!nm||!b.eligible)continue;
     bidLog.push({name:nm, action:b.skip?'skip':b.amount!==null?`$${b.amount}M`:'sin pujar', isWinner:result.winnerId===pid});
   }
@@ -351,6 +423,8 @@ function resolveFormationVote(r){
   io.to(r.code).emit('sub:formation_decided',{formation:s.formation});
   for(const [pid] of r.players.entries()) s.playerState.set(pid,subPlayerState(r.subastaConfig.budget,r.subastaConfig.skipLimit));
   s.deck=buildDeck(r); s.currentCardIndex=0;
+  // Mandar los títulos de Wikipedia del deck para que los clientes precarguen las imágenes
+  io.to(r.code).emit('sub:prefetch',{ wikiTitles:[...new Set(s.deck.map(c=>c.wikiTitle))] });
   setTimeout(()=>showCard(r),1500);
 }
 
@@ -513,6 +587,14 @@ io.on('connection', socket => {
     io.to(r.code).emit('sub:skip_public',{name:r.players.get(socket.id)?.name});
     if(checkAllResponded(r)&&!s.highestBid){clearSubTimer(r);resolveCard(r);}
   });
+  socket.on('player:rps_choice', ({code,choice}) => {
+    const r=rooms.get(code); if(!r||r.status!=='subasta_rps'||!r.subasta.rps)return;
+    if(!['piedra','papel','tijera'].includes(choice))return;
+    if(!r.subasta.rps.players.includes(socket.id))return;
+    r.subasta.rps.choices.set(socket.id,choice);
+    io.to(r.code).emit('sub:rps_progress',{chosen:r.subasta.rps.choices.size,total:r.subasta.rps.players.length});
+    if(r.subasta.rps.choices.size>=r.subasta.rps.players.length) resolveRPS(r);
+  });
   socket.on('player:request_sub_sync', ({code}) => { const r=rooms.get(code); if(!r||r.status!=='subasta_play')return; const snap=subSnapshot(r); if(snap)socket.emit('sub:resync',snap); });
   socket.on('host:next_subasta_card', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
@@ -526,7 +608,7 @@ io.on('connection', socket => {
     clearLieTimer(r); clearSubTimer(r);
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
-    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[]};
+    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null};
     for(const p of r.players.values()){p.alive=true;p.score=0;}
     emitRoom(r);
   });

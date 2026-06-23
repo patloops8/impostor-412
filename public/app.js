@@ -19,7 +19,7 @@ socket.io.on('reconnect', () => { connBanner.classList.add('hidden'); });
 /* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-result','s-sub-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -253,17 +253,31 @@ $('btn-lie-next').addEventListener('click',()=>{ if(lieLastFinal)socket.emit('ho
 
 /* ===================== SUBASTA ===================== */
 const wikiCache=new Map();
+// Pide el thumbnail reducido a ~300px: mucho más liviano para móvil que la imagen completa.
+async function fetchWikiThumb(wikiTitle){
+  if(wikiCache.has(wikiTitle)) return wikiCache.get(wikiTitle);
+  try{
+    const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`);
+    const d=await res.json();
+    let u=d.thumbnail?.source||null;
+    // Wikipedia sirve thumbs con el ancho en la URL (…/NNNpx-…). Forzar 300px si se puede.
+    if(u) u=u.replace(/\/\d+px-/,'/300px-');
+    wikiCache.set(wikiTitle,u);
+    return u;
+  }catch{ wikiCache.set(wikiTitle,null); return null; }
+}
 async function loadSil(imgEl,phEl,phPosEl,wikiTitle,posName,revealed){
   if(!imgEl)return;
   if(!wikiTitle){ silPh(imgEl,phEl,phPosEl,posName); return; }
-  if(wikiCache.has(wikiTitle)){ const u=wikiCache.get(wikiTitle); if(u)applySil(imgEl,phEl,u,revealed);else silPh(imgEl,phEl,phPosEl,posName); return; }
-  try{ const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`); const d=await res.json(); const u=d.thumbnail?.source||null; wikiCache.set(wikiTitle,u); if(u)applySil(imgEl,phEl,u,revealed);else silPh(imgEl,phEl,phPosEl,posName); }
-  catch{ wikiCache.set(wikiTitle,null); silPh(imgEl,phEl,phPosEl,posName); }
+  const u=await fetchWikiThumb(wikiTitle);
+  if(u)applySil(imgEl,phEl,u,revealed); else silPh(imgEl,phEl,phPosEl,posName);
 }
+// Precarga: dispara los fetch de varios títulos en segundo plano (sin bloquear).
+function prefetchWiki(titles){ (titles||[]).forEach(t=>{ if(t&&!wikiCache.has(t)) fetchWikiThumb(t).catch(()=>{}); }); }
 function applySil(img,ph,url,rev){ img.className=rev?'silhouette-img revealed':'silhouette-img'; img.onerror=()=>{img.classList.add('hidden');if(ph)ph.classList.remove('hidden');}; img.src=url; img.classList.remove('hidden'); if(ph)ph.classList.add('hidden'); }
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
-let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false;
+let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
@@ -299,7 +313,8 @@ socket.on('sub:formation_vote',({formations,secondsLeft})=>{
 });
 socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
 socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
-socket.on('sub:formation_decided',({formation})=>{ $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:formation_decided',({formation})=>{ currentFormation=formation; $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:prefetch',({wikiTitles})=>{ prefetchWiki(wikiTitles); });
 
 socket.on('sub:card',({cardIndex,totalCards,position,positionLabel,startingPrice,wikiTitle,secondsLeft})=>{
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
@@ -366,6 +381,38 @@ socket.on('sub:bid_rejected',({reason})=>{ $('bid-error').textContent=reason; $(
 socket.on('sub:skip_confirmed',({skipsLeft})=>{ subState.skipsLeft=skipsLeft; updSubStats(); });
 socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHighest=highestBid.amount;$('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;} setSubCount(secondsLeft); updBidBtns(); if(phase==='bidding'&&subEligible)$('sub-can-bid').classList.remove('hidden'); });
 let subLast=false;
+// ===== Piedra-papel-tijera (cuando nadie quiere la carta) =====
+let rpsAmIn=false;
+socket.on('sub:rps_start',({playerIds,playerNames,cardName,positionLabel})=>{
+  stopSubClock();
+  rpsAmIn=playerIds.includes(myId);
+  $('sub-rps-title').textContent='Piedra, papel o tijera';
+  $('sub-rps-sub').textContent=`${cardName} (${positionLabel}) — el que pierde se la queda 😈`;
+  $('sub-rps-reveal').innerHTML='';
+  $('sub-rps-status').textContent='';
+  if(rpsAmIn){
+    $('sub-rps-choose').classList.remove('hidden');
+    $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=false;
+    $('sub-rps-status').textContent='Elige tu jugada';
+  } else {
+    $('sub-rps-choose').classList.add('hidden');
+    $('sub-rps-status').textContent='Esperando a: '+playerNames.join(', ');
+  }
+  show('s-sub-rps');
+});
+function rpsChoose(c){ $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=true; $('sub-rps-status').textContent='Elegiste. Esperando al rival...'; socket.emit('player:rps_choice',{code:roomCode,choice:c}); }
+$('rps-piedra').addEventListener('click',()=>rpsChoose('piedra'));
+$('rps-papel').addEventListener('click',()=>rpsChoose('papel'));
+$('rps-tijera').addEventListener('click',()=>rpsChoose('tijera'));
+socket.on('sub:rps_progress',({chosen,total})=>{ if(!rpsAmIn)$('sub-rps-status').textContent=`${chosen}/${total} ya eligieron...`; });
+const RPS_EMOJI={piedra:'🪨',papel:'📄',tijera:'✂️'};
+socket.on('sub:rps_result',({choices,loserName,decided})=>{
+  const box=$('sub-rps-reveal'); box.innerHTML='';
+  for(const [name,ch] of Object.entries(choices)){ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${RPS_EMOJI[ch]||''} ${esc(ch)}</span><span class="who">${esc(name)}</span>`; box.appendChild(it); }
+  if(decided){ $('sub-rps-title').textContent='¡'+loserName+' se la queda!'; $('sub-rps-sub').textContent='Perdió el piedra-papel-tijera'; $('sub-rps-choose').classList.add('hidden'); $('sub-rps-status').textContent=''; }
+  else { $('sub-rps-title').textContent='¡Empate! Otra vez'; $('sub-rps-sub').textContent='Se repite entre los empatados'; }
+});
+
 socket.on('sub:card_resolved',({cardName,cardLabel,cardPosition,positionLabel,cardWikiTitle,cardTroll,result,winnerName,isLastCard})=>{
   stopSubClock();
   subLast=isLastCard;
@@ -383,17 +430,57 @@ socket.on('sub:card_resolved',({cardName,cardLabel,cardPosition,positionLabel,ca
   show('s-sub-result');
 });
 $('btn-sub-next').addEventListener('click',()=>socket.emit('host:next_subasta_card',{code:roomCode}));
-socket.on('sub:game_over',({scores})=>{
+socket.on('sub:game_over',({scores,formation})=>{
+  if(formation)currentFormation=formation;
   const me=scores.find(s=>s.id===myId);
   $('sub-my-total').textContent=`$${me?me.totalRealValue:0}M`;
-  const td=$('sub-my-team'); td.innerHTML='';
-  if(me)me.cards.forEach(c=>{ const s=document.createElement('div'); s.className='team-slot filled'; s.innerHTML=`<div class="pos-label">${c.positionLabel}</div><div class="player-name">${esc(c.name)}</div><div class="player-price">$${c.amountPaid}M · <span style="color:${c.troll?'var(--red)':'var(--lime)'}">$${c.realValue}M real</span></div>`; td.appendChild(s); });
+  drawPitch($('sub-pitch'), currentFormation, me?me.cards:[]);
   const sb=$('sub-scoreboard'); sb.innerHTML='';
   scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">$${s.totalRealValue}M</span>`; sb.appendChild(r); });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
   show('s-sub-over');
 });
+// Dibuja la alineación en una cancha. Las filas van de arriba (delanteros) a abajo (portero).
+const FORMATION_SLOTS={
+  '4-3-3':   {POR:1,LD:1,DFC:2,LI:1,MCD:1,MC:2,MCO:0,ED:1,EI:1,DC:1},
+  '4-4-2':   {POR:1,LD:1,DFC:2,LI:1,MCD:0,MC:2,MCO:0,ED:1,EI:1,DC:2},
+  '4-2-3-1': {POR:1,LD:1,DFC:2,LI:1,MCD:2,MC:0,MCO:1,ED:1,EI:1,DC:1},
+  '3-5-2':   {POR:1,LD:0,DFC:3,LI:0,MCD:1,MC:2,MCO:1,ED:1,EI:1,DC:1},
+  '3-4-3':   {POR:1,LD:0,DFC:3,LI:0,MCD:1,MC:2,MCO:0,ED:1,EI:1,DC:2},
+  '4-3-1-2': {POR:1,LD:1,DFC:2,LI:1,MCD:1,MC:2,MCO:1,ED:0,EI:0,DC:2},
+};
+function drawPitch(container, formation, cards){
+  container.innerHTML='';
+  const slots=FORMATION_SLOTS[formation]||FORMATION_SLOTS['4-3-3'];
+  // Agrupar las cartas ganadas por posición
+  const byPos={}; (cards||[]).forEach(c=>{ (byPos[c.position]=byPos[c.position]||[]).push(c); });
+  // Filas visuales de arriba (ataque) hacia abajo (portería)
+  const rows=[ ['DC'], ['ED','MCO','EI'], ['MCD','MC'], ['LD','DFC','LI'], ['POR'] ];
+  // Distribuir verticalmente
+  const usableRows=rows.filter(row=>row.some(p=>slots[p]>0));
+  const n=usableRows.length;
+  usableRows.forEach((row,idx)=>{
+    const rowDiv=document.createElement('div'); rowDiv.className='pitch-row';
+    rowDiv.style.top=`${(idx+0.5)/n*100}%`; rowDiv.style.transform='translateY(-50%)';
+    // Para cada posición de la fila, dibujar tantos tokens como pida la formación
+    row.forEach(pos=>{
+      const count=slots[pos]||0;
+      for(let k=0;k<count;k++){
+        const card=(byPos[pos]&&byPos[pos][k])||null;
+        const pl=document.createElement('div'); pl.className='pitch-player'+(card?'':' pitch-empty');
+        const token=document.createElement('div'); token.className='pitch-token'+(card&&card.troll?' troll':'');
+        token.textContent=pos;
+        const nm=document.createElement('div'); nm.className='pitch-name'; nm.textContent=card?shortName(card.name):'—';
+        pl.appendChild(token); pl.appendChild(nm);
+        if(card){ const v=document.createElement('div'); v.className='pitch-val'; v.textContent=`$${card.realValue}M`; pl.appendChild(v); }
+        rowDiv.appendChild(pl);
+      }
+    });
+    container.appendChild(rowDiv);
+  });
+}
+function shortName(name){ const parts=name.split(' '); return parts.length>1?parts[parts.length-1]:name; }
 $('btn-sub-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
 
 // Reconexión a subasta: pedir estado

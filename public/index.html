@@ -241,6 +241,19 @@
     <div class="clue-log" id="sub-bid-log" style="max-height:140px;"></div>
   </section>
 
+  <section id="s-sub-rps" class="hidden center-flex">
+    <p class="eyebrow">Nadie quería esta carta</p>
+    <h2 style="font-size:1.5rem;" id="sub-rps-title">Piedra, papel o tijera</h2>
+    <p id="sub-rps-sub" style="margin-bottom:10px;">El que pierde se la queda 😈</p>
+    <div id="sub-rps-choose" class="hidden" style="display:flex;gap:12px;justify-content:center;">
+      <button class="vote-btn" id="rps-piedra" style="font-size:2rem;padding:20px;">🪨</button>
+      <button class="vote-btn" id="rps-papel" style="font-size:2rem;padding:20px;">📄</button>
+      <button class="vote-btn" id="rps-tijera" style="font-size:2rem;padding:20px;">✂️</button>
+    </div>
+    <p id="sub-rps-status" style="margin-top:14px;"></p>
+    <div class="clue-log" id="sub-rps-reveal" style="margin-top:12px;width:100%;"></div>
+  </section>
+
   <section id="s-sub-result" class="hidden center-flex">
     <div class="silhouette-container" style="max-width:180px;">
       <img id="sub-result-img" class="silhouette-img revealed" src="" alt="" />
@@ -257,9 +270,11 @@
 
   <section id="s-sub-over" class="hidden">
     <p class="eyebrow">Resultado Final</p>
-    <h2 style="font-size:1.4rem;margin-bottom:6px;">Tu equipo</h2>
-    <div class="card" style="margin-bottom:10px;"><p style="font-size:0.85rem;">Valor real total</p><p style="font-family:var(--mono);font-size:2rem;color:var(--lime);" id="sub-my-total">$0M</p></div>
-    <div class="team-grid" id="sub-my-team"></div>
+    <div class="between" style="margin-bottom:10px;">
+      <h2 style="font-size:1.4rem;">Tu alineación</h2>
+      <span style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;" id="sub-my-total">$0M</span>
+    </div>
+    <div id="sub-pitch" class="pitch"></div>
     <div class="divider"></div>
     <h3 style="margin-bottom:8px;">Clasificación</h3>
     <div class="card" id="sub-scoreboard"></div>
