@@ -291,14 +291,15 @@ function stopSubClock(){ if(subClockRAF){clearTimeout(subClockRAF);subClockRAF=n
 function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
-socket.on('sub:formation_vote',({formations,deadlineAt})=>{
+socket.on('sub:formation_vote',({formations,secondsLeft})=>{
   const box=$('sub-form-buttons'); box.innerHTML=''; $('sub-form-voted').classList.add('hidden');
   formations.forEach(f=>{ const b=document.createElement('button'); b.className='btn-secondary'; b.textContent=f; b.addEventListener('click',()=>{ box.querySelectorAll('button').forEach(x=>x.disabled=true); socket.emit('player:vote_formation',{code:roomCode,formation:f}); $('sub-form-voted').classList.remove('hidden'); }); box.appendChild(b); });
-  if(subFormCd)clearInterval(subFormCd); const el=$('sub-form-countdown'); function t(){const r=Math.max(0,Math.ceil((deadlineAt-Date.now())/1000));el.textContent=r;el.classList.toggle('urgent',r<=5);} t(); subFormCd=setInterval(t,500);
+  const el=$('sub-form-countdown'); el.textContent=secondsLeft; el.classList.toggle('urgent',secondsLeft<=5);
   show('s-sub-formation');
 });
+socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
 socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
-socket.on('sub:formation_decided',({formation})=>{ if(subFormCd){clearInterval(subFormCd);subFormCd=null;} $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:formation_decided',({formation})=>{ $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,position,positionLabel,startingPrice,wikiTitle,secondsLeft})=>{
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;

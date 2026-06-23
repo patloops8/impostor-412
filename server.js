@@ -210,7 +210,7 @@ function resolveLie(r,success,reason){
 }
 
 /* ===================== SUBASTA ===================== */
-const ANALYSIS_S=15, BIDDING_S=15, EXT_S=5;
+const ANALYSIS_S=15, BIDDING_S=15, EXT_S=8, FORMATION_S=45;
 function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
 function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,totalRealValue:0}; }
 function buildDeck(r){
@@ -323,12 +323,24 @@ function endSubasta(r){
 }
 function startFormationVote(r){
   const s=r.subasta; s.phase='formation_vote'; s.formationVotes=new Map(); r.status='subasta_formation';
+  s.formationSecondsLeft=FORMATION_S;
   emitRoom(r);
-  io.to(r.code).emit('sub:formation_vote',{formations:ALL_FORMATIONS,deadlineAt:Date.now()+45000});
-  s.formationTimer=setTimeout(()=>resolveFormationVote(r),45000);
+  io.to(r.code).emit('sub:formation_vote',{formations:ALL_FORMATIONS,secondsLeft:s.formationSecondsLeft});
+  startFormationClock(r);
+}
+function startFormationClock(r){
+  clearSubTimer(r); const code=r.code;
+  const iv=setInterval(()=>{
+    const room=rooms.get(code);
+    if(!room||room.status!=='subasta_formation'){clearInterval(iv);timers.delete(code);return;}
+    const s=room.subasta; s.formationSecondsLeft--;
+    io.to(code).emit('sub:formation_tick',{secondsLeft:Math.max(0,s.formationSecondsLeft)});
+    if(s.formationSecondsLeft<=0){ clearInterval(iv); timers.delete(code); resolveFormationVote(room); }
+  },1000);
+  timers.set(code,iv);
 }
 function resolveFormationVote(r){
-  const s=r.subasta; if(s.formationTimer){clearTimeout(s.formationTimer);s.formationTimer=null;}
+  const s=r.subasta; clearSubTimer(r);
   if (s.phase!=='formation_vote') return;
   const tally=new Map();
   for(const f of s.formationVotes.values())tally.set(f,(tally.get(f)||0)+1);
