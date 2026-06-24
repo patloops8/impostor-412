@@ -72,9 +72,17 @@
       </div>
       <!-- Config Subasta -->
       <div id="cfg-subasta" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Presupuesto</label><select id="cfg-sub-budget"><option value="300">$300M</option><option value="500" selected>$500M</option><option value="750">$750M</option><option value="1000">$1000M</option><option value="1500">$1500M</option></select></div>
+        <div class="config-row"><label>Presupuesto</label><select id="cfg-sub-budget"><option value="1000" selected>$1000M</option><option value="1500">$1500M</option><option value="2000">$2000M</option><option value="3000">$3000M</option><option value="5000">$5000M</option></select></div>
         <div class="config-row"><label>Skips por jugador</label><select id="cfg-sub-skips"><option>2</option><option>3</option><option selected>5</option><option>8</option></select></div>
-        <p style="font-size:0.78rem;margin-top:8px;">Análisis 15s + puja 15s por carta. Las pujas son públicas.</p>
+        <div class="config-row" style="flex-direction:column;align-items:flex-start;">
+          <label>Modo de victoria</label>
+          <div class="category-checks" style="margin-top:8px;">
+            <label class="category-chip checked" id="win-mode-ovr"><input type="radio" name="wm" value="ovr" checked/> OVR (estilo FIFA)</label>
+            <label class="category-chip" id="win-mode-votacion"><input type="radio" name="wm" value="votacion"/> Votación (debate)</label>
+          </div>
+          <p style="font-size:0.74rem;margin-top:8px;" id="win-mode-desc">OVR: gana quien tenga el equipo con mayor media promedio.</p>
+        </div>
+        <p style="font-size:0.78rem;margin-top:8px;">Análisis 15s + puja 15s por carta. Precio inicial al azar ($10M–$150M). Las medias se ocultan hasta el final.</p>
       </div>
 
       <button class="btn-primary hidden" id="btn-start" style="width:100%;margin-top:16px;">Iniciar partida</button>
@@ -267,6 +275,47 @@
     <p id="sub-result-sub" style="margin-top:6px;"></p>
     <button class="btn-primary hidden" id="btn-sub-next" style="width:100%;">Siguiente carta</button>
     <p id="sub-result-wait" class="hidden">Esperando al anfitrión...</p>
+  </section>
+
+  <!-- Torneo: anuncio de ronda/duelo -->
+  <section id="s-sub-tournament" class="hidden center-flex">
+    <p class="eyebrow" id="sub-tour-eyebrow">Torneo de equipos</p>
+    <h2 style="font-size:1.6rem;text-align:center;" id="sub-tour-title">—</h2>
+    <p id="sub-tour-sub" style="text-align:center;"></p>
+    <div class="clue-log" id="sub-tour-info" style="width:100%;margin-top:10px;"></div>
+  </section>
+
+  <!-- Torneo: votación posición por posición -->
+  <section id="s-sub-duel" class="hidden">
+    <div class="between" style="margin-bottom:8px;">
+      <p class="eyebrow" id="sub-duel-round">Ronda 1</p>
+      <p class="eyebrow" id="sub-duel-progress">Pos 1/11</p>
+    </div>
+    <div class="between" style="margin-bottom:12px;">
+      <div style="text-align:center;flex:1;"><div style="font-weight:800;" id="sub-duel-a-name">Equipo A</div><div style="font-family:var(--mono);font-size:1.4rem;color:var(--lime);" id="sub-duel-a-score">0</div></div>
+      <div style="font-family:var(--display);font-size:1.5rem;color:var(--text-dim);">VS</div>
+      <div style="text-align:center;flex:1;"><div style="font-weight:800;" id="sub-duel-b-name">Equipo B</div><div style="font-family:var(--mono);font-size:1.4rem;color:var(--lime);" id="sub-duel-b-score">0</div></div>
+    </div>
+    <div class="card center-flex" style="padding:16px;">
+      <span class="position-badge" id="sub-duel-pos">Portero</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:12px;">
+        <div style="text-align:center;">
+          <div class="silhouette-container" style="max-width:120px;margin:0 auto 8px;"><img id="sub-duel-a-img" class="silhouette-img" src=""/><div id="sub-duel-a-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
+          <div style="font-size:0.82rem;font-weight:700;" id="sub-duel-a-player">—</div>
+          <div style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;display:none;" id="sub-duel-a-media">—</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="silhouette-container" style="max-width:120px;margin:0 auto 8px;"><img id="sub-duel-b-img" class="silhouette-img" src=""/><div id="sub-duel-b-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
+          <div style="font-size:0.82rem;font-weight:700;" id="sub-duel-b-player">—</div>
+          <div style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;display:none;" id="sub-duel-b-media">—</div>
+        </div>
+      </div>
+    </div>
+    <div id="sub-duel-can-vote" class="hidden vote-grid" style="margin-top:14px;">
+      <button class="vote-btn" id="sub-duel-vote-a">Mejor el de la izquierda</button>
+      <button class="vote-btn" id="sub-duel-vote-b">Mejor el de la derecha</button>
+    </div>
+    <p id="sub-duel-status" style="text-align:center;margin-top:12px;"></p>
   </section>
 
   <section id="s-sub-over" class="hidden">

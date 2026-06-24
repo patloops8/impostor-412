@@ -70,12 +70,12 @@ function newRoom(code, hostId) {
     votes: new Map(), roundNumber: 0,
     mentirosoConfig: { roundCount: 5, mode: 'texto' },
     lie: { roundNumber:0, turnStartIndex:0, category:null, turnOrder:[], currentTurnIndex:0, currentClaim:0, lastClaimerId:null, challenge:null },
-    subastaConfig: { budget: 500, skipLimit: 5 },
+    subastaConfig: { budget: 1000, skipLimit: 5, winMode: 'ovr' }, // winMode: 'ovr' | 'votacion'
     subasta: {
       phase:'config', formation:null, formationVotes:new Map(),
       deck:[], currentCardIndex:-1, currentCard:null,
       auctionPhase:null, secondsLeft:0, totalEligible:0,
-      bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[], rps:null, rpsTimer:null,
+      bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[], rps:null, rpsTimer:null, teams:null, bracket:null,
     },
   };
 }
@@ -222,14 +222,15 @@ function resolveLie(r,success,reason){
 /* ===================== SUBASTA ===================== */
 const ANALYSIS_S=15, BIDDING_S=15, EXT_S=8, FORMATION_S=45;
 function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
-function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,totalRealValue:0}; }
+function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,mediaSum:0}; }
 function buildDeck(r){
   const slots=FORMATIONS[r.subasta.formation], pc=r.players.size, pool={};
   for(const p of POSITION_ORDER)pool[p]=[];
   for(const c of SUBASTA_CARDS) if(pool[c.position])pool[c.position].push(c);
   const deck=[];
   for(const pos of POSITION_ORDER){ const n=(slots[pos]||0)*pc; if(!n)continue; deck.push(...shuffle(pool[pos]).slice(0,Math.min(n,pool[pos].length))); }
-  return deck.map(c=>({...c}));
+  // Precio inicial ALEATORIO entre 10 y 150 millones, sin relación con la media del jugador.
+  return deck.map(c=>({ ...c, startingPrice: 10 + Math.floor(Math.random()*141) }));
 }
 function showCard(r){
   const s=r.subasta, card=s.deck[s.currentCardIndex];
@@ -388,25 +389,164 @@ function finishResolveCard(r,card,result){
 }
 function assignCard(r,pid,amount){
   const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return;
-  ps.budget-=amount; ps.team[card.position].push({cardId:card.id,amountPaid:amount}); ps.totalRealValue+=card.realValue;
+  ps.budget-=amount; ps.team[card.position].push({cardId:card.id,amountPaid:amount}); ps.mediaSum+=card.media;
 }
-function endSubasta(r){
-  r.subasta.phase='over'; r.status='subasta_over';
+function buildTeams(r){
+  // Devuelve un Map pid -> { name, cards:[{name,position,positionLabel,media,...}], ovr }
   const s=r.subasta;
   const teamCards=new Map(); for(const [pid] of r.players.entries())teamCards.set(pid,[]);
   for(const {card,result} of s.resolvedCards){
     if(result.winnerId&&teamCards.has(result.winnerId))
-      teamCards.get(result.winnerId).push({name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],realValue:card.realValue,amountPaid:result.amount,troll:card.troll});
+      teamCards.get(result.winnerId).push({name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll,wikiTitle:card.wikiTitle});
   }
-  const scores=[];
+  const teams=new Map();
   for(const [pid,ps] of s.playerState.entries()){
     const pl=r.players.get(pid); if(!pl)continue;
     const cards=teamCards.get(pid)||[];
-    scores.push({id:pid,name:pl.name,totalRealValue:cards.reduce((a,c)=>a+c.realValue,0),budgetLeft:ps.budget,cards});
+    const ovr=cards.length?Math.round(cards.reduce((a,c)=>a+c.media,0)/cards.length):0;
+    teams.set(pid,{id:pid,name:pl.name,cards,ovr,budgetLeft:ps.budget});
   }
-  scores.sort((a,b)=>b.totalRealValue-a.totalRealValue);
+  return teams;
+}
+function endSubasta(r){
+  const s=r.subasta;
+  s.teams=buildTeams(r);
+  if(r.subastaConfig.winMode==='votacion' && s.teams.size>=2){
+    startTournament(r);
+  } else {
+    finishSubastaOVR(r);
+  }
+}
+function finishSubastaOVR(r){
+  r.subasta.phase='over'; r.status='subasta_over';
+  const s=r.subasta;
+  const scores=[...s.teams.values()].map(t=>({id:t.id,name:t.name,ovr:t.ovr,totalMedia:t.cards.reduce((a,c)=>a+c.media,0),budgetLeft:t.budgetLeft,cards:t.cards}));
+  scores.sort((a,b)=>b.ovr-a.ovr || b.totalMedia-a.totalMedia);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
-  io.to(r.code).emit('sub:game_over',{scores,formation:s.formation});
+  io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,formation:s.formation});
+}
+
+/* ===== TORNEO DE BRACKETS (modo votación) ===== */
+function startTournament(r){
+  const s=r.subasta;
+  r.status='subasta_tournament';
+  // Lista de equipos ordenada por OVR (para asignar byes al mejor)
+  s.bracket={ alive:[...s.teams.keys()], round:1, currentDuel:null, eliminated:[] };
+  io.to(r.code).emit('sub:tournament_start',{
+    teams:[...s.teams.values()].map(t=>({id:t.id,name:t.name,ovr:t.ovr})),
+  });
+  setTimeout(()=>nextDuelOrAdvance(r),3000);
+}
+function nextDuelOrAdvance(r){
+  const s=r.subasta, b=s.bracket; if(!b)return;
+  if(b.alive.length===1){ finishTournament(r,b.alive[0]); return; }
+  // Emparejar: ordenar vivos por OVR; si impares, el mejor OVR recibe bye
+  const aliveSorted=b.alive.slice().sort((x,y)=>s.teams.get(y).ovr-s.teams.get(x).ovr);
+  if(!b.queue || b.queue.length===0){
+    // Construir la cola de duelos para esta ronda
+    let contenders=aliveSorted.slice();
+    b.byes=[];
+    if(contenders.length%2===1){ b.byes.push(contenders.shift()); } // el mejor OVR pasa directo
+    b.queue=[];
+    for(let i=0;i<contenders.length;i+=2) b.queue.push([contenders[i],contenders[i+1]]);
+    b.winnersThisRound=[...b.byes];
+    if(b.byes.length){
+      io.to(r.code).emit('sub:tournament_bye',{ name:s.teams.get(b.byes[0]).name, ovr:s.teams.get(b.byes[0]).ovr, round:b.round });
+    }
+  }
+  if(b.queue.length===0){
+    // Terminó la ronda: los ganadores pasan a la siguiente
+    b.alive=b.winnersThisRound.slice();
+    b.round++; b.queue=null;
+    if(b.alive.length===1){ finishTournament(r,b.alive[0]); return; }
+    io.to(r.code).emit('sub:tournament_round',{round:b.round, remaining:b.alive.map(id=>s.teams.get(id).name)});
+    setTimeout(()=>nextDuelOrAdvance(r),3000);
+    return;
+  }
+  // Tomar el siguiente duelo de la cola
+  const [aId,bId]=b.queue.shift();
+  startDuel(r,aId,bId);
+}
+function startDuel(r,aId,bId){
+  const s=r.subasta, b=s.bracket;
+  const teamA=s.teams.get(aId), teamB=s.teams.get(bId);
+  // Posiciones a comparar: las de la formación, en orden
+  const slots=FORMATIONS[s.formation];
+  const positions=[];
+  for(const pos of POSITION_ORDER){ const n=slots[pos]||0; for(let k=0;k<n;k++) positions.push({pos,idx:k}); }
+  b.currentDuel={ aId, bId, positions, posIndex:0, votesA:0, votesB:0, posResults:[], votes:new Map() };
+  io.to(r.code).emit('sub:duel_start',{ aId, bId, aName:teamA.name, bName:teamB.name, round:b.round, totalPositions:positions.length });
+  setTimeout(()=>nextDuelPosition(r),2500);
+}
+function nextDuelPosition(r){
+  const s=r.subasta, b=s.bracket, d=b.currentDuel; if(!d)return;
+  if(d.posIndex>=d.positions.length){ finishDuel(r); return; }
+  const {pos,idx}=d.positions[d.posIndex];
+  const teamA=s.teams.get(d.aId), teamB=s.teams.get(d.bId);
+  const cardA=cardAtPosition(teamA,pos,idx), cardB=cardAtPosition(teamB,pos,idx);
+  d.votes=new Map(); d.currentCardA=cardA; d.currentCardB=cardB;
+  r.status='subasta_duel_vote';
+  // Votan solo los neutrales (ni dueño A ni dueño B). Si no hay neutrales, decide el OVR de la posición.
+  const voters=[...r.players.keys()].filter(pid=>pid!==d.aId&&pid!==d.bId&&r.players.get(pid)?.connected);
+  io.to(r.code).emit('sub:duel_position',{
+    position:pos, positionLabel:POSITION_LABELS[pos],
+    aName:teamA.name, bName:teamB.name,
+    aCard:cardA?{name:cardA.name,wikiTitle:cardA.wikiTitle}:null,
+    bCard:cardB?{name:cardB.name,wikiTitle:cardB.wikiTitle}:null,
+    posIndex:d.posIndex+1, totalPositions:d.positions.length,
+    voterIds:voters,
+  });
+  if(voters.length===0){ // nadie neutral: decide la media
+    setTimeout(()=>{ autoResolvePosition(r); },1500);
+  }
+}
+function cardAtPosition(team,pos,idx){ const inPos=team.cards.filter(c=>c.position===pos); return inPos[idx]||null; }
+function autoResolvePosition(r){
+  const d=r.subasta.bracket.currentDuel; if(!d)return;
+  const ma=d.currentCardA?d.currentCardA.media:0, mb=d.currentCardB?d.currentCardB.media:0;
+  if(ma>=mb)d.votesA++; else d.votesB++;
+  revealPosition(r, ma>=mb?'A':'B', 0, 0);
+}
+function revealPosition(r,winner,va,vb){
+  const s=r.subasta, b=s.bracket, d=b.currentDuel;
+  d.posResults.push({ position:d.positions[d.posIndex].pos, winner, mediaA:d.currentCardA?.media??0, mediaB:d.currentCardB?.media??0 });
+  io.to(r.code).emit('sub:duel_position_result',{
+    winner, votesA:va, votesB:vb,
+    mediaA:d.currentCardA?d.currentCardA.media:null, mediaB:d.currentCardB?d.currentCardB.media:null,
+    aName:s.teams.get(d.aId).name, bName:s.teams.get(d.bId).name,
+    scoreA:d.votesA, scoreB:d.votesB,
+  });
+  d.posIndex++;
+  setTimeout(()=>nextDuelPosition(r),3500);
+}
+function finishDuel(r){
+  const s=r.subasta, b=s.bracket, d=b.currentDuel;
+  let winnerId;
+  if(d.votesA>d.votesB) winnerId=d.aId;
+  else if(d.votesB>d.votesA) winnerId=d.bId;
+  else { // empate en posiciones ganadas: decide OVR
+    const ovrA=s.teams.get(d.aId).ovr, ovrB=s.teams.get(d.bId).ovr;
+    if(ovrA>ovrB)winnerId=d.aId; else if(ovrB>ovrA)winnerId=d.bId;
+    else winnerId=Math.random()<0.5?d.aId:d.bId; // empate total: azar (PPT simplificado)
+  }
+  const loserId = winnerId===d.aId?d.bId:d.aId;
+  b.winnersThisRound.push(winnerId);
+  b.eliminated.push(loserId);
+  io.to(r.code).emit('sub:duel_result',{
+    winnerName:s.teams.get(winnerId).name, loserName:s.teams.get(loserId).name,
+    scoreA:d.votesA, scoreB:d.votesB, aName:s.teams.get(d.aId).name, bName:s.teams.get(d.bId).name,
+  });
+  b.currentDuel=null;
+  setTimeout(()=>nextDuelOrAdvance(r),4000);
+}
+function finishTournament(r,championId){
+  const s=r.subasta; s.phase='over'; r.status='subasta_over';
+  const champion=s.teams.get(championId);
+  // Puntos: campeón gana más; el resto por orden de eliminación inverso
+  const order=[championId, ...s.bracket.eliminated.slice().reverse().filter(id=>id!==championId)];
+  order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
+  const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
+  io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation});
 }
 function startFormationVote(r){
   const s=r.subasta; s.phase='formation_vote'; s.formationVotes=new Map(); r.status='subasta_formation';
@@ -497,10 +637,11 @@ io.on('connection', socket => {
     if(mode==='voz'||mode==='texto')r.mentirosoConfig.mode=mode;
     emitRoom(r);
   });
-  socket.on('host:update_subasta_config', ({code,budget,skipLimit}) => {
+  socket.on('host:update_subasta_config', ({code,budget,skipLimit,winMode}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
-    if(Number.isInteger(budget)&&budget>=10)r.subastaConfig.budget=Math.min(budget,9999);
+    if(Number.isInteger(budget)&&budget>=100)r.subastaConfig.budget=Math.min(budget,99999);
     if(Number.isInteger(skipLimit)&&skipLimit>=0)r.subastaConfig.skipLimit=Math.min(skipLimit,20);
+    if(winMode==='ovr'||winMode==='votacion')r.subastaConfig.winMode=winMode;
     emitRoom(r);
   });
 
@@ -602,6 +743,20 @@ io.on('connection', socket => {
     io.to(r.code).emit('sub:skip_public',{name:r.players.get(socket.id)?.name});
     if(checkAllResponded(r)&&!s.highestBid){clearSubTimer(r);resolveCard(r);}
   });
+  socket.on('player:vote_duel', ({code,choice}) => {
+    const r=rooms.get(code); if(!r||r.status!=='subasta_duel_vote')return;
+    const d=r.subasta.bracket?.currentDuel; if(!d)return;
+    if(socket.id===d.aId||socket.id===d.bId)return; // dueños no votan
+    if(choice!=='A'&&choice!=='B')return;
+    d.votes.set(socket.id,choice);
+    const voters=[...r.players.keys()].filter(pid=>pid!==d.aId&&pid!==d.bId&&r.players.get(pid)?.connected);
+    io.to(r.code).emit('sub:duel_vote_progress',{votesIn:d.votes.size,votesNeeded:voters.length});
+    if(d.votes.size>=voters.length&&voters.length>0){
+      let va=0,vb=0; for(const v of d.votes.values()){ if(v==='A')va++; else vb++; }
+      if(va>=vb)d.votesA++; else d.votesB++;
+      revealPosition(r, va>=vb?'A':'B', va, vb);
+    }
+  });
   socket.on('player:rps_choice', ({code,choice}) => {
     const r=rooms.get(code); if(!r||r.status!=='subasta_rps'||!r.subasta.rps)return;
     if(!['piedra','papel','tijera'].includes(choice))return;
@@ -623,7 +778,7 @@ io.on('connection', socket => {
     clearLieTimer(r); clearSubTimer(r);
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
-    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null};
+    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
     for(const p of r.players.values()){p.alive=true;p.score=0;}
     emitRoom(r);
   });

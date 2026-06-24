@@ -4,1299 +4,1169 @@
     "name": "Manuel Neuer",
     "label": "Manuel Neuer (Bayern Múnich)",
     "position": "POR",
-    "startingPrice": 55,
-    "realValue": 75,
     "troll": false,
-    "wikiTitle": "Manuel Neuer"
+    "wikiTitle": "Manuel Neuer",
+    "media": 84
   },
   {
     "id": "casillas",
     "name": "Iker Casillas",
     "label": "Iker Casillas (Real Madrid)",
     "position": "POR",
-    "startingPrice": 60,
-    "realValue": 78,
     "troll": false,
-    "wikiTitle": "Iker Casillas"
+    "wikiTitle": "Iker Casillas",
+    "media": 86
   },
   {
     "id": "buffon",
     "name": "Gianluigi Buffon",
     "label": "Gianluigi Buffon (Juventus)",
     "position": "POR",
-    "startingPrice": 58,
-    "realValue": 76,
     "troll": false,
-    "wikiTitle": "Gianluigi Buffon"
+    "wikiTitle": "Gianluigi Buffon",
+    "media": 85
   },
   {
     "id": "yashin",
     "name": "Lev Yashin",
     "label": "Lev Yashin (Dinamo Moscú) — el mejor portero de la historia",
     "position": "POR",
-    "startingPrice": 65,
-    "realValue": 90,
     "troll": false,
-    "wikiTitle": "Lev Yashin"
+    "wikiTitle": "Lev Yashin",
+    "media": 92
   },
   {
     "id": "schmeichel",
     "name": "Peter Schmeichel",
     "label": "Peter Schmeichel (Manchester United)",
     "position": "POR",
-    "startingPrice": 45,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Peter Schmeichel"
+    "wikiTitle": "Peter Schmeichel",
+    "media": 81
   },
   {
     "id": "kahn",
     "name": "Oliver Kahn",
     "label": "Oliver Kahn (Bayern Múnich)",
     "position": "POR",
-    "startingPrice": 50,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Oliver Kahn"
+    "wikiTitle": "Oliver Kahn",
+    "media": 82
   },
   {
     "id": "alisson",
     "name": "Alisson Becker",
     "label": "Alisson Becker (Liverpool)",
     "position": "POR",
-    "startingPrice": 40,
-    "realValue": 60,
     "troll": false,
-    "wikiTitle": "Alisson Becker"
+    "wikiTitle": "Alisson Becker",
+    "media": 77
   },
   {
     "id": "donnarumma",
     "name": "Gianluigi Donnarumma",
     "label": "Gianluigi Donnarumma (PSG)",
     "position": "POR",
-    "startingPrice": 35,
-    "realValue": 52,
     "troll": false,
-    "wikiTitle": "Gianluigi Donnarumma"
+    "wikiTitle": "Gianluigi Donnarumma",
+    "media": 73
   },
   {
     "id": "navas",
     "name": "Keylor Navas",
     "label": "Keylor Navas (Real Madrid / PSG)",
     "position": "POR",
-    "startingPrice": 30,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Keylor Navas"
+    "wikiTitle": "Keylor Navas",
+    "media": 72
   },
   {
     "id": "reina_troll",
     "name": "Pepe Reina",
     "label": "Pepe Reina (Napoli — temporada más floja)",
     "position": "POR",
-    "startingPrice": 58,
-    "realValue": 12,
     "troll": true,
-    "wikiTitle": "Pepe Reina"
+    "wikiTitle": "Pepe Reina",
+    "media": 43
   },
   {
     "id": "maldini",
     "name": "Paolo Maldini",
     "label": "Paolo Maldini (AC Milan) — el defensa más elegante de la historia",
     "position": "LI",
-    "startingPrice": 65,
-    "realValue": 88,
     "troll": false,
-    "wikiTitle": "Paolo Maldini"
+    "wikiTitle": "Paolo Maldini",
+    "media": 91
   },
   {
     "id": "baresi",
     "name": "Franco Baresi",
     "label": "Franco Baresi (AC Milan)",
     "position": "DFC",
-    "startingPrice": 60,
-    "realValue": 85,
     "troll": false,
-    "wikiTitle": "Franco Baresi"
+    "wikiTitle": "Franco Baresi",
+    "media": 89
   },
   {
     "id": "beckenbauer",
     "name": "Franz Beckenbauer",
     "label": "Franz Beckenbauer (Bayern Múnich)",
     "position": "DFC",
-    "startingPrice": 62,
-    "realValue": 87,
     "troll": false,
-    "wikiTitle": "Franz Beckenbauer"
+    "wikiTitle": "Franz Beckenbauer",
+    "media": 90
   },
   {
     "id": "ramos",
     "name": "Sergio Ramos",
     "label": "Sergio Ramos (Real Madrid)",
     "position": "DFC",
-    "startingPrice": 55,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Sergio Ramos"
+    "wikiTitle": "Sergio Ramos",
+    "media": 83
   },
   {
     "id": "puyol",
     "name": "Carles Puyol",
     "label": "Carles Puyol (FC Barcelona)",
     "position": "DFC",
-    "startingPrice": 48,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Carles Puyol"
+    "wikiTitle": "Carles Puyol",
+    "media": 81
   },
   {
     "id": "cannavaro",
     "name": "Fabio Cannavaro",
     "label": "Fabio Cannavaro (Real Madrid / Juventus)",
     "position": "DFC",
-    "startingPrice": 50,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Fabio Cannavaro"
+    "wikiTitle": "Fabio Cannavaro",
+    "media": 82
   },
   {
     "id": "r_carlos",
     "name": "Roberto Carlos",
     "label": "Roberto Carlos (Real Madrid)",
     "position": "LI",
-    "startingPrice": 55,
-    "realValue": 76,
     "troll": false,
-    "wikiTitle": "Roberto Carlos"
+    "wikiTitle": "Roberto Carlos",
+    "media": 85
   },
   {
     "id": "cafu",
     "name": "Cafu",
     "label": "Cafu (Roma / AC Milan / Brasil)",
     "position": "LD",
-    "startingPrice": 50,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Cafu"
+    "wikiTitle": "Cafu",
+    "media": 83
   },
   {
     "id": "ferdinand",
     "name": "Rio Ferdinand",
     "label": "Rio Ferdinand (Manchester United)",
     "position": "DFC",
-    "startingPrice": 42,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Rio Ferdinand"
+    "wikiTitle": "Rio Ferdinand",
+    "media": 78
   },
   {
     "id": "terry",
     "name": "John Terry",
     "label": "John Terry (Chelsea)",
     "position": "DFC",
-    "startingPrice": 40,
-    "realValue": 60,
     "troll": false,
-    "wikiTitle": "John Terry"
+    "wikiTitle": "John Terry",
+    "media": 77
   },
   {
     "id": "vvd",
     "name": "Virgil van Dijk",
     "label": "Virgil van Dijk (Liverpool)",
     "position": "DFC",
-    "startingPrice": 45,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "Virgil van Dijk"
+    "wikiTitle": "Virgil van Dijk",
+    "media": 80
   },
   {
     "id": "dani_alves",
     "name": "Dani Alves",
     "label": "Dani Alves (FC Barcelona / Juventus)",
     "position": "LD",
-    "startingPrice": 48,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Dani Alves"
+    "wikiTitle": "Dani Alves",
+    "media": 81
   },
   {
     "id": "cole_ashley",
     "name": "Ashley Cole",
     "label": "Ashley Cole (Chelsea / Arsenal)",
     "position": "LI",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Ashley Cole"
+    "wikiTitle": "Ashley Cole",
+    "media": 75
   },
   {
     "id": "kompany",
     "name": "Vincent Kompany",
     "label": "Vincent Kompany (Manchester City)",
     "position": "DFC",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Vincent Kompany"
+    "wikiTitle": "Vincent Kompany",
+    "media": 75
   },
   {
     "id": "pique",
     "name": "Gerard Piqué",
     "label": "Gerard Piqué (FC Barcelona)",
     "position": "DFC",
-    "startingPrice": 40,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Gerard Piqué"
+    "wikiTitle": "Gerard Piqué",
+    "media": 76
   },
   {
     "id": "hummels",
     "name": "Mats Hummels",
     "label": "Mats Hummels (Borussia Dortmund / Bayern)",
     "position": "DFC",
-    "startingPrice": 38,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Mats Hummels"
+    "wikiTitle": "Mats Hummels",
+    "media": 76
   },
   {
     "id": "thiago_silva",
     "name": "Thiago Silva",
     "label": "Thiago Silva (PSG / Chelsea / Brasil)",
     "position": "DFC",
-    "startingPrice": 42,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Thiago Silva"
+    "wikiTitle": "Thiago Silva",
+    "media": 78
   },
   {
     "id": "hierro",
     "name": "Fernando Hierro",
     "label": "Fernando Hierro (Real Madrid)",
     "position": "DFC",
-    "startingPrice": 38,
-    "realValue": 56,
     "troll": false,
-    "wikiTitle": "Fernando Hierro"
+    "wikiTitle": "Fernando Hierro",
+    "media": 75
   },
   {
     "id": "ayala",
     "name": "Roberto Ayala",
     "label": "Roberto Ayala (Valencia / Argentina)",
     "position": "DFC",
-    "startingPrice": 22,
-    "realValue": 48,
     "troll": false,
-    "wikiTitle": "Roberto Ayala"
+    "wikiTitle": "Roberto Ayala",
+    "media": 71
   },
   {
     "id": "lahm",
     "name": "Philipp Lahm",
     "label": "Philipp Lahm (Bayern Múnich) — gem oculta",
     "position": "LD",
-    "startingPrice": 18,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Philipp Lahm"
+    "wikiTitle": "Philipp Lahm",
+    "media": 82
   },
   {
     "id": "marcelo_troll",
     "name": "Marcelo",
     "label": "Marcelo (Real Madrid — última temporada)",
     "position": "LI",
-    "startingPrice": 55,
-    "realValue": 8,
     "troll": true,
-    "wikiTitle": "Marcelo (footballer, born 1988)"
+    "wikiTitle": "Marcelo (footballer, born 1988)",
+    "media": 42
   },
   {
     "id": "belletti_troll",
     "name": "Juliano Belletti",
     "label": "Juliano Belletti (FC Barcelona) — ¿lo conoces?",
     "position": "LD",
-    "startingPrice": 50,
-    "realValue": 10,
     "troll": true,
-    "wikiTitle": "Juliano Belletti"
+    "wikiTitle": "Juliano Belletti",
+    "media": 42
   },
   {
     "id": "nesta",
     "name": "Alessandro Nesta",
     "label": "Alessandro Nesta (AC Milan) — joya oculta",
     "position": "DFC",
-    "startingPrice": 15,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Alessandro Nesta"
+    "wikiTitle": "Alessandro Nesta",
+    "media": 83
   },
   {
     "id": "cronaldo_def_troll",
     "name": "Pepe",
     "label": "Pepe (Real Madrid) — el más duro",
     "position": "DFC",
-    "startingPrice": 60,
-    "realValue": 14,
     "troll": true,
-    "wikiTitle": "Pepe (footballer, born 1983)"
+    "wikiTitle": "Pepe (footballer, born 1983)",
+    "media": 43
   },
   {
     "id": "ivan_helguera",
     "name": "Iván Helguera",
     "label": "Iván Helguera (Real Madrid) — ¿lo recuerdas?",
     "position": "DFC",
-    "startingPrice": 48,
-    "realValue": 8,
     "troll": true,
-    "wikiTitle": "Iván Helguera"
+    "wikiTitle": "Iván Helguera",
+    "media": 42
   },
   {
     "id": "kounde",
     "name": "Jules Koundé",
     "label": "Jules Koundé (FC Barcelona)",
     "position": "DFC",
-    "startingPrice": 28,
-    "realValue": 45,
     "troll": false,
-    "wikiTitle": "Jules Koundé"
+    "wikiTitle": "Jules Koundé",
+    "media": 70
   },
   {
     "id": "rudiger",
     "name": "Antonio Rüdiger",
     "label": "Antonio Rüdiger (Chelsea / Real Madrid)",
     "position": "DFC",
-    "startingPrice": 32,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Antonio Rüdiger"
+    "wikiTitle": "Antonio Rüdiger",
+    "media": 72
   },
   {
     "id": "upamecano",
     "name": "Dayot Upamecano",
     "label": "Dayot Upamecano (Bayern Múnich)",
     "position": "DFC",
-    "startingPrice": 28,
-    "realValue": 44,
     "troll": false,
-    "wikiTitle": "Dayot Upamecano"
+    "wikiTitle": "Dayot Upamecano",
+    "media": 70
   },
   {
     "id": "robertson",
     "name": "Andy Robertson",
     "label": "Andy Robertson (Liverpool) — gem oculta",
     "position": "LI",
-    "startingPrice": 14,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Andy Robertson"
+    "wikiTitle": "Andy Robertson",
+    "media": 75
   },
   {
     "id": "trent",
     "name": "Trent Alexander-Arnold",
     "label": "Trent Alexander-Arnold (Liverpool)",
     "position": "LD",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Trent Alexander-Arnold"
+    "wikiTitle": "Trent Alexander-Arnold",
+    "media": 75
   },
   {
     "id": "zidane",
     "name": "Zinedine Zidane",
     "label": "Zinedine Zidane (Real Madrid / Juventus) — el mejor mediocampista",
     "position": "MCO",
-    "startingPrice": 80,
-    "realValue": 95,
     "troll": false,
-    "wikiTitle": "Zinedine Zidane"
+    "wikiTitle": "Zinedine Zidane",
+    "media": 94
   },
   {
     "id": "iniesta",
     "name": "Andrés Iniesta",
     "label": "Andrés Iniesta (FC Barcelona)",
     "position": "MC",
-    "startingPrice": 70,
-    "realValue": 88,
     "troll": false,
-    "wikiTitle": "Andrés Iniesta"
+    "wikiTitle": "Andrés Iniesta",
+    "media": 91
   },
   {
     "id": "xavi",
     "name": "Xavi Hernández",
     "label": "Xavi Hernández (FC Barcelona)",
     "position": "MC",
-    "startingPrice": 68,
-    "realValue": 85,
     "troll": false,
-    "wikiTitle": "Xavi Hernández"
+    "wikiTitle": "Xavi Hernández",
+    "media": 89
   },
   {
     "id": "ronaldinho",
     "name": "Ronaldinho",
     "label": "Ronaldinho (FC Barcelona / AC Milan)",
     "position": "MCO",
-    "startingPrice": 72,
-    "realValue": 90,
     "troll": false,
-    "wikiTitle": "Ronaldinho"
+    "wikiTitle": "Ronaldinho",
+    "media": 92
   },
   {
     "id": "pirlo",
     "name": "Andrea Pirlo",
     "label": "Andrea Pirlo (AC Milan / Juventus)",
     "position": "MCD",
-    "startingPrice": 65,
-    "realValue": 83,
     "troll": false,
-    "wikiTitle": "Andrea Pirlo"
+    "wikiTitle": "Andrea Pirlo",
+    "media": 88
   },
   {
     "id": "modric",
     "name": "Luka Modrić",
     "label": "Luka Modrić (Real Madrid)",
     "position": "MC",
-    "startingPrice": 60,
-    "realValue": 80,
     "troll": false,
-    "wikiTitle": "Luka Modrić"
+    "wikiTitle": "Luka Modrić",
+    "media": 87
   },
   {
     "id": "debruyne",
     "name": "Kevin De Bruyne",
     "label": "Kevin De Bruyne (Manchester City)",
     "position": "MCO",
-    "startingPrice": 58,
-    "realValue": 78,
     "troll": false,
-    "wikiTitle": "Kevin De Bruyne"
+    "wikiTitle": "Kevin De Bruyne",
+    "media": 86
   },
   {
     "id": "lampard",
     "name": "Frank Lampard",
     "label": "Frank Lampard (Chelsea)",
     "position": "MC",
-    "startingPrice": 48,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "Frank Lampard"
+    "wikiTitle": "Frank Lampard",
+    "media": 80
   },
   {
     "id": "gerrard",
     "name": "Steven Gerrard",
     "label": "Steven Gerrard (Liverpool)",
     "position": "MC",
-    "startingPrice": 50,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Steven Gerrard"
+    "wikiTitle": "Steven Gerrard",
+    "media": 81
   },
   {
     "id": "scholes",
     "name": "Paul Scholes",
     "label": "Paul Scholes (Manchester United) — gem oculta",
     "position": "MC",
-    "startingPrice": 15,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Paul Scholes"
+    "wikiTitle": "Paul Scholes",
+    "media": 81
   },
   {
     "id": "beckham",
     "name": "David Beckham",
     "label": "David Beckham (Manchester United / Real Madrid)",
     "position": "MC",
-    "startingPrice": 50,
-    "realValue": 60,
     "troll": false,
-    "wikiTitle": "David Beckham"
+    "wikiTitle": "David Beckham",
+    "media": 77
   },
   {
     "id": "busquets",
     "name": "Sergio Busquets",
     "label": "Sergio Busquets (FC Barcelona) — gem oculta",
     "position": "MCD",
-    "startingPrice": 12,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Sergio Busquets"
+    "wikiTitle": "Sergio Busquets",
+    "media": 78
   },
   {
     "id": "kroos",
     "name": "Toni Kroos",
     "label": "Toni Kroos (Real Madrid)",
     "position": "MC",
-    "startingPrice": 55,
-    "realValue": 75,
     "troll": false,
-    "wikiTitle": "Toni Kroos"
+    "wikiTitle": "Toni Kroos",
+    "media": 84
   },
   {
     "id": "riquelme",
     "name": "Juan Román Riquelme",
     "label": "Juan Román Riquelme (Boca Juniors / Barcelona)",
     "position": "MCO",
-    "startingPrice": 45,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "Juan Román Riquelme"
+    "wikiTitle": "Juan Román Riquelme",
+    "media": 80
   },
   {
     "id": "platini",
     "name": "Michel Platini",
     "label": "Michel Platini (Juventus)",
     "position": "MCO",
-    "startingPrice": 55,
-    "realValue": 80,
     "troll": false,
-    "wikiTitle": "Michel Platini"
+    "wikiTitle": "Michel Platini",
+    "media": 87
   },
   {
     "id": "cruyff",
     "name": "Johan Cruyff",
     "label": "Johan Cruyff (Ajax / FC Barcelona)",
     "position": "MCO",
-    "startingPrice": 60,
-    "realValue": 85,
     "troll": false,
-    "wikiTitle": "Johan Cruyff"
+    "wikiTitle": "Johan Cruyff",
+    "media": 89
   },
   {
     "id": "valderrama",
     "name": "Carlos Valderrama",
     "label": "Carlos Valderrama (Colombia) — el Pibe",
     "position": "MCO",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Carlos Valderrama"
+    "wikiTitle": "Carlos Valderrama",
+    "media": 75
   },
   {
     "id": "davids",
     "name": "Edgar Davids",
     "label": "Edgar Davids (Juventus / Ajax)",
     "position": "MCD",
-    "startingPrice": 30,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Edgar Davids"
+    "wikiTitle": "Edgar Davids",
+    "media": 72
   },
   {
     "id": "veron_troll",
     "name": "Juan Sebastián Verón",
     "label": "Juan Sebastián Verón (Manchester United) — flopazo del año",
     "position": "MC",
-    "startingPrice": 68,
-    "realValue": 5,
     "troll": true,
-    "wikiTitle": "Juan Sebastián Verón"
+    "wikiTitle": "Juan Sebastián Verón",
+    "media": 41
   },
   {
     "id": "beckham_mls_troll",
     "name": "David Beckham",
     "label": "David Beckham (LA Galaxy — retirado)",
     "position": "MC",
-    "startingPrice": 65,
-    "realValue": 4,
     "troll": true,
-    "wikiTitle": "David Beckham"
+    "wikiTitle": "David Beckham",
+    "media": 41
   },
   {
     "id": "robinho_troll",
     "name": "Robinho",
     "label": "Robinho (Manchester City — tremendo fichaje... o no)",
     "position": "MCO",
-    "startingPrice": 62,
-    "realValue": 6,
     "troll": true,
-    "wikiTitle": "Robinho"
+    "wikiTitle": "Robinho",
+    "media": 41
   },
   {
     "id": "hazard_troll",
     "name": "Eden Hazard",
     "label": "Eden Hazard (Real Madrid — lesiones interminables)",
     "position": "MCO",
-    "startingPrice": 72,
-    "realValue": 7,
     "troll": true,
-    "wikiTitle": "Eden Hazard"
+    "wikiTitle": "Eden Hazard",
+    "media": 42
   },
   {
     "id": "ozil_troll",
     "name": "Mesut Özil",
     "label": "Mesut Özil (Arsenal — última temporada)",
     "position": "MCO",
-    "startingPrice": 60,
-    "realValue": 5,
     "troll": true,
-    "wikiTitle": "Mesut Özil"
+    "wikiTitle": "Mesut Özil",
+    "media": 41
   },
   {
     "id": "pogba_troll",
     "name": "Paul Pogba",
     "label": "Paul Pogba (Manchester United) — potencial no aprovechado",
     "position": "MC",
-    "startingPrice": 70,
-    "realValue": 8,
     "troll": true,
-    "wikiTitle": "Paul Pogba"
+    "wikiTitle": "Paul Pogba",
+    "media": 42
   },
   {
     "id": "vidal",
     "name": "Arturo Vidal",
     "label": "Arturo Vidal (Bayern / Barça / Chile)",
     "position": "MC",
-    "startingPrice": 32,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Arturo Vidal"
+    "wikiTitle": "Arturo Vidal",
+    "media": 72
   },
   {
     "id": "camavinga",
     "name": "Eduardo Camavinga",
     "label": "Eduardo Camavinga (Real Madrid)",
     "position": "MCD",
-    "startingPrice": 28,
-    "realValue": 45,
     "troll": false,
-    "wikiTitle": "Eduardo Camavinga"
+    "wikiTitle": "Eduardo Camavinga",
+    "media": 70
   },
   {
     "id": "bellingham",
     "name": "Jude Bellingham",
     "label": "Jude Bellingham (Real Madrid)",
     "position": "MC",
-    "startingPrice": 45,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "Jude Bellingham"
+    "wikiTitle": "Jude Bellingham",
+    "media": 80
   },
   {
     "id": "pedri",
     "name": "Pedri",
     "label": "Pedri (FC Barcelona) — gem oculta",
     "position": "MC",
-    "startingPrice": 10,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Pedri"
+    "wikiTitle": "Pedri",
+    "media": 76
   },
   {
     "id": "gavi",
     "name": "Gavi",
     "label": "Gavi (FC Barcelona)",
     "position": "MC",
-    "startingPrice": 30,
-    "realValue": 52,
     "troll": false,
-    "wikiTitle": "Gavi (footballer)"
+    "wikiTitle": "Gavi (footballer)",
+    "media": 73
   },
   {
     "id": "messi",
     "name": "Lionel Messi",
     "label": "Lionel Messi (FC Barcelona) — el mejor de todos los tiempos",
     "position": "ED",
-    "startingPrice": 90,
-    "realValue": 100,
     "troll": false,
-    "wikiTitle": "Lionel Messi"
+    "wikiTitle": "Lionel Messi",
+    "media": 94
   },
   {
     "id": "cristiano",
     "name": "Cristiano Ronaldo",
     "label": "Cristiano Ronaldo (Real Madrid / Manchester United)",
     "position": "EI",
-    "startingPrice": 88,
-    "realValue": 98,
     "troll": false,
-    "wikiTitle": "Cristiano Ronaldo"
+    "wikiTitle": "Cristiano Ronaldo",
+    "media": 94
   },
   {
     "id": "pele",
     "name": "Pelé",
     "label": "Pelé (Santos / Brasil) — rey del fútbol",
     "position": "DC",
-    "startingPrice": 85,
-    "realValue": 98,
     "troll": false,
-    "wikiTitle": "Pelé"
+    "wikiTitle": "Pelé",
+    "media": 94
   },
   {
     "id": "maradona",
     "name": "Diego Maradona",
     "label": "Diego Maradona (Nápoles / Argentina)",
     "position": "MCO",
-    "startingPrice": 85,
-    "realValue": 97,
     "troll": false,
-    "wikiTitle": "Diego Maradona"
+    "wikiTitle": "Diego Maradona",
+    "media": 94
   },
   {
     "id": "r9",
     "name": "Ronaldo R9",
     "label": "Ronaldo R9 (Barcelona / Inter / Real Madrid) — el Fenómeno",
     "position": "DC",
-    "startingPrice": 78,
-    "realValue": 93,
     "troll": false,
-    "wikiTitle": "Ronaldo (Brazilian footballer)"
+    "wikiTitle": "Ronaldo (Brazilian footballer)",
+    "media": 93
   },
   {
     "id": "henry",
     "name": "Thierry Henry",
     "label": "Thierry Henry (Arsenal / FC Barcelona)",
     "position": "DC",
-    "startingPrice": 65,
-    "realValue": 82,
     "troll": false,
-    "wikiTitle": "Thierry Henry"
+    "wikiTitle": "Thierry Henry",
+    "media": 88
   },
   {
     "id": "ibra",
     "name": "Zlatan Ibrahimović",
     "label": "Zlatan Ibrahimović (PSG / AC Milan)",
     "position": "DC",
-    "startingPrice": 60,
-    "realValue": 78,
     "troll": false,
-    "wikiTitle": "Zlatan Ibrahimović"
+    "wikiTitle": "Zlatan Ibrahimović",
+    "media": 86
   },
   {
     "id": "drogba",
     "name": "Didier Drogba",
     "label": "Didier Drogba (Chelsea)",
     "position": "DC",
-    "startingPrice": 50,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Didier Drogba"
+    "wikiTitle": "Didier Drogba",
+    "media": 82
   },
   {
     "id": "suarez",
     "name": "Luis Suárez",
     "label": "Luis Suárez (Liverpool / FC Barcelona)",
     "position": "DC",
-    "startingPrice": 55,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Luis Suárez"
+    "wikiTitle": "Luis Suárez",
+    "media": 83
   },
   {
     "id": "benzema",
     "name": "Karim Benzema",
     "label": "Karim Benzema (Real Madrid) — Balón de Oro",
     "position": "DC",
-    "startingPrice": 58,
-    "realValue": 75,
     "troll": false,
-    "wikiTitle": "Karim Benzema"
+    "wikiTitle": "Karim Benzema",
+    "media": 84
   },
   {
     "id": "lewandowski",
     "name": "Robert Lewandowski",
     "label": "Robert Lewandowski (Bayern / FC Barcelona)",
     "position": "DC",
-    "startingPrice": 55,
-    "realValue": 73,
     "troll": false,
-    "wikiTitle": "Robert Lewandowski"
+    "wikiTitle": "Robert Lewandowski",
+    "media": 83
   },
   {
     "id": "haaland",
     "name": "Erling Haaland",
     "label": "Erling Haaland (Manchester City)",
     "position": "DC",
-    "startingPrice": 52,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Erling Haaland"
+    "wikiTitle": "Erling Haaland",
+    "media": 83
   },
   {
     "id": "mbappe",
     "name": "Kylian Mbappé",
     "label": "Kylian Mbappé (PSG / Real Madrid)",
     "position": "EI",
-    "startingPrice": 60,
-    "realValue": 80,
     "troll": false,
-    "wikiTitle": "Kylian Mbappé"
+    "wikiTitle": "Kylian Mbappé",
+    "media": 87
   },
   {
     "id": "neymar",
     "name": "Neymar Jr.",
     "label": "Neymar Jr. (FC Barcelona / PSG)",
     "position": "EI",
-    "startingPrice": 62,
-    "realValue": 78,
     "troll": false,
-    "wikiTitle": "Neymar"
+    "wikiTitle": "Neymar",
+    "media": 86
   },
   {
     "id": "salah",
     "name": "Mohamed Salah",
     "label": "Mohamed Salah (Liverpool)",
     "position": "ED",
-    "startingPrice": 52,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Mohamed Salah"
+    "wikiTitle": "Mohamed Salah",
+    "media": 82
   },
   {
     "id": "aguero",
     "name": "Sergio Agüero",
     "label": "Sergio Agüero (Manchester City)",
     "position": "DC",
-    "startingPrice": 52,
-    "realValue": 70,
     "troll": false,
-    "wikiTitle": "Sergio Agüero"
+    "wikiTitle": "Sergio Agüero",
+    "media": 82
   },
   {
     "id": "rooney",
     "name": "Wayne Rooney",
     "label": "Wayne Rooney (Manchester United)",
     "position": "DC",
-    "startingPrice": 45,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "Wayne Rooney"
+    "wikiTitle": "Wayne Rooney",
+    "media": 80
   },
   {
     "id": "batistuta",
     "name": "Gabriel Batistuta",
     "label": "Gabriel Batistuta (Fiorentina / Roma) — gem oculta",
     "position": "DC",
-    "startingPrice": 12,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Gabriel Batistuta"
+    "wikiTitle": "Gabriel Batistuta",
+    "media": 83
   },
   {
     "id": "eto",
     "name": "Samuel Eto'o",
     "label": "Samuel Eto'o (FC Barcelona / Inter)",
     "position": "DC",
-    "startingPrice": 42,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Samuel Eto'o"
+    "wikiTitle": "Samuel Eto'o",
+    "media": 78
   },
   {
     "id": "tevez",
     "name": "Carlos Tevez",
     "label": "Carlos Tevez (Boca Juniors / Manchester City)",
     "position": "DC",
-    "startingPrice": 38,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Carlos Tevez"
+    "wikiTitle": "Carlos Tevez",
+    "media": 76
   },
   {
     "id": "vinicius",
     "name": "Vinícius Júnior",
     "label": "Vinícius Júnior (Real Madrid)",
     "position": "EI",
-    "startingPrice": 50,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Vinícius Júnior"
+    "wikiTitle": "Vinícius Júnior",
+    "media": 81
   },
   {
     "id": "bale_troll",
     "name": "Gareth Bale",
     "label": "Gareth Bale (Real Madrid — campo de golf incluido)",
     "position": "ED",
-    "startingPrice": 75,
-    "realValue": 6,
     "troll": true,
-    "wikiTitle": "Gareth Bale"
+    "wikiTitle": "Gareth Bale",
+    "media": 41
   },
   {
     "id": "maradona_dt_troll",
     "name": "Diego Maradona",
     "label": "Maradona DT (Dorados de Sinaloa) — ¿lo pagaste caro?",
     "position": "MCO",
-    "startingPrice": 82,
-    "realValue": 3,
     "troll": true,
-    "wikiTitle": "Diego Maradona"
+    "wikiTitle": "Diego Maradona",
+    "media": 41
   },
   {
     "id": "r9_old_troll",
     "name": "Ronaldo R9",
     "label": "Ronaldo R9 (Corinthians 2011 — retirado)",
     "position": "DC",
-    "startingPrice": 75,
-    "realValue": 4,
     "troll": true,
-    "wikiTitle": "Ronaldo (Brazilian footballer)"
+    "wikiTitle": "Ronaldo (Brazilian footballer)",
+    "media": 41
   },
   {
     "id": "cr7_alnassr_troll",
     "name": "Cristiano Ronaldo",
     "label": "Cristiano Ronaldo (Al-Nassr — la Saudi Pro League)",
     "position": "EI",
-    "startingPrice": 80,
-    "realValue": 5,
     "troll": true,
-    "wikiTitle": "Cristiano Ronaldo"
+    "wikiTitle": "Cristiano Ronaldo",
+    "media": 41
   },
   {
     "id": "ibra_mls_troll",
     "name": "Zlatan Ibrahimović",
     "label": "Zlatan Ibrahimović (LA Galaxy) — 'Bienvenidos a Los Ángeles'",
     "position": "DC",
-    "startingPrice": 68,
-    "realValue": 4,
     "troll": true,
-    "wikiTitle": "Zlatan Ibrahimović"
+    "wikiTitle": "Zlatan Ibrahimović",
+    "media": 41
   },
   {
     "id": "figo",
     "name": "Luis Figo",
     "label": "Luis Figo (Real Madrid / Barcelona)",
     "position": "ED",
-    "startingPrice": 58,
-    "realValue": 80,
     "troll": false,
-    "wikiTitle": "Luís Figo"
+    "wikiTitle": "Luís Figo",
+    "media": 87
   },
   {
     "id": "robben",
     "name": "Arjen Robben",
     "label": "Arjen Robben (Bayern Múnich)",
     "position": "ED",
-    "startingPrice": 52,
-    "realValue": 75,
     "troll": false,
-    "wikiTitle": "Arjen Robben"
+    "wikiTitle": "Arjen Robben",
+    "media": 84
   },
   {
     "id": "bernardo",
     "name": "Bernardo Silva",
     "label": "Bernardo Silva (Manchester City)",
     "position": "ED",
-    "startingPrice": 42,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Bernardo Silva"
+    "wikiTitle": "Bernardo Silva",
+    "media": 78
   },
   {
     "id": "saka",
     "name": "Bukayo Saka",
     "label": "Bukayo Saka (Arsenal)",
     "position": "ED",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Bukayo Saka"
+    "wikiTitle": "Bukayo Saka",
+    "media": 75
   },
   {
     "id": "bale_ed",
     "name": "Gareth Bale",
     "label": "Gareth Bale (Tottenham — prime)",
     "position": "ED",
-    "startingPrice": 40,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Gareth Bale"
+    "wikiTitle": "Gareth Bale",
+    "media": 81
   },
   {
     "id": "di_maria",
     "name": "Ángel Di María",
     "label": "Ángel Di María (Real Madrid / PSG)",
     "position": "ED",
-    "startingPrice": 38,
-    "realValue": 60,
     "troll": false,
-    "wikiTitle": "Ángel Di María"
+    "wikiTitle": "Ángel Di María",
+    "media": 77
   },
   {
     "id": "bale_ei_troll",
     "name": "Gareth Bale",
     "label": "Gareth Bale (Golf FC — modo vacaciones)",
     "position": "EI",
-    "startingPrice": 60,
-    "realValue": 5,
     "troll": true,
-    "wikiTitle": "Gareth Bale"
+    "wikiTitle": "Gareth Bale",
+    "media": 41
   },
   {
     "id": "sterling",
     "name": "Raheem Sterling",
     "label": "Raheem Sterling (Manchester City)",
     "position": "EI",
-    "startingPrice": 35,
-    "realValue": 52,
     "troll": false,
-    "wikiTitle": "Raheem Sterling"
+    "wikiTitle": "Raheem Sterling",
+    "media": 73
   },
   {
     "id": "sane",
     "name": "Leroy Sané",
     "label": "Leroy Sané (Bayern Múnich)",
     "position": "EI",
-    "startingPrice": 32,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Leroy Sané"
+    "wikiTitle": "Leroy Sané",
+    "media": 72
   },
   {
     "id": "coman",
     "name": "Kingsley Coman",
     "label": "Kingsley Coman (Bayern Múnich)",
     "position": "EI",
-    "startingPrice": 30,
-    "realValue": 48,
     "troll": false,
-    "wikiTitle": "Kingsley Coman"
+    "wikiTitle": "Kingsley Coman",
+    "media": 71
   },
   {
     "id": "makelele",
     "name": "Claude Makélélé",
     "label": "Claude Makélélé (Real Madrid / Chelsea)",
     "position": "MCD",
-    "startingPrice": 40,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Claude Makélélé"
+    "wikiTitle": "Claude Makélélé",
+    "media": 81
   },
   {
     "id": "kante",
     "name": "N'Golo Kanté",
     "label": "N'Golo Kanté (Chelsea)",
     "position": "MCD",
-    "startingPrice": 42,
-    "realValue": 65,
     "troll": false,
-    "wikiTitle": "N'Golo Kanté"
+    "wikiTitle": "N'Golo Kanté",
+    "media": 80
   },
   {
     "id": "gattuso",
     "name": "Gennaro Gattuso",
     "label": "Gennaro Gattuso (AC Milan)",
     "position": "MCD",
-    "startingPrice": 35,
-    "realValue": 55,
     "troll": false,
-    "wikiTitle": "Gennaro Gattuso"
+    "wikiTitle": "Gennaro Gattuso",
+    "media": 75
   },
   {
     "id": "casemiro",
     "name": "Casemiro",
     "label": "Casemiro (Real Madrid)",
     "position": "MCD",
-    "startingPrice": 40,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Casemiro"
+    "wikiTitle": "Casemiro",
+    "media": 78
   },
   {
     "id": "rodri",
     "name": "Rodri",
     "label": "Rodri (Manchester City) — Balón de Oro",
     "position": "MCD",
-    "startingPrice": 48,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Rodri (footballer, born 1996)"
+    "wikiTitle": "Rodri (footballer, born 1996)",
+    "media": 83
   },
   {
     "id": "mascherano",
     "name": "Javier Mascherano",
     "label": "Javier Mascherano (FC Barcelona)",
     "position": "MCD",
-    "startingPrice": 32,
-    "realValue": 52,
     "troll": false,
-    "wikiTitle": "Javier Mascherano"
+    "wikiTitle": "Javier Mascherano",
+    "media": 73
   },
   {
     "id": "maicon",
     "name": "Maicon",
     "label": "Maicon (Inter de Milán)",
     "position": "LD",
-    "startingPrice": 35,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Maicon (footballer, born 1981)"
+    "wikiTitle": "Maicon (footballer, born 1981)",
+    "media": 76
   },
   {
     "id": "zanetti",
     "name": "Javier Zanetti",
     "label": "Javier Zanetti (Inter de Milán)",
     "position": "LD",
-    "startingPrice": 40,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Javier Zanetti"
+    "wikiTitle": "Javier Zanetti",
+    "media": 78
   },
   {
     "id": "carvajal",
     "name": "Dani Carvajal",
     "label": "Dani Carvajal (Real Madrid)",
     "position": "LD",
-    "startingPrice": 32,
-    "realValue": 52,
     "troll": false,
-    "wikiTitle": "Dani Carvajal"
+    "wikiTitle": "Dani Carvajal",
+    "media": 73
   },
   {
     "id": "walker",
     "name": "Kyle Walker",
     "label": "Kyle Walker (Manchester City)",
     "position": "LD",
-    "startingPrice": 28,
-    "realValue": 48,
     "troll": false,
-    "wikiTitle": "Kyle Walker"
+    "wikiTitle": "Kyle Walker",
+    "media": 71
   },
   {
     "id": "evra",
     "name": "Patrice Evra",
     "label": "Patrice Evra (Manchester United)",
     "position": "LI",
-    "startingPrice": 30,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Patrice Evra"
+    "wikiTitle": "Patrice Evra",
+    "media": 72
   },
   {
     "id": "alaba",
     "name": "David Alaba",
     "label": "David Alaba (Bayern / Real Madrid)",
     "position": "LI",
-    "startingPrice": 35,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "David Alaba"
+    "wikiTitle": "David Alaba",
+    "media": 76
   },
   {
     "id": "theo",
     "name": "Theo Hernández",
     "label": "Theo Hernández (AC Milan)",
     "position": "LI",
-    "startingPrice": 30,
-    "realValue": 50,
     "troll": false,
-    "wikiTitle": "Theo Hernández"
+    "wikiTitle": "Theo Hernández",
+    "media": 72
   },
   {
     "id": "grimaldo",
     "name": "Álex Grimaldo",
     "label": "Álex Grimaldo (Bayer Leverkusen)",
     "position": "LI",
-    "startingPrice": 22,
-    "realValue": 42,
     "troll": false,
-    "wikiTitle": "Álex Grimaldo"
+    "wikiTitle": "Álex Grimaldo",
+    "media": 69
   },
   {
     "id": "ozil",
     "name": "Mesut Özil",
     "label": "Mesut Özil (Real Madrid / Arsenal — prime)",
     "position": "MCO",
-    "startingPrice": 45,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Mesut Özil"
+    "wikiTitle": "Mesut Özil",
+    "media": 81
   },
   {
     "id": "kaka",
     "name": "Kaká",
     "label": "Kaká (AC Milan)",
     "position": "MCO",
-    "startingPrice": 55,
-    "realValue": 80,
     "troll": false,
-    "wikiTitle": "Kaká"
+    "wikiTitle": "Kaká",
+    "media": 87
   },
   {
     "id": "totti",
     "name": "Francesco Totti",
     "label": "Francesco Totti (AS Roma)",
     "position": "MCO",
-    "startingPrice": 50,
-    "realValue": 75,
     "troll": false,
-    "wikiTitle": "Francesco Totti"
+    "wikiTitle": "Francesco Totti",
+    "media": 84
   },
   {
     "id": "villa",
     "name": "David Villa",
     "label": "David Villa (Valencia / FC Barcelona)",
     "position": "DC",
-    "startingPrice": 45,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "David Villa"
+    "wikiTitle": "David Villa",
+    "media": 81
   },
   {
     "id": "torres",
     "name": "Fernando Torres",
     "label": "Fernando Torres (Liverpool / Atlético)",
     "position": "DC",
-    "startingPrice": 42,
-    "realValue": 62,
     "troll": false,
-    "wikiTitle": "Fernando Torres"
+    "wikiTitle": "Fernando Torres",
+    "media": 78
   },
   {
     "id": "shevchenko",
     "name": "Andriy Shevchenko",
     "label": "Andriy Shevchenko (AC Milan)",
     "position": "DC",
-    "startingPrice": 48,
-    "realValue": 72,
     "troll": false,
-    "wikiTitle": "Andriy Shevchenko"
+    "wikiTitle": "Andriy Shevchenko",
+    "media": 83
   },
   {
     "id": "raul",
     "name": "Raúl González",
     "label": "Raúl (Real Madrid)",
     "position": "DC",
-    "startingPrice": 45,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Raúl (footballer)"
+    "wikiTitle": "Raúl (footballer)",
+    "media": 81
   },
   {
     "id": "inzaghi",
     "name": "Filippo Inzaghi",
     "label": "Filippo Inzaghi (AC Milan)",
     "position": "DC",
-    "startingPrice": 35,
-    "realValue": 58,
     "troll": false,
-    "wikiTitle": "Filippo Inzaghi"
+    "wikiTitle": "Filippo Inzaghi",
+    "media": 76
   },
   {
     "id": "vieira",
     "name": "Patrick Vieira",
     "label": "Patrick Vieira (Arsenal)",
     "position": "MCD",
-    "startingPrice": 42,
-    "realValue": 68,
     "troll": false,
-    "wikiTitle": "Patrick Vieira"
+    "wikiTitle": "Patrick Vieira",
+    "media": 81
   },
   {
     "id": "keane",
     "name": "Roy Keane",
     "label": "Roy Keane (Manchester United)",
     "position": "MCD",
-    "startingPrice": 40,
-    "realValue": 66,
     "troll": false,
-    "wikiTitle": "Roy Keane"
+    "wikiTitle": "Roy Keane",
+    "media": 80
   },
   {
     "id": "matic_troll",
     "name": "Nemanja Matić",
     "label": "Nemanja Matić (Manchester United — fin de carrera)",
     "position": "MCD",
-    "startingPrice": 48,
-    "realValue": 8,
     "troll": true,
-    "wikiTitle": "Nemanja Matić"
+    "wikiTitle": "Nemanja Matić",
+    "media": 42
   }
 ]

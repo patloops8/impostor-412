@@ -28,7 +28,7 @@ socket.io.on('reconnect', () => { connBanner.classList.add('hidden'); });
 /* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -152,9 +152,16 @@ document.querySelectorAll('input[name=lm]').forEach(r=>r.addEventListener('chang
   sendLieCfg();
 }));
 
-function sendSubCfg(){ socket.emit('host:update_subasta_config',{code:roomCode,budget:Number($('cfg-sub-budget').value),skipLimit:Number($('cfg-sub-skips').value)}); }
+function sendSubCfg(){ socket.emit('host:update_subasta_config',{code:roomCode,budget:Number($('cfg-sub-budget').value),skipLimit:Number($('cfg-sub-skips').value),winMode:document.querySelector('input[name=wm]:checked').value}); }
 $('cfg-sub-budget').addEventListener('change',sendSubCfg);
 $('cfg-sub-skips').addEventListener('change',sendSubCfg);
+document.querySelectorAll('input[name=wm]').forEach(r=>r.addEventListener('change',()=>{
+  const ovr=document.querySelector('input[name=wm][value=ovr]').checked;
+  $('win-mode-ovr').classList.toggle('checked',ovr);
+  $('win-mode-votacion').classList.toggle('checked',!ovr);
+  $('win-mode-desc').textContent=ovr?'OVR: gana quien tenga el equipo con mayor media promedio.':'Votación: al final se debate posición por posición y el grupo vota. Torneo de eliminación.';
+  sendSubCfg();
+}));
 
 $('btn-start').addEventListener('click',()=>socket.emit('host:start_match',{code:roomCode}));
 
@@ -286,7 +293,7 @@ function prefetchWiki(titles){ (titles||[]).forEach(t=>{ if(t&&!wikiCache.has(t)
 function applySil(img,ph,url,rev){ img.className=rev?'silhouette-img revealed':'silhouette-img'; img.onerror=()=>{img.classList.add('hidden');if(ph)ph.classList.remove('hidden');}; img.src=url; img.classList.remove('hidden'); if(ph)ph.classList.add('hidden'); }
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
-let subState={budget:500,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
+let subState={budget:1000,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
@@ -455,13 +462,66 @@ socket.on('sub:card_resolved',({cardName,cardLabel,cardPosition,positionLabel,ca
   show('s-sub-result');
 });
 $('btn-sub-next').addEventListener('click',()=>socket.emit('host:next_subasta_card',{code:roomCode}));
-socket.on('sub:game_over',({scores,formation})=>{
+// ===== TORNEO (modo votación) =====
+socket.on('sub:tournament_start',({teams})=>{
+  stopSubClock();
+  $('sub-tour-eyebrow').textContent='Torneo de equipos';
+  $('sub-tour-title').textContent='¡Empieza el debate!';
+  $('sub-tour-sub').textContent='Se enfrentarán posición por posición. Votan los que no juegan el duelo.';
+  const info=$('sub-tour-info'); info.innerHTML='';
+  teams.slice().sort((a,b)=>b.ovr-a.ovr).forEach(t=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(t.name)}</span><span class="who">OVR oculto</span>`; info.appendChild(it); });
+  show('s-sub-tournament');
+});
+socket.on('sub:tournament_bye',({name,round})=>{ $('sub-tour-title').textContent=`${name} pasa directo`; $('sub-tour-sub').textContent=`Mejor equipo de la ronda ${round} — espera rival`; show('s-sub-tournament'); });
+socket.on('sub:tournament_round',({round,remaining})=>{ $('sub-tour-title').textContent=`Ronda ${round}`; $('sub-tour-sub').textContent='Siguen: '+remaining.join(', '); show('s-sub-tournament'); });
+socket.on('sub:duel_start',({aName,bName,round,totalPositions})=>{
+  $('sub-duel-round').textContent=`Ronda ${round}`;
+  $('sub-duel-a-name').textContent=aName; $('sub-duel-b-name').textContent=bName;
+  $('sub-duel-a-score').textContent='0'; $('sub-duel-b-score').textContent='0';
+  $('sub-duel-progress').textContent=`Pos 0/${totalPositions}`;
+  show('s-sub-duel');
+});
+let duelAmInvolved=false;
+socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,totalPositions,voterIds})=>{
+  $('sub-duel-pos').textContent=positionLabel; $('sub-duel-pos').className='position-badge '+posGroup(position);
+  $('sub-duel-progress').textContent=`Pos ${posIndex}/${totalPositions}`;
+  $('sub-duel-a-player').textContent=aCard?aCard.name:'(sin jugador)';
+  $('sub-duel-b-player').textContent=bCard?bCard.name:'(sin jugador)';
+  $('sub-duel-a-media').style.display='none'; $('sub-duel-b-media').style.display='none';
+  loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.wikiTitle:null,positionLabel,false);
+  loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.wikiTitle:null,positionLabel,false);
+  const canVote=voterIds.includes(myId);
+  duelAmInvolved=!canVote;
+  $('sub-duel-can-vote').classList.toggle('hidden',!canVote);
+  $('sub-duel-status').textContent=canVote?'¿Quién es mejor?':'Tú juegas este duelo. Esperando votos...';
+});
+$('sub-duel-vote-a').addEventListener('click',()=>castDuelVote('A'));
+$('sub-duel-vote-b').addEventListener('click',()=>castDuelVote('B'));
+function castDuelVote(c){ $('sub-duel-can-vote').classList.add('hidden'); $('sub-duel-status').textContent='Voto enviado...'; socket.emit('player:vote_duel',{code:roomCode,choice:c}); }
+socket.on('sub:duel_vote_progress',({votesIn,votesNeeded})=>{ if($('sub-duel-can-vote').classList.contains('hidden'))$('sub-duel-status').textContent=`${votesIn}/${votesNeeded} votos`; });
+socket.on('sub:duel_position_result',({winner,mediaA,mediaB,scoreA,scoreB})=>{
+  if(mediaA!==null){ $('sub-duel-a-media').style.display='block'; $('sub-duel-a-media').textContent='Media '+mediaA; }
+  if(mediaB!==null){ $('sub-duel-b-media').style.display='block'; $('sub-duel-b-media').textContent='Media '+mediaB; }
+  $('sub-duel-a-score').textContent=scoreA; $('sub-duel-b-score').textContent=scoreB;
+  $('sub-duel-status').textContent=winner==='A'?'◄ Gana esta posición':'Gana esta posición ►';
+});
+socket.on('sub:duel_result',({winnerName,loserName,scoreA,scoreB})=>{
+  $('sub-tour-eyebrow').textContent='Resultado del duelo';
+  $('sub-tour-title').textContent=`${winnerName} avanza`;
+  $('sub-tour-sub').textContent=`${winnerName} venció a ${loserName} (${scoreA}–${scoreB})`;
+  $('sub-tour-info').innerHTML='';
+  show('s-sub-tournament');
+});
+
+socket.on('sub:game_over',({mode,scores,formation,championName})=>{
   if(formation)currentFormation=formation;
   const me=scores.find(s=>s.id===myId);
-  $('sub-my-total').textContent=`$${me?me.totalRealValue:0}M`;
+  // Encabezado según modo
+  if(mode==='votacion'){ $('sub-my-total').textContent=championName?('🏆 '+championName):''; }
+  else { $('sub-my-total').textContent=me?('OVR '+me.ovr):''; }
   drawPitch($('sub-pitch'), currentFormation, me?me.cards:[]);
   const sb=$('sub-scoreboard'); sb.innerHTML='';
-  scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">$${s.totalRealValue}M</span>`; sb.appendChild(r); });
+  scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):('OVR '+s.ovr); r.innerHTML=`<span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${detail}</span>`; sb.appendChild(r); });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
   show('s-sub-over');
@@ -498,7 +558,7 @@ function drawPitch(container, formation, cards){
         token.textContent=pos;
         const nm=document.createElement('div'); nm.className='pitch-name'; nm.textContent=card?shortName(card.name):'—';
         pl.appendChild(token); pl.appendChild(nm);
-        if(card){ const v=document.createElement('div'); v.className='pitch-val'; v.textContent=`$${card.realValue}M`; pl.appendChild(v); }
+        if(card){ const v=document.createElement('div'); v.className='pitch-val'; v.textContent=`${card.media}`; pl.appendChild(v); }
         rowDiv.appendChild(pl);
       }
     });
