@@ -35,6 +35,11 @@ html,body{margin:0;padding:0;color:var(--ink);font-family:var(--body);min-height
 body{
   background:var(--bg) url('/images/ui/fondo-estadio.jpg') center top / cover no-repeat fixed;
 }
+/* En laptop la imagen vertical se recorta mucho; la anclamos arriba y oscurecemos
+   los lados con el color base para que se integre sin verse estirada. */
+@media (min-width:760px){
+  body{ background-size:auto 100vh, cover; background-position:center top; }
+}
 /* Capa oscura sobre el fondo para que el texto siempre se lea */
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg, rgba(7,11,16,0.35) 0%, rgba(7,11,16,0.7) 55%, rgba(7,11,16,0.92) 100%);}
 
@@ -59,6 +64,21 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 
 .wrap{max-width:520px;margin:0 auto;padding:22px 18px 40px;min-height:100vh;display:flex;flex-direction:column;}
 .wrap-tv{max-width:1100px;}
+/* En pantallas anchas (laptop): la app se ve como un panel centrado tipo "teléfono",
+   con el estadio de fondo llenando toda la pantalla alrededor. */
+@media (min-width:760px){
+  .wrap:not(.wrap-tv){
+    max-width:480px;
+    margin:24px auto;
+    min-height:calc(100vh - 48px);
+    background:linear-gradient(180deg, rgba(7,11,16,0.55) 0%, rgba(7,11,16,0.8) 100%);
+    backdrop-filter:blur(3px);
+    border:1px solid var(--line2);
+    border-radius:24px;
+    box-shadow:0 24px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(182,255,46,0.08);
+    overflow:hidden;
+  }
+}
 .eyebrow{font-family:var(--display);font-size:0.84rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--neon);margin:0;font-weight:600;}
 .card{background:var(--panel);backdrop-filter:blur(6px);border:1px solid var(--line2);border-radius:var(--radius);padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.35);}
 .center-flex{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;flex:1;text-align:center;}
@@ -95,9 +115,9 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .clue-item .who{color:var(--ink-soft);font-family:var(--mono);font-size:0.75rem;font-variant-numeric:tabular-nums;}
 
 .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.vote-btn{background:var(--card);color:var(--ink);border:2px solid var(--line2);border-radius:12px;padding:18px 10px;font-size:1rem;font-weight:700;}
-.vote-btn:hover{border-color:var(--neon);}
-.vote-btn.selected{border-color:var(--neon);background:rgba(182,255,46,0.10);}
+.vote-btn{background:rgba(182,255,46,0.05);color:var(--neon);border:2px solid var(--neon-dim);border-radius:12px;padding:18px 10px;font-size:1rem;font-weight:700;letter-spacing:0.02em;}
+.vote-btn:hover{background:rgba(182,255,46,0.14);border-color:var(--neon);box-shadow:0 0 14px rgba(182,255,46,0.2);}
+.vote-btn.selected{border-color:var(--neon);background:var(--neon);color:#0a1400;box-shadow:0 0 18px rgba(182,255,46,0.35);}
 
 .reveal-banner{border-radius:var(--radius-lg);padding:26px 20px;text-align:center;}
 .reveal-banner.caught{background:linear-gradient(160deg,#1f6f3d 0%,#0e2a18 100%);border:1px solid var(--neon-dim);color:var(--white);}
