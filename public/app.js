@@ -268,48 +268,20 @@ socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,ro
 $('btn-lie-next').addEventListener('click',()=>{ if(lieLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_lie_round',{code:roomCode}); });
 
 /* ===================== SUBASTA ===================== */
-const wikiCache=new Map();
-// Pide el thumbnail reducido a ~300px: mucho más liviano para móvil que la imagen completa.
-async function fetchWikiThumb(wikiTitle){
-  if(wikiCache.has(wikiTitle)) return wikiCache.get(wikiTitle);
-  try{
-    const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`);
-    const d=await res.json();
-    let u=d.thumbnail?.source||null;
-    if(u) u=u.replace(/\/\d+px-/,'/300px-');
-    wikiCache.set(wikiTitle,u);
-    return u;
-  }catch{ wikiCache.set(wikiTitle,null); return null; }
-}
-// Carga la imagen del jugador. Prioridad:
-//   1. Imagen local propia (/images/siluetas/<id>.png o /images/reales/<id>.png)
-//   2. Si no existe, respaldo a Wikipedia
-//   3. Si tampoco, la inicial de la posición
-// 'revealed' = true usa la foto a color (reales/), false usa la silueta (siluetas/).
-function loadSil(imgEl,phEl,phPosEl,cardId,wikiTitle,posName,revealed){
+// Carga la imagen del jugador desde las imágenes propias del servidor.
+//   revealed=false -> silueta negra (/images/siluetas/<id>.png)
+//   revealed=true  -> foto a color (/images/reales/<id>.png)
+// Si la imagen no existe todavía, muestra el placeholder (inicial de la posición).
+function loadSil(imgEl,phEl,phPosEl,cardId,posName,revealed){
   if(!imgEl)return;
+  if(!cardId){ silPh(imgEl,phEl,phPosEl,posName); return; }
   const carpeta = revealed ? 'reales' : 'siluetas';
-  if(cardId){
-    const localUrl = `/images/${carpeta}/${encodeURIComponent(cardId)}.png`;
-    // Imagen local: ya viene procesada (silueta negra o foto a color). Sin filtro.
-    imgEl.className = 'silhouette-img revealed';
-    imgEl.onerror = ()=>{ tryWikiFallback(imgEl,phEl,phPosEl,wikiTitle,posName,revealed); };
-    imgEl.onload = ()=>{ imgEl.classList.remove('hidden'); if(phEl)phEl.classList.add('hidden'); };
-    imgEl.src = localUrl;
-    imgEl.classList.remove('hidden'); if(phEl)phEl.classList.add('hidden');
-    return;
-  }
-  tryWikiFallback(imgEl,phEl,phPosEl,wikiTitle,posName,revealed);
+  const url = `/images/${carpeta}/${encodeURIComponent(cardId)}.png`;
+  imgEl.className = 'silhouette-img revealed';
+  imgEl.onerror = ()=>{ silPh(imgEl,phEl,phPosEl,posName); }; // sin imagen: placeholder
+  imgEl.onload = ()=>{ imgEl.classList.remove('hidden'); if(phEl)phEl.classList.add('hidden'); };
+  imgEl.src = url;
 }
-async function tryWikiFallback(imgEl,phEl,phPosEl,wikiTitle,posName,revealed){
-  if(!wikiTitle){ silPh(imgEl,phEl,phPosEl,posName); return; }
-  const u=await fetchWikiThumb(wikiTitle);
-  // Fallback Wikipedia: es foto a color. Si NO está revelada, ennegrecerla con filtro CSS.
-  if(u)applySil(imgEl,phEl,u,revealed); else silPh(imgEl,phEl,phPosEl,posName);
-}
-// Precarga: dispara los fetch de varios títulos en segundo plano (sin bloquear).
-function prefetchWiki(titles){ (titles||[]).forEach(t=>{ if(t&&!wikiCache.has(t)) fetchWikiThumb(t).catch(()=>{}); }); }
-function applySil(img,ph,url,rev){ img.className=rev?'silhouette-img revealed':'silhouette-img wiki-dark'; img.onerror=()=>{img.classList.add('hidden');if(ph)ph.classList.remove('hidden');}; img.src=url; img.classList.remove('hidden'); if(ph)ph.classList.add('hidden'); }
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
 let subState={budget:1000,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
@@ -365,9 +337,8 @@ socket.on('sub:formation_vote',({formations,secondsLeft})=>{
 socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
 socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
 socket.on('sub:formation_decided',({formation})=>{ currentFormation=formation; $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
-socket.on('sub:prefetch',({wikiTitles})=>{ prefetchWiki(wikiTitles); });
 
-socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,wikiTitle,secondsLeft})=>{
+socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,secondsLeft})=>{
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
   $('sub-counter').textContent=`${cardIndex+1}/${totalCards}`;
   const badge=$('sub-pos-badge'); badge.textContent=positionLabel; badge.className='position-badge '+posGroup(position);
@@ -377,7 +348,7 @@ socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,starti
   $('sub-phase-label').textContent='Analizando...';
   $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.add('hidden'); $('sub-ineligible').classList.add('hidden');
   updBidBtns();
-  loadSil($('sub-img'),$('sub-img-placeholder'),$('sub-img-pos'),cardId,wikiTitle,positionLabel,false);
+  loadSil($('sub-img'),$('sub-img-placeholder'),$('sub-img-pos'),cardId,positionLabel,false);
   show('s-sub-play');           // mostrar la pantalla primero...
   stopSubClock();               // ...resetear cualquier reloj previo...
   setSubCount(secondsLeft);     // ...y arrancar el reloj local ya en pantalla
@@ -464,12 +435,12 @@ socket.on('sub:rps_result',({choices,loserName,decided})=>{
   else { $('sub-rps-title').textContent='¡Empate! Otra vez'; $('sub-rps-sub').textContent='Se repite entre los empatados'; }
 });
 
-socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionLabel,cardWikiTitle,cardTroll,result,winnerName,isLastCard})=>{
+socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionLabel,cardTroll,result,winnerName,isLastCard})=>{
   stopSubClock();
   subLast=isLastCard;
   const isW=result.winnerId===myId;
   if(isW){ subState.budget-=result.amount; updSubStats(); }
-  loadSil($('sub-result-img'),$('sub-result-placeholder'),null,cardId,cardWikiTitle,positionLabel,true);
+  loadSil($('sub-result-img'),$('sub-result-placeholder'),null,cardId,positionLabel,true);
   $('sub-result-name').textContent=cardName; $('sub-result-label').textContent=cardLabel;
   $('sub-result-troll').classList.toggle('hidden',!cardTroll);
   if(result.type==='discard'){ $('sub-result-eyebrow').textContent='Descartada'; $('sub-result-sub').textContent='Nadie se la llevó.'; }
@@ -507,8 +478,8 @@ socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,tota
   $('sub-duel-a-player').textContent=aCard?aCard.name:'(sin jugador)';
   $('sub-duel-b-player').textContent=bCard?bCard.name:'(sin jugador)';
   $('sub-duel-a-media').style.display='none'; $('sub-duel-b-media').style.display='none';
-  loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,aCard?aCard.wikiTitle:null,positionLabel,false);
-  loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.cardId:null,bCard?bCard.wikiTitle:null,positionLabel,false);
+  loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,positionLabel,false);
+  loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.cardId:null,positionLabel,false);
   const canVote=voterIds.includes(myId);
   duelAmInvolved=!canVote;
   $('sub-duel-can-vote').classList.toggle('hidden',!canVote);

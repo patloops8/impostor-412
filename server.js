@@ -295,12 +295,12 @@ function showCard(r){
   r.status='subasta_play'; s.totalEligible=elig;
   for(const [pid,bid] of s.bids.entries())
     io.to(pid).emit('sub:eligibility',{ eligible:bid.eligible, skipsLeft:s.playerState.get(pid)?.skipsLeft??0 });
-  io.to(r.code).emit('sub:card',{ cardIndex:s.currentCardIndex, totalCards:s.deck.length, cardId:card.id, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:'analysis', secondsLeft:s.secondsLeft, totalEligible:elig });
+  io.to(r.code).emit('sub:card',{ cardIndex:s.currentCardIndex, totalCards:s.deck.length, cardId:card.id, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, phase:'analysis', secondsLeft:s.secondsLeft, totalEligible:elig });
   startSubClock(r);
 }
 function subSnapshot(r){
   const s=r.subasta, card=s.currentCard; if(!card)return null;
-  return { cardIndex:s.currentCardIndex, totalCards:s.deck.length, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:s.auctionPhase, secondsLeft:s.secondsLeft, highestBid:s.highestBid, totalEligible:s.totalEligible };
+  return { cardIndex:s.currentCardIndex, totalCards:s.deck.length, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, phase:s.auctionPhase, secondsLeft:s.secondsLeft, highestBid:s.highestBid, totalEligible:s.totalEligible };
 }
 function startSubClock(r){
   clearSubTimer(r); const code=r.code;
@@ -424,7 +424,7 @@ function finishResolveCard(r,card,result){
     bidLog.push({name:nm, action:b.skip?'skip':b.amount!==null?`$${b.amount}M`:'sin pujar', isWinner:result.winnerId===pid});
   }
   bidLog.sort((a,b)=>(b.isWinner?1:0)-(a.isWinner?1:0));
-  io.to(r.code).emit('sub:card_resolved',{ cardId:card.id, cardName:card.name, cardLabel:card.label, cardPosition:card.position, positionLabel:POSITION_LABELS[card.position], cardWikiTitle:card.wikiTitle, cardTroll:card.troll, result, winnerName:result.winnerId?r.players.get(result.winnerId)?.name:null, bidLog, isLastCard:s.currentCardIndex>=s.deck.length-1 });
+  io.to(r.code).emit('sub:card_resolved',{ cardId:card.id, cardName:card.name, cardLabel:card.label, cardPosition:card.position, positionLabel:POSITION_LABELS[card.position], cardTroll:card.troll, result, winnerName:result.winnerId?r.players.get(result.winnerId)?.name:null, bidLog, isLastCard:s.currentCardIndex>=s.deck.length-1 });
 }
 function assignCard(r,pid,amount){
   const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return;
@@ -436,7 +436,7 @@ function buildTeams(r){
   const teamCards=new Map(); for(const [pid] of r.players.entries())teamCards.set(pid,[]);
   for(const {card,result} of s.resolvedCards){
     if(result.winnerId&&teamCards.has(result.winnerId))
-      teamCards.get(result.winnerId).push({cardId:card.id,name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll,wikiTitle:card.wikiTitle});
+      teamCards.get(result.winnerId).push({cardId:card.id,name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll});
   }
   const teams=new Map();
   for(const [pid,ps] of s.playerState.entries()){
@@ -530,8 +530,8 @@ function nextDuelPosition(r){
   io.to(r.code).emit('sub:duel_position',{
     position:pos, positionLabel:POSITION_LABELS[pos],
     aName:teamA.name, bName:teamB.name,
-    aCard:cardA?{name:cardA.name,wikiTitle:cardA.wikiTitle,cardId:cardA.cardId}:null,
-    bCard:cardB?{name:cardB.name,wikiTitle:cardB.wikiTitle,cardId:cardB.cardId}:null,
+    aCard:cardA?{name:cardA.name,cardId:cardA.cardId}:null,
+    bCard:cardB?{name:cardB.name,cardId:cardB.cardId}:null,
     posIndex:d.posIndex+1, totalPositions:d.positions.length,
     voterIds:voters,
   });
@@ -617,8 +617,6 @@ function resolveFormationVote(r){
   io.to(r.code).emit('sub:formation_decided',{formation:s.formation});
   for(const [pid] of r.players.entries()) s.playerState.set(pid,subPlayerState(r.subastaConfig.budget,r.subastaConfig.skipLimit));
   s.deck=buildDeck(r); s.currentCardIndex=0;
-  // Mandar los títulos de Wikipedia del deck para que los clientes precarguen las imágenes
-  io.to(r.code).emit('sub:prefetch',{ wikiTitles:[...new Set(s.deck.map(c=>c.wikiTitle))] });
   setTimeout(()=>showCard(r),1500);
 }
 

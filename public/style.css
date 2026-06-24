@@ -94,7 +94,6 @@ select{font-family:var(--mono);font-weight:700;background:var(--bg-raised);borde
 
 .silhouette-container{width:100%;max-width:240px;margin:0 auto 14px;aspect-ratio:3/4;background:#e8e6e0;border:3px solid var(--grass-light);border-radius:var(--radius);overflow:hidden;display:flex;align-items:center;justify-content:center;}
 .silhouette-img{width:100%;height:100%;object-fit:contain;}
-.silhouette-img.wiki-dark{object-fit:cover;filter:brightness(0) contrast(1.2);}
 .silhouette-img.revealed{transition:opacity .5s ease;}
 .silhouette-placeholder{display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:5rem;color:#666;width:100%;height:100%;}
 .position-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
