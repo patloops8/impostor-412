@@ -35,10 +35,9 @@ html,body{margin:0;padding:0;color:var(--ink);font-family:var(--body);min-height
 body{
   background:var(--bg) url('/images/ui/fondo-estadio.jpg') center top / cover no-repeat fixed;
 }
-/* En laptop la imagen vertical se recorta mucho; la anclamos arriba y oscurecemos
-   los lados con el color base para que se integre sin verse estirada. */
+/* En laptop mantenemos cover (nitido) pero anclado arriba para ver las luces del estadio */
 @media (min-width:760px){
-  body{ background-size:auto 100vh, cover; background-position:center top; }
+  body{ background-position:center top; }
 }
 /* Capa oscura sobre el fondo para que el texto siempre se lea */
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg, rgba(7,11,16,0.35) 0%, rgba(7,11,16,0.7) 55%, rgba(7,11,16,0.92) 100%);}
@@ -72,7 +71,6 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
     margin:24px auto;
     min-height:calc(100vh - 48px);
     background:linear-gradient(180deg, rgba(7,11,16,0.55) 0%, rgba(7,11,16,0.8) 100%);
-    backdrop-filter:blur(3px);
     border:1px solid var(--line2);
     border-radius:24px;
     box-shadow:0 24px 70px rgba(0,0,0,0.6), 0 0 0 1px rgba(182,255,46,0.08);
@@ -115,6 +113,15 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .clue-item .who{color:var(--ink-soft);font-family:var(--mono);font-size:0.75rem;font-variant-numeric:tabular-nums;}
 
 .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* Botones de puja: misma familia neon, diferenciados por intensidad (no por colores que pelean) */
+.bid-btn{font-family:var(--body);font-weight:800;border-radius:999px;padding:16px 20px;font-size:1.02rem;letter-spacing:0.02em;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s;width:100%;}
+.bid-btn.bid-1{background:rgba(182,255,46,0.08);color:var(--neon);border:2px solid var(--neon-dim);}
+.bid-btn.bid-1:hover{background:rgba(182,255,46,0.18);border-color:var(--neon);}
+.bid-btn.bid-5{background:rgba(182,255,46,0.45);color:#0a1400;border:2px solid var(--neon);}
+.bid-btn.bid-5:hover{background:rgba(182,255,46,0.62);}
+.bid-btn.bid-10{background:var(--neon);color:#0a1400;border:2px solid var(--neon);box-shadow:0 0 22px rgba(182,255,46,0.4);}
+.bid-btn.bid-10:hover{background:var(--neon-dim);}
+.bid-btn:active{transform:translateY(1px) scale(0.99);}
 .vote-btn{background:rgba(182,255,46,0.05);color:var(--neon);border:2px solid var(--neon-dim);border-radius:12px;padding:18px 10px;font-size:1rem;font-weight:700;letter-spacing:0.02em;}
 .vote-btn:hover{background:rgba(182,255,46,0.14);border-color:var(--neon);box-shadow:0 0 14px rgba(182,255,46,0.2);}
 .vote-btn.selected{border-color:var(--neon);background:var(--neon);color:#0a1400;box-shadow:0 0 18px rgba(182,255,46,0.35);}
@@ -132,10 +139,10 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .conn-banner.error{background:var(--red);color:#fff;}
 
 /* Tarjetas de minijuegos con imagen de fondo */
-.game-pick-grid{display:grid;grid-template-columns:1fr;gap:14px;}
-.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius-lg);padding:18px 16px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:150px;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
-.game-pick-card::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.55;z-index:0;}
-.game-pick-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, transparent 30%, rgba(7,11,16,0.92) 100%);z-index:1;}
+.game-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius);padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;aspect-ratio:3/4.4;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
+.game-pick-card::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center top;opacity:0.92;z-index:0;}
+.game-pick-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, transparent 35%, rgba(7,11,16,0.55) 60%, rgba(7,11,16,0.96) 100%);z-index:1;}
 .game-pick-card > *{position:relative;z-index:2;}
 .game-pick-card.g-impostor::before{background-image:url('/images/ui/tarjeta-impostor.jpg');}
 .game-pick-card.g-subasta::before{background-image:url('/images/ui/tarjeta-subasta.jpg');}
@@ -145,8 +152,8 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .game-pick-card.g-impostor.selected{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple), 0 0 22px rgba(139,84,224,0.3);}
 .game-pick-card.g-subasta.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold), 0 0 22px rgba(233,185,73,0.3);}
 .game-pick-card.g-mentiroso.selected{border-color:var(--red);box-shadow:0 0 0 1px var(--red), 0 0 22px rgba(255,77,77,0.3);}
-.game-pick-title{font-family:var(--display);font-size:1.7rem;color:var(--white);letter-spacing:0.01em;text-shadow:0 2px 8px rgba(0,0,0,0.8);}
-.game-pick-desc{font-size:0.86rem;color:#d4ddd8;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,0.8);}
+.game-pick-title{font-family:var(--display);font-size:0.92rem;line-height:1.05;color:var(--white);letter-spacing:0.01em;text-shadow:0 2px 8px rgba(0,0,0,0.9);}
+.game-pick-desc{display:none;}
 
 .config-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
 .config-row:last-child{border-bottom:none;}
