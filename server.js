@@ -223,14 +223,59 @@ function resolveLie(r,success,reason){
 const ANALYSIS_S=8, BIDDING_S=10, EXT_S=5, FORMATION_S=45;
 function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
 function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,mediaSum:0}; }
+// Pesos de aparición por rareza. Mayor peso = sale más seguido.
+const RAREZA_PESO = { mediano: 12, top: 6, leyenda: 2, troll: 1.5 };
+// Selección ponderada SIN reemplazo: saca 'cuantas' cartas del pool dando más
+// probabilidad a las comunes (medianos) y menos a las raras (leyendas/trolls).
+function weightedSample(pool, cuantas){
+  const items = pool.map(c => ({ c, w: RAREZA_PESO[c.rareza] || 5 }));
+  const out = [];
+  for(let n=0; n<cuantas && items.length>0; n++){
+    const total = items.reduce((a,it)=>a+it.w, 0);
+    let r = Math.random()*total;
+    let idx = 0;
+    for(let i=0;i<items.length;i++){ r-=items[i].w; if(r<=0){ idx=i; break; } }
+    out.push(items[idx].c);
+    items.splice(idx,1); // sin reemplazo
+  }
+  return out;
+}
 function buildDeck(r){
   const slots=FORMATIONS[r.subasta.formation], pc=r.players.size, pool={};
   for(const p of POSITION_ORDER)pool[p]=[];
   for(const c of SUBASTA_CARDS) if(pool[c.position])pool[c.position].push(c);
   const deck=[];
-  for(const pos of POSITION_ORDER){ const n=(slots[pos]||0)*pc; if(!n)continue; deck.push(...shuffle(pool[pos]).slice(0,Math.min(n,pool[pos].length))); }
-  // Precio inicial ALEATORIO entre 10 y 150 millones, sin relación con la media del jugador.
+  for(const pos of POSITION_ORDER){
+    const needPerPlayer=slots[pos]||0;
+    if(!needPerPlayer)continue;
+    const minimo = needPerPlayer * pc;
+    const conColchon = minimo + Math.ceil(minimo*0.5) + 2;
+    const cuantas = Math.min(conColchon, pool[pos].length);
+    // Selección ponderada por rareza (medianos más probables, leyendas/trolls menos)
+    deck.push(...weightedSample(pool[pos], cuantas));
+  }
   return deck.map(c=>({ ...c, startingPrice: 10 + Math.floor(Math.random()*141) }));
+}
+// ¿Algún jugador todavía necesita (y podría llegar a llenar) esta posición?
+function someoneNeedsPosition(r, pos){
+  const slots=FORMATIONS[r.subasta.formation];
+  for(const [pid] of r.players.entries()){
+    const ps=r.subasta.playerState.get(pid);
+    if(ps && ps.team[pos].length < slots[pos]) return true;
+  }
+  return false;
+}
+// Avanza a la siguiente carta ÚTIL: salta las de posiciones que TODOS ya completaron.
+function advanceToNextUsefulCard(r){
+  const s=r.subasta;
+  let idx=s.currentCardIndex+1;
+  while(idx < s.deck.length){
+    const pos=s.deck[idx].position;
+    if(someoneNeedsPosition(r,pos)){ s.currentCardIndex=idx; showCard(r); return; }
+    idx++; // nadie necesita esta posición: saltarla
+  }
+  // No quedan cartas útiles: termina la subasta
+  endSubasta(r);
 }
 function showCard(r){
   const s=r.subasta, card=s.deck[s.currentCardIndex];
@@ -250,7 +295,7 @@ function showCard(r){
   r.status='subasta_play'; s.totalEligible=elig;
   for(const [pid,bid] of s.bids.entries())
     io.to(pid).emit('sub:eligibility',{ eligible:bid.eligible, skipsLeft:s.playerState.get(pid)?.skipsLeft??0 });
-  io.to(r.code).emit('sub:card',{ cardIndex:s.currentCardIndex, totalCards:s.deck.length, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:'analysis', secondsLeft:s.secondsLeft, totalEligible:elig });
+  io.to(r.code).emit('sub:card',{ cardIndex:s.currentCardIndex, totalCards:s.deck.length, cardId:card.id, position:card.position, positionLabel:POSITION_LABELS[card.position], startingPrice:card.startingPrice, wikiTitle:card.wikiTitle, phase:'analysis', secondsLeft:s.secondsLeft, totalEligible:elig });
   startSubClock(r);
 }
 function subSnapshot(r){
@@ -379,7 +424,7 @@ function finishResolveCard(r,card,result){
     bidLog.push({name:nm, action:b.skip?'skip':b.amount!==null?`$${b.amount}M`:'sin pujar', isWinner:result.winnerId===pid});
   }
   bidLog.sort((a,b)=>(b.isWinner?1:0)-(a.isWinner?1:0));
-  io.to(r.code).emit('sub:card_resolved',{ cardName:card.name, cardLabel:card.label, cardPosition:card.position, positionLabel:POSITION_LABELS[card.position], cardWikiTitle:card.wikiTitle, cardTroll:card.troll, result, winnerName:result.winnerId?r.players.get(result.winnerId)?.name:null, bidLog, isLastCard:s.currentCardIndex>=s.deck.length-1 });
+  io.to(r.code).emit('sub:card_resolved',{ cardId:card.id, cardName:card.name, cardLabel:card.label, cardPosition:card.position, positionLabel:POSITION_LABELS[card.position], cardWikiTitle:card.wikiTitle, cardTroll:card.troll, result, winnerName:result.winnerId?r.players.get(result.winnerId)?.name:null, bidLog, isLastCard:s.currentCardIndex>=s.deck.length-1 });
 }
 function assignCard(r,pid,amount){
   const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return;
@@ -391,7 +436,7 @@ function buildTeams(r){
   const teamCards=new Map(); for(const [pid] of r.players.entries())teamCards.set(pid,[]);
   for(const {card,result} of s.resolvedCards){
     if(result.winnerId&&teamCards.has(result.winnerId))
-      teamCards.get(result.winnerId).push({name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll,wikiTitle:card.wikiTitle});
+      teamCards.get(result.winnerId).push({cardId:card.id,name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll,wikiTitle:card.wikiTitle});
   }
   const teams=new Map();
   for(const [pid,ps] of s.playerState.entries()){
@@ -485,8 +530,8 @@ function nextDuelPosition(r){
   io.to(r.code).emit('sub:duel_position',{
     position:pos, positionLabel:POSITION_LABELS[pos],
     aName:teamA.name, bName:teamB.name,
-    aCard:cardA?{name:cardA.name,wikiTitle:cardA.wikiTitle}:null,
-    bCard:cardB?{name:cardB.name,wikiTitle:cardB.wikiTitle}:null,
+    aCard:cardA?{name:cardA.name,wikiTitle:cardA.wikiTitle,cardId:cardA.cardId}:null,
+    bCard:cardB?{name:cardB.name,wikiTitle:cardB.wikiTitle,cardId:cardB.cardId}:null,
     posIndex:d.posIndex+1, totalPositions:d.positions.length,
     voterIds:voters,
   });
@@ -762,9 +807,7 @@ io.on('connection', socket => {
   socket.on('player:request_sub_sync', ({code}) => { const r=rooms.get(code); if(!r||r.status!=='subasta_play')return; const snap=subSnapshot(r); if(snap)socket.emit('sub:resync',snap); });
   socket.on('host:next_subasta_card', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
-    const s=r.subasta;
-    if(s.currentCardIndex>=s.deck.length-1)endSubasta(r);
-    else{s.currentCardIndex++;showCard(r);}
+    advanceToNextUsefulCard(r);
   });
 
   socket.on('host:new_session', ({code}) => {
