@@ -40,28 +40,19 @@
 .hidden{display:none !important;}
 
 html,body{margin:0;padding:0;color:var(--ink);font-family:var(--body);min-height:100vh;-webkit-tap-highlight-color:transparent;}
-/* FONDO: rayas de cesped cortado en diagonal + viñeta de estadio */
+/* FONDO: cancha de futbol realista (SVG), fija detras de todo */
 body{
-  background-color:var(--grass-b);
-  background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.10) 0%, transparent 60%),
-    repeating-linear-gradient(115deg, var(--grass-a) 0 38px, var(--grass-b) 38px 76px);
-  background-attachment:fixed;
+  background:#256237 url('/cancha.svg') center top / cover no-repeat fixed;
 }
 
 h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:0.01em;margin:0;text-transform:uppercase;}
 p{margin:0;color:var(--ink-soft);line-height:1.55;}
 
-/* Mini balon reutilizable (pseudo-elemento) */
+/* Mini balon realista (SVG) reutilizable */
 .ball::before{
-  content:"";display:inline-block;width:0.85em;height:0.85em;margin-right:0.4em;vertical-align:-0.08em;border-radius:50%;
-  background:
-    radial-gradient(circle at 50% 38%, #1a1a1a 0 14%, transparent 15%),
-    radial-gradient(circle at 22% 70%, #1a1a1a 0 9%, transparent 10%),
-    radial-gradient(circle at 78% 70%, #1a1a1a 0 9%, transparent 10%),
-    #fff;
-  border:1px solid rgba(0,0,0,0.35);
-  box-shadow:0 1px 2px rgba(0,0,0,0.3);
+  content:"";display:inline-block;width:0.95em;height:0.95em;margin-right:0.42em;vertical-align:-0.12em;
+  background:url('/balon.svg') center/contain no-repeat;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
 button{font-family:var(--body);font-weight:700;border:none;border-radius:999px;cursor:pointer;transition:transform .12s, box-shadow .12s, background .15s;}
@@ -83,20 +74,14 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .wrap{max-width:520px;margin:0 auto;padding:0;min-height:100vh;display:flex;flex-direction:column;}
 .wrap > *{position:relative;}
 .wrap{
-  background:var(--card);
-  box-shadow:0 0 40px rgba(0,0,0,0.3);
+  background:rgba(247,244,236,0.97);
+  backdrop-filter:blur(2px);
+  box-shadow:0 0 50px rgba(0,0,0,0.4);
   padding:22px 18px 40px;
-  border-left:1px solid rgba(0,0,0,0.1);
-  border-right:1px solid rgba(0,0,0,0.1);
+  border-left:1px solid rgba(0,0,0,0.12);
+  border-right:1px solid rgba(0,0,0,0.12);
 }
-.wrap-tv{max-width:1100px;background:transparent;box-shadow:none;padding:22px 18px 40px;}
-/* Banda de cesped en el borde superior del panel (se siente el estadio) */
-.wrap::before{
-  content:"";display:block;height:14px;margin:-22px -18px 18px;
-  background:repeating-linear-gradient(90deg, var(--grass-a) 0 20px, var(--grass-b) 20px 40px);
-  border-bottom:3px solid var(--grass-line);
-}
-.wrap-tv::before{display:none;}
+.wrap-tv{max-width:1100px;background:transparent;box-shadow:none;padding:22px 18px 40px;backdrop-filter:none;}
 
 
 .eyebrow{font-family:var(--display);font-size:0.82rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--grass-deep);margin:0;font-weight:600;}
@@ -105,7 +90,7 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .spacer{flex:1;}
 /* Divisor: linea de cal con balon al centro */
 .divider{height:2px;background:var(--line);margin:18px 0;border:none;position:relative;}
-.divider::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 50% 38%, #1a1a1a 0 16%, transparent 17%),#fff;border:1px solid rgba(0,0,0,0.3);}
+.divider::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:url('/balon.svg') center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.3));}
 .error-text{color:var(--red);font-size:0.85rem;font-weight:600;}
 .row{display:flex;align-items:center;gap:10px;}
 .between{display:flex;justify-content:space-between;align-items:center;gap:12px;}

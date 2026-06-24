@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice" width="800" height="1200">
+  <defs>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a8a4f"/>
+      <stop offset="50%" stop-color="#2f7544"/>
+      <stop offset="100%" stop-color="#256237"/>
+    </linearGradient>
+    <radialGradient id="stadiumLight" cx="50%" cy="18%" r="80%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#grass)"/>
+  <!-- franjas de cesped cortado horizontales -->
+  <g fill="#ffffff" opacity="0.045">
+    <rect y="0" width="800" height="100"/>
+    <rect y="200" width="800" height="100"/>
+    <rect y="400" width="800" height="100"/>
+    <rect y="600" width="800" height="100"/>
+    <rect y="800" width="800" height="100"/>
+    <rect y="1000" width="800" height="100"/>
+  </g>
+  <!-- lineas de cal -->
+  <g stroke="#eef3e8" stroke-width="3" fill="none" opacity="0.45">
+    <!-- borde del campo -->
+    <rect x="60" y="80" width="680" height="1040" rx="4"/>
+    <!-- linea media -->
+    <line x1="60" y1="600" x2="740" y2="600"/>
+    <!-- circulo central -->
+    <circle cx="400" cy="600" r="95"/>
+    <circle cx="400" cy="600" r="5" fill="#eef3e8" stroke="none"/>
+    <!-- area superior -->
+    <rect x="230" y="80" width="340" height="150"/>
+    <rect x="320" y="80" width="160" height="60"/>
+    <!-- area inferior -->
+    <rect x="230" y="970" width="340" height="150"/>
+    <rect x="320" y="1060" width="160" height="60"/>
+    <!-- arcos de area -->
+    <path d="M 320 230 A 90 90 0 0 0 480 230"/>
+    <path d="M 320 970 A 90 90 0 0 1 480 970"/>
+  </g>
+  <!-- iluminacion de estadio encima -->
+  <rect width="800" height="1200" fill="url(#stadiumLight)"/>
+</svg>
