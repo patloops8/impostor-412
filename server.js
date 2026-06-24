@@ -220,7 +220,7 @@ function resolveLie(r,success,reason){
 }
 
 /* ===================== SUBASTA ===================== */
-const ANALYSIS_S=15, BIDDING_S=15, EXT_S=8, FORMATION_S=45;
+const ANALYSIS_S=8, BIDDING_S=10, EXT_S=5, FORMATION_S=45;
 function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
 function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,mediaSum:0}; }
 function buildDeck(r){
