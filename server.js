@@ -287,12 +287,12 @@ function resolveCard(r){
   if(r.status!=='subasta_play')return;
   clearSubTimer(r);
   const s=r.subasta, card=s.currentCard, bids=s.bids;
-  const slots=FORMATIONS[s.formation];
   const valid=[], noResp=[];
   for(const [pid,b] of bids.entries()){
-    if(!b.eligible||b.skip)continue;
+    if(!b.eligible)continue;       // no elegible (posición cubierta o sin presupuesto): fuera
+    if(b.skip)continue;            // skip = renuncia TOTAL: nunca se lleva la carta, ni va a PPT
     if(b.amount!==null&&b.amount>=card.startingPrice) valid.push({playerId:pid,amount:b.amount});
-    else if(!b.responded||b.amount===null) noResp.push(pid);
+    else noResp.push(pid);         // elegible, no skipeó, pero no llegó a pujar (sin tiempo)
   }
   let result;
   if(valid.length>0){
@@ -303,23 +303,17 @@ function resolveCard(r){
     assignCard(r,w.playerId,w.amount); result={type:'bid',winnerId:w.playerId,amount:w.amount};
     finishResolveCard(r,card,result);
   } else if(noResp.length>=2){
-    // Nadie pujó pero 2+ siguen "vivos" (no skipearon): piedra-papel-tijera, pierde uno y se la queda
+    // Nadie pujó, pero 2+ elegibles NO skipearon: piedra-papel-tijera entre ellos.
     startRPS(r,noResp,card);
     return; // se resuelve async tras el PPT
   } else if(noResp.length===1){
-    // Solo uno quedó sin skipear: se la lleva al precio inicial
+    // Solo un elegible no skipeó ni pujó: se la lleva forzado al precio inicial.
     assignCard(r,noResp[0],card.startingPrice); result={type:'forced',winnerId:noResp[0],amount:card.startingPrice};
     finishResolveCard(r,card,result);
   } else {
-    // Todos skipearon. ¿Alguien AÚN necesita esta posición?
-    const needers=[];
-    for(const [pid] of r.players.entries()){
-      const ps=s.playerState.get(pid);
-      if(ps && ps.team[card.position].length<slots[card.position] && ps.budget>=card.startingPrice) needers.push(pid);
-    }
-    if(needers.length>=2){ startRPS(r,needers,card); return; }
-    else if(needers.length===1){ assignCard(r,needers[0],card.startingPrice); result={type:'forced',winnerId:needers[0],amount:card.startingPrice}; finishResolveCard(r,card,result); }
-    else { result={type:'discard'}; finishResolveCard(r,card,result); } // nadie la necesita o nadie puede pagarla
+    // Todos los elegibles skipearon (o no había elegibles): la carta se DESCARTA.
+    result={type:'discard'};
+    finishResolveCard(r,card,result);
   }
 }
 
@@ -332,7 +326,7 @@ function startRPS(r,playerIds,card){
   r.status='subasta_rps';
   io.to(r.code).emit('sub:rps_start',{
     playerIds:contenders, playerNames:contenders.map(id=>r.players.get(id)?.name),
-    cardName:card.name, positionLabel:POSITION_LABELS[card.position],
+    positionLabel:POSITION_LABELS[card.position],
   });
   // Por si alguien no elige en 12s, elegir aleatorio por él
   s.rpsTimer=setTimeout(()=>resolveRPS(r),12000);

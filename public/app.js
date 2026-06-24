@@ -415,11 +415,11 @@ socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHig
 let subLast=false;
 // ===== Piedra-papel-tijera (cuando nadie quiere la carta) =====
 let rpsAmIn=false;
-socket.on('sub:rps_start',({playerIds,playerNames,cardName,positionLabel})=>{
+socket.on('sub:rps_start',({playerIds,playerNames,positionLabel})=>{
   stopSubClock();
   rpsAmIn=playerIds.includes(myId);
   $('sub-rps-title').textContent='Piedra, papel o tijera';
-  $('sub-rps-sub').textContent=`${cardName} (${positionLabel}) — el que pierde se la queda 😈`;
+  $('sub-rps-sub').textContent=`Jugador misterioso de ${positionLabel} — el que pierde se lo queda 😈`;
   $('sub-rps-reveal').innerHTML='';
   $('sub-rps-status').textContent='';
   if(rpsAmIn){
@@ -540,8 +540,10 @@ function drawPitch(container, formation, cards){
   const slots=FORMATION_SLOTS[formation]||FORMATION_SLOTS['4-3-3'];
   // Agrupar las cartas ganadas por posición
   const byPos={}; (cards||[]).forEach(c=>{ (byPos[c.position]=byPos[c.position]||[]).push(c); });
-  // Filas visuales de arriba (ataque) hacia abajo (portería)
-  const rows=[ ['DC'], ['ED','MCO','EI'], ['MCD','MC'], ['LD','DFC','LI'], ['POR'] ];
+  // Filas visuales de arriba (ataque) hacia abajo (portería).
+  // El orden DENTRO de cada fila es de izquierda a derecha en pantalla:
+  // los jugadores del lado izquierdo (LI, EI) van primero, los del derecho (LD, ED) al final.
+  const rows=[ ['DC'], ['EI','MCO','ED'], ['MC','MCD'], ['LI','DFC','LD'], ['POR'] ];
   // Distribuir verticalmente
   const usableRows=rows.filter(row=>row.some(p=>slots[p]>0));
   const n=usableRows.length;
