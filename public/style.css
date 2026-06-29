@@ -22,11 +22,10 @@
   --display:'Oswald',sans-serif; --body:'Libre Franklin',sans-serif; --mono:'Libre Franklin',sans-serif;
   --radius:14px; --radius-lg:20px;
 
-  /* Alias compatibilidad */
-  --lime:#b6ff2e; --grass:#1f6f3d; --grass-light:#3f9457;
-  --text:#eef4ee; --text-dim:#9fb0ad;
-  --bg-raised:#16222f; --bg-card:#111b26;
-  --leather:#b6ff2e; --leather-dark:#8fd420; --leather-deep:#070b10; --cream:#070b10;
+  /* Alias compatibilidad: apuntan a las variables canonicas de arriba,
+     asi si se cambia el verde neon (u otro color base) se actualiza en todos lados. */
+  --lime:var(--neon);
+  --text:var(--ink); --text-dim:var(--ink-soft);
 }
 *{box-sizing:border-box;}
 .hidden{display:none !important;}
@@ -94,6 +93,8 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 
 .player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;}
 .player-chip{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px;text-align:center;}
+.player-chip-top{display:flex;align-items:center;justify-content:center;gap:8px;}
+.player-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:0.82rem;flex-shrink:0;line-height:1;}
 .player-chip .name{font-weight:800;font-size:0.95rem;color:var(--ink);}
 .player-chip .meta{font-family:var(--mono);font-size:0.72rem;color:var(--ink-soft);margin-top:4px;font-variant-numeric:tabular-nums;}
 .player-chip.dead{opacity:0.4;}
@@ -201,6 +202,9 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .pitch-player{display:flex;flex-direction:column;align-items:center;gap:2px;max-width:62px;text-align:center;}
 .pitch-token{width:32px;height:32px;border-radius:50%;background:var(--neon);color:#0a1400;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:0.64rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);}
 .pitch-token.troll{background:var(--red);color:#fff;border-color:#fff;}
+.pitch-token-img{width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:top center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);background:var(--card);display:block;}
+.pitch-token-img.troll{border-color:var(--red);}
 .pitch-name{font-size:0.62rem;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 1px 2px rgba(0,0,0,0.9);}
+.pitch-pos{font-family:var(--display);font-size:0.52rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--neon);text-shadow:0 1px 2px rgba(0,0,0,0.9);}
 .pitch-val{font-family:var(--mono);font-size:0.6rem;font-weight:700;color:var(--neon);text-shadow:0 1px 2px rgba(0,0,0,0.9);font-variant-numeric:tabular-nums;}
 .pitch-empty .pitch-token{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.3);}

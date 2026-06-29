@@ -28,6 +28,20 @@ socket.io.on('reconnect', () => { connBanner.classList.add('hidden'); });
 /* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+// Paleta de avatares para jugadores humanos (sin foto): color de fondo + color de letra legible.
+const AVATAR_PALETTE=[{bg:'#b6ff2e',fg:'#0a1400'},{bg:'#e9b949',fg:'#1a1200'},{bg:'#8b54e0',fg:'#ffffff'},{bg:'#ff4d4d',fg:'#ffffff'},{bg:'#4e8ecb',fg:'#ffffff'}];
+function avatarFor(id){
+  let h=0; for(let i=0;i<(id||'').length;i++) h=(h*31+id.charCodeAt(i))>>>0;
+  const c=AVATAR_PALETTE[h%AVATAR_PALETTE.length];
+  return c;
+}
+function avatarHTML(id,name){
+  const c=avatarFor(id||name||'?');
+  const initial=esc((name||'?').trim().charAt(0).toUpperCase()||'?');
+  return `<span class="player-avatar" style="background:${c.bg};color:${c.fg};">${initial}</span>`;
+}
+const MEDALS=['🥇','🥈','🥉'];
+function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
 const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
@@ -88,7 +102,7 @@ function renderLobby(st){
   const grid=$('lobby-players'); grid.innerHTML='';
   st.players.forEach(p=>{
     const c=document.createElement('div'); c.className='player-chip'+(p.id===myId?' me':'');
-    c.innerHTML=`<div class="name">${esc(p.name)}</div><div class="meta">${p.isHost?'★ anfitrión':(p.connected?'conectado':'...')}</div>`;
+    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div><div class="meta">${p.isHost?'★ anfitrión':(p.connected?'conectado':'...')}</div>`;
     grid.appendChild(c);
   });
   $('player-count').textContent=st.players.length;
@@ -180,7 +194,7 @@ socket.on('imp:turn',({currentTurnPlayerId})=>{ impTurn=currentTurnPlayerId; if(
 function renderClue(){
   $('imp-manga-label').textContent=`Manga ${impManga.n}/${impManga.c}`;
   const grid=$('imp-players'); grid.innerHTML='';
-  players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="name">${esc(p.name)}</div>`; grid.appendChild(c); });
+  players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div>`; grid.appendChild(c); });
   const mine=impTurn===myId;
   $('imp-my-turn').classList.toggle('hidden',!mine);
   $('imp-wait-turn').classList.toggle('hidden',mine);
@@ -212,7 +226,7 @@ socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount
   show('s-imp-over');
 });
 $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_manga',{code:roomCode}); });
-function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
+function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
 
 /* ===================== MENTIROSO ===================== */
 let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false;
@@ -511,7 +525,7 @@ socket.on('sub:game_over',({mode,scores,formation,championName})=>{
   else { $('sub-my-total').textContent=me?('OVR '+me.ovr):''; }
   drawPitch($('sub-pitch'), currentFormation, me?me.cards:[]);
   const sb=$('sub-scoreboard'); sb.innerHTML='';
-  scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):('OVR '+s.ovr); r.innerHTML=`<span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${detail}</span>`; sb.appendChild(r); });
+  scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):('OVR '+s.ovr); r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${detail}</span>`; sb.appendChild(r); });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
   show('s-sub-over');
@@ -546,10 +560,10 @@ function drawPitch(container, formation, cards){
       for(let k=0;k<count;k++){
         const card=(byPos[pos]&&byPos[pos][k])||null;
         const pl=document.createElement('div'); pl.className='pitch-player'+(card?'':' pitch-empty');
-        const token=document.createElement('div'); token.className='pitch-token'+(card&&card.troll?' troll':'');
-        token.textContent=pos;
+        pl.appendChild(pitchTokenEl(card,pos));
         const nm=document.createElement('div'); nm.className='pitch-name'; nm.textContent=card?shortName(card.name):'—';
-        pl.appendChild(token); pl.appendChild(nm);
+        pl.appendChild(nm);
+        if(card){ const pl2=document.createElement('div'); pl2.className='pitch-pos'; pl2.textContent=pos; pl.appendChild(pl2); }
         if(card){ const v=document.createElement('div'); v.className='pitch-val'; v.textContent=`${card.media}`; pl.appendChild(v); }
         rowDiv.appendChild(pl);
       }
@@ -558,6 +572,22 @@ function drawPitch(container, formation, cards){
   });
 }
 function shortName(name){ const parts=name.split(' '); return parts.length>1?parts[parts.length-1]:name; }
+// Token de la cancha final: foto real circular si existe (/images/reales/<id>.png),
+// con fallback automático al circulo con el código de posición si la imagen no carga (404).
+function pitchTokenEl(card,pos){
+  if(!card) { const t=document.createElement('div'); t.className='pitch-token'; t.textContent=pos; return t; }
+  const img=document.createElement('img');
+  img.className='pitch-token-img'+(card.troll?' troll':'');
+  img.src=`/images/reales/${card.cardId}.png`;
+  img.alt=card.name;
+  img.onerror=function(){
+    const fallback=document.createElement('div');
+    fallback.className='pitch-token'+(card.troll?' troll':'');
+    fallback.textContent=pos;
+    img.replaceWith(fallback);
+  };
+  return img;
+}
 $('btn-sub-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
 
 // Reconexión a subasta: pedir estado
