@@ -227,7 +227,7 @@ $('btn-imp-role-ok').addEventListener('click',()=>{ renderClue(); show('s-imp-cl
 socket.on('imp:round',({roundNumber,currentTurnPlayerId})=>{ $('imp-round').textContent=roundNumber; impTurn=currentTurnPlayerId; $('imp-clue-log').innerHTML=''; if(currentVisibleSection()!=='s-imp-role'){renderClue();show('s-imp-clue');} });
 socket.on('imp:turn',({currentTurnPlayerId})=>{ impTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-imp-clue')renderClue(); });
 function renderClue(){
-  $('imp-manga-label').textContent=`Manga ${impManga.n}/${impManga.c}`;
+  $('imp-manga-label').textContent=`Ronda ${impManga.n}/${impManga.c}`;
   const grid=$('imp-players'); grid.innerHTML='';
   players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div>`; grid.appendChild(c); });
   const mine=impTurn===myId;
@@ -257,11 +257,11 @@ let impLastFinal=false;
 socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount,isLastManga,scores})=>{
   impLastFinal=isLastManga;
   $('imp-over-banner').className='reveal-banner '+(result==='impostors_caught'?'caught':'escaped');
-  $('imp-over-eyebrow').textContent=(result==='impostors_caught'?'Impostores atrapados':'Ganaron los impostores')+` · Manga ${mangaNumber}/${mangaCount}`;
+  $('imp-over-eyebrow').textContent=(result==='impostors_caught'?'Impostores atrapados':'Ganaron los impostores')+` · Ronda ${mangaNumber}/${mangaCount}`;
   $('imp-over-title').textContent=(impostorNames.length>1?impostorNames.join(', ')+' eran':impostorNames.join(', ')+' era')+' impostor';
   $('imp-over-sub').textContent='Concepto: '+concept.name+' ('+concept.category+')';
   renderScores('imp-scoreboard',scores);
-  $('btn-imp-next').textContent=isLastManga?'Volver al inicio':'Siguiente manga';
+  $('btn-imp-next').textContent=isLastManga?'Volver al inicio':'Siguiente ronda';
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
   show('s-imp-over');

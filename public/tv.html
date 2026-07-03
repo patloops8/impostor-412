@@ -62,7 +62,7 @@ socket.on('room:update',(st)=>{
 });
 
 // El Impostor
-socket.on('imp:round',({roundNumber})=>{ $('tv-status-label').textContent='El Impostor · Ronda '+roundNumber; });
+socket.on('imp:round',({roundNumber})=>{ $('tv-status-label').textContent='El Impostor · Vuelta '+roundNumber; });
 socket.on('imp:clue',({name,word})=>{
   const c=$('tv-content');
   if(!c.querySelector('#tv-clue-log')) c.innerHTML='<h2 style="font-size:1.6rem;margin-bottom:14px;">Pistas</h2><div class="clue-log" id="tv-clue-log"></div>';
