@@ -53,6 +53,7 @@
         <button class="game-pick-card g-subasta" id="pick-subasta"><span class="game-pick-title">Subasta Futbolera</span><span class="game-pick-desc">Construye el mejor equipo con presupuesto limitado.</span></button>
         <button class="game-pick-card g-mentiroso" id="pick-mentiroso"><span class="game-pick-title">Mentiroso Futbolero</span><span class="game-pick-desc">Convence a todos de que tu respuesta es real.</span></button>
         <button class="game-pick-card g-wavelength" id="pick-wavelength"><span class="game-pick-title">La Frecuencia</span><span class="game-pick-desc">Sintonizá con el grupo en el debate futbolero.</span></button>
+        <button class="game-pick-card g-who" id="pick-who"><span class="game-pick-title">¿Quién Soy?</span><span class="game-pick-desc">Todos ven tu identidad menos vos.</span></button>
       </div>
 
       <!-- Config Impostor -->
@@ -90,6 +91,14 @@
       <div id="cfg-wavelength" class="hidden card" style="margin-top:14px;">
         <div class="config-row"><label>Rondas</label><select id="cfg-wave-rounds"><option>3</option><option selected>5</option><option>8</option><option>10</option></select></div>
         <p style="font-size:0.78rem;margin-top:8px;">Cada ronda un jugador es el Psíquico: ve dónde cae la zona secreta y da una pista hablada. Los demás adivinan moviendo su propia aguja, a ciegas del resto, y bloquean su respuesta antes de que se acabe el tiempo.</p>
+      </div>
+      <!-- Config ¿Quién Soy? -->
+      <div id="cfg-who" class="hidden card" style="margin-top:14px;">
+        <div class="config-row" style="flex-direction:column;align-items:flex-start;">
+          <label>Categorías</label>
+          <div class="category-checks" id="cfg-who-cats" style="margin-top:10px;"></div>
+        </div>
+        <p style="font-size:0.78rem;margin-top:8px;">Sin tiempo límite: por turnos, cada jugador hace una pregunta de Sí/No en voz alta (los demás contestan tocando el primer botón) o intenta adivinar quién es. Termina cuando todos adivinaron.</p>
       </div>
 
       <button class="btn-primary hidden" id="btn-start" style="width:100%;margin-top:16px;">Iniciar partida</button>
@@ -407,6 +416,54 @@
     <div class="card" id="wave-scoreboard"></div>
     <button class="btn-primary hidden" id="btn-wave-next" style="width:100%;margin-top:18px;">Siguiente ronda</button>
     <p id="wave-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+  </section>
+
+  <!-- ===== ¿QUIÉN SOY? ===== -->
+  <section id="s-who-board" class="hidden">
+    <div class="screen-head">
+      <p class="eyebrow">¿Quién Soy?</p>
+      <h2>Tablero</h2>
+    </div>
+    <div class="who-grid" id="who-grid"></div>
+    <div id="who-my-turn" class="hidden card" style="margin-top:14px;">
+      <h2 style="font-size:1.1rem;">🎙️ ¡Tu turno!</h2>
+      <p style="margin:6px 0 12px;">Hacé una pregunta de Sí/No en voz alta, o intentá adivinar quién sos.</p>
+      <input type="text" id="inp-who-guess" placeholder="¿Quién creés que sos?" />
+      <button class="btn-primary" id="btn-who-guess" style="width:100%;margin-top:10px;">¡Ya sé quién soy!</button>
+    </div>
+    <div id="who-others-turn" class="hidden" style="margin-top:14px;">
+      <div class="turn-banner" style="padding:10px 14px 18px;">
+        <div class="turn-avatar" id="who-turn-avatar">—</div>
+        <p class="eyebrow">Turno de</p><h2 id="who-turn-name">—</h2>
+      </div>
+      <div class="who-answer-grid">
+        <button class="vote-btn who-answer-si" id="btn-who-si">Sí</button>
+        <button class="vote-btn who-answer-no" id="btn-who-no">No</button>
+        <button class="vote-btn who-answer-talvez" id="btn-who-talvez">Tal vez</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <h3 style="font-size:1rem;margin-bottom:8px;">Preguntas</h3>
+    <div class="clue-log" id="who-log"></div>
+  </section>
+
+  <section id="s-who-guess-pending" class="hidden center-flex">
+    <p class="eyebrow">¿Le pegó?</p>
+    <h2 style="font-size:1.3rem;text-align:center;" id="who-guess-heading">—</h2>
+    <p style="font-size:1.15rem;text-align:center;color:var(--neon);font-weight:700;" id="who-guess-text">—</p>
+    <div id="who-host-validate" class="hidden vote-grid" style="margin-top:14px;width:100%;">
+      <button class="vote-btn" id="btn-who-correct">Correcto ✓</button>
+      <button class="vote-btn" id="btn-who-incorrect">Incorrecto ✗</button>
+    </div>
+    <p id="who-validate-wait" class="hidden" style="margin-top:14px;">Esperando al anfitrión...</p>
+  </section>
+
+  <section id="s-who-over" class="hidden center-flex">
+    <p class="eyebrow">¡Todos se descubrieron!</p>
+    <h1 style="font-size:1.8rem;">Resultado Final</h1>
+    <div class="card" style="width:100%;" id="who-scoreboard"></div>
+    <button class="btn-primary hidden" id="btn-who-new" style="width:100%;">Nueva partida</button>
+    <p id="who-over-wait" class="hidden">Esperando al anfitrión...</p>
   </section>
 
 </div>

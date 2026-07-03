@@ -65,7 +65,7 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -148,6 +148,7 @@ function renderLobby(st){
   if(isHost){
     renderGamePicker(st.gameType);
     if(st.gameType==='impostor') renderImpostorCfg(st.impostorConfig);
+    if(st.gameType==='who') renderWhoCfg(st.whoConfig);
     updateStartBtn(st.players.length);
   }
 }
@@ -157,10 +158,12 @@ function renderGamePicker(g){
   $('pick-mentiroso').classList.toggle('selected',g==='mentiroso');
   $('pick-subasta').classList.toggle('selected',g==='subasta');
   $('pick-wavelength').classList.toggle('selected',g==='wavelength');
+  $('pick-who').classList.toggle('selected',g==='who');
   $('cfg-impostor').classList.toggle('hidden',g!=='impostor');
   $('cfg-mentiroso').classList.toggle('hidden',g!=='mentiroso');
   $('cfg-subasta').classList.toggle('hidden',g!=='subasta');
   $('cfg-wavelength').classList.toggle('hidden',g!=='wavelength');
+  $('cfg-who').classList.toggle('hidden',g!=='who');
 }
 function updateStartBtn(n){
   const can=n>=minPlayers&&currentGame;
@@ -173,6 +176,7 @@ $('pick-impostor').addEventListener('click',()=>socket.emit('host:select_game',{
 $('pick-mentiroso').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'mentiroso'}));
 $('pick-subasta').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'subasta'}));
 $('pick-wavelength').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'wavelength'}));
+$('pick-who').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'who'}));
 
 let impCfgRendered=false;
 function renderImpostorCfg(cfg){
@@ -217,6 +221,21 @@ document.querySelectorAll('input[name=wm]').forEach(r=>r.addEventListener('chang
 
 function sendWaveCfg(){ socket.emit('host:update_wave_config',{code:roomCode,roundCount:Number($('cfg-wave-rounds').value)}); }
 $('cfg-wave-rounds').addEventListener('change',sendWaveCfg);
+
+let whoCfgRendered=false;
+const WHO_CATS=['futbolista','dt'];
+function renderWhoCfg(cfg){
+  if(whoCfgRendered)return;
+  const wrap=$('cfg-who-cats'); wrap.innerHTML='';
+  WHO_CATS.forEach(cat=>{
+    const l=document.createElement('label'); l.className='category-chip'+(cfg.categories.includes(cat)?' checked':'');
+    l.innerHTML=`<input type="checkbox" value="${cat}" ${cfg.categories.includes(cat)?'checked':''}/> ${CAT_LABELS[cat]||cat}`;
+    l.querySelector('input').addEventListener('change',()=>{l.classList.toggle('checked');sendWhoCfg();});
+    wrap.appendChild(l);
+  });
+  whoCfgRendered=true;
+}
+function sendWhoCfg(){ socket.emit('host:update_who_config',{code:roomCode,categories:[...document.querySelectorAll('#cfg-who-cats input:checked')].map(i=>i.value)}); }
 
 $('btn-start').addEventListener('click',()=>socket.emit('host:start_match',{code:roomCode}));
 
@@ -811,3 +830,74 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   show('s-wave-reveal');
 });
 $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });
+
+/* ===================== ¿QUIÉN SOY? ===================== */
+const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT'};
+let whoTurnToken=0, whoIsMyTurn=false;
+
+function renderWhoGrid(cards, activeId){
+  const grid=$('who-grid'); grid.innerHTML='';
+  cards.forEach(c=>{
+    const mine=c.id===myId;
+    const div=document.createElement('div');
+    div.className='who-card'+(c.id===activeId?' active':'')+(mine?' mine':'')+(!c.hidden&&mine?' revealed':'');
+    if(c.hidden){
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (vos)':''}</div><div class="who-hidden-glyph">?</div>`;
+    } else {
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (vos)':''}</div><div class="who-identity">${esc(c.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[c.category]||c.category)}</div>`;
+    }
+    grid.appendChild(div);
+  });
+}
+socket.on('who:state', ({cards,activePlayerId,activePlayerName,isMyTurn,turnToken})=>{
+  whoTurnToken=turnToken; whoIsMyTurn=isMyTurn;
+  renderWhoGrid(cards, activePlayerId);
+  $('who-my-turn').classList.toggle('hidden', !isMyTurn);
+  $('who-others-turn').classList.toggle('hidden', isMyTurn);
+  if(isMyTurn){ $('inp-who-guess').value=''; }
+  else {
+    $('who-turn-name').textContent=activePlayerName||'—';
+    const av=$('who-turn-avatar'); const c=avatarFor(activePlayerId||'?');
+    av.style.background=c.bg; av.style.color=c.fg;
+    av.textContent=(activePlayerName||'?').trim().charAt(0).toUpperCase()||'?';
+  }
+  show('s-who-board');
+});
+socket.on('who:answer', ({answererName,answer,activePlayerName})=>{
+  const label={si:'Sí',no:'No',talvez:'Tal vez'}[answer]||answer;
+  const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
+  it.innerHTML=`<span>${esc(activePlayerName)} → ${esc(label)}</span><span class="who">${esc(answererName)}</span>`;
+  log.prepend(it);
+});
+$('btn-who-si').addEventListener('click',()=>socket.emit('player:who_answer',{code:roomCode,answer:'si',turnToken:whoTurnToken}));
+$('btn-who-no').addEventListener('click',()=>socket.emit('player:who_answer',{code:roomCode,answer:'no',turnToken:whoTurnToken}));
+$('btn-who-talvez').addEventListener('click',()=>socket.emit('player:who_answer',{code:roomCode,answer:'talvez',turnToken:whoTurnToken}));
+$('btn-who-guess').addEventListener('click',()=>{
+  const t=$('inp-who-guess').value.trim(); if(!t)return;
+  socket.emit('player:who_guess',{code:roomCode,text:t});
+});
+$('inp-who-guess').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-who-guess').click(); });
+
+socket.on('who:guess_submitted', ({playerId,playerName,text})=>{
+  $('who-guess-heading').textContent=`${playerName} dice que es...`;
+  $('who-guess-text').textContent=text;
+  const amHost=isHost, amGuesser=playerId===myId;
+  $('who-host-validate').classList.toggle('hidden', !amHost);
+  $('who-validate-wait').classList.toggle('hidden', amHost);
+  $('who-validate-wait').textContent = amGuesser ? 'Esperando que el anfitrión confirme...' : 'Esperando al anfitrión...';
+  show('s-who-guess-pending');
+});
+$('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
+$('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:false}));
+socket.on('who:guess_result', ({playerName,correct,identity})=>{
+  const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
+  it.innerHTML=correct?`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">✓</span>`:`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
+  log.prepend(it);
+});
+socket.on('who:game_over', ({scores})=>{
+  renderScores('who-scoreboard', scores);
+  $('btn-who-new').classList.toggle('hidden', !isHost);
+  $('who-over-wait').classList.toggle('hidden', isHost);
+  show('s-who-over');
+});
+$('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));

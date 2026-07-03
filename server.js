@@ -47,7 +47,7 @@ const rooms = new Map();
 const timers = new Map(); // code -> intervalId (reloj único por sala)
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2 };
+const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2, who: 3 };
 
 function genCode() {
   let c;
@@ -83,6 +83,10 @@ function newRoom(code, hostId) {
       roundNumber:0, order:[], orderIndex:0, psychicId:null, pair:null, target:null,
       usedPairIndexes:new Set(), guesses:new Map(), secondsLeft:0, deadlineAt:null,
     },
+    whoConfig: { categories: ['futbolista','dt'] },
+    who: {
+      order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), pendingGuess:null,
+    },
   };
 }
 
@@ -106,6 +110,7 @@ function emitRoom(r){
     mentirosoConfig: r.mentirosoConfig,
     subastaConfig: r.subastaConfig,
     waveConfig: r.waveConfig,
+    whoConfig: r.whoConfig,
     maxImpostors: maxImpostorsFor(r.players.size),
     minPlayers: r.gameType ? MIN_PLAYERS[r.gameType] : 3,
   });
@@ -173,6 +178,12 @@ function remapPlayerId(r, oldId, newId){
   r.wave.order = swapArr(r.wave.order);
   if (r.wave.psychicId===oldId) r.wave.psychicId=newId;
   swapKey(r.wave.guesses);
+
+  // ¿Quién Soy?
+  r.who.order = swapArr(r.who.order);
+  swapKey(r.who.assignments);
+  if (r.who.revealed.has(oldId)){ r.who.revealed.delete(oldId); r.who.revealed.add(newId); }
+  if (r.who.pendingGuess?.playerId===oldId) r.who.pendingGuess.playerId=newId;
 }
 
 /* ===================== EL IMPOSTOR ===================== */
@@ -771,6 +782,68 @@ function resolveWaveRound(r){
   });
 }
 
+/* ===================== ¿QUIÉN SOY? ===================== */
+// Sin timers: el juego avanza turno a turno, una accion por vez.
+function startWhoSession(r){
+  const pool = shuffle(CONCEPTS.filter(c=>r.whoConfig.categories.includes(c.category)));
+  const usable = pool.length ? pool : shuffle(CONCEPTS.filter(c=>c.category==='futbolista'||c.category==='dt'));
+  const ids = [...r.players.keys()];
+  r.who.assignments = new Map();
+  ids.forEach((id,i)=> r.who.assignments.set(id, usable[i % usable.length]));
+  r.who.order = shuffle(ids);
+  r.who.turnIndex = 0; r.who.turnToken = 0;
+  r.who.revealed = new Set(); r.who.pendingGuess = null;
+  r.status = 'who_turn';
+  emitWhoState(r);
+}
+const whoActiveId = r => r.who.order.length ? r.who.order[r.who.turnIndex % r.who.order.length] : null;
+const whoRemaining = r => playersArr(r).filter(p=>!r.who.revealed.has(p.id));
+// Le manda a cada jugador su propia vista del tablero: todas las cartas menos
+// la suya (oculta hasta que la adivine). Igual que el reparto de roles de Impostor.
+function whoStateFor(r, pid){
+  const activeId = whoActiveId(r);
+  const activeName = r.players.get(activeId)?.name || '?';
+  const cards = playersArr(r).map(p=>{
+    const mine = p.id===pid;
+    const revealed = r.who.revealed.has(p.id);
+    const assign = r.who.assignments.get(p.id);
+    if(mine && !revealed) return { id:p.id, name:p.name, hidden:true };
+    return { id:p.id, name:p.name, hidden:false, identity:assign?.name, category:assign?.category };
+  });
+  return { cards, activePlayerId:activeId, activePlayerName:activeName,
+    isMyTurn: pid===activeId, canAnswer: pid!==activeId, turnToken:r.who.turnToken };
+}
+function emitWhoState(r){
+  for(const [pid] of r.players.entries()) io.to(pid).emit('who:state', whoStateFor(r,pid));
+  // La vista TV no es un jugador (no recibe los emits privados de arriba). Le
+  // mandamos un estado aparte, pero SIN revelar ninguna identidad todavia no
+  // adivinada: la TV suele estar a la vista de todos, y mostrar ahi los
+  // nombres arruinaria el "no sabes quien sos" para cualquiera que mire.
+  const activeId=whoActiveId(r);
+  io.to(r.code).emit('who:tv_state', {
+    activePlayerName: r.players.get(activeId)?.name,
+    cards: playersArr(r).map(p=>{
+      const revealed=r.who.revealed.has(p.id);
+      const assign=r.who.assignments.get(p.id);
+      return { name:p.name, revealed, identity: revealed?assign?.name:null, category: revealed?assign?.category:null };
+    }),
+  });
+}
+function whoAdvanceTurn(r){
+  const order=r.who.order; if(!order.length)return;
+  r.who.turnToken++;
+  if(whoRemaining(r).length===0){ finishWho(r); return; }
+  let attempts=0;
+  do{
+    r.who.turnIndex=(r.who.turnIndex+1)%order.length; attempts++;
+  } while((r.who.revealed.has(order[r.who.turnIndex])||!r.players.get(order[r.who.turnIndex])?.connected) && attempts<=order.length);
+  emitWhoState(r);
+}
+function finishWho(r){
+  r.status='who_over';
+  io.to(r.code).emit('who:game_over',{ scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
+}
+
 // Al reconectarse en medio de una partida, el jugador necesita que le reenvíen
 // el estado actual de SU juego (rol, de quién es el turno, etc.) para aterrizar
 // en la pantalla correcta en vez de quedarse pegado en el lobby/home.
@@ -837,6 +910,13 @@ function sendResumeState(r, socket){
         socket.emit('wave:guessing_start', { secondsLeft, left:r.wave.pair.left, right:r.wave.pair.right });
       }
       break;
+    case 'who_turn':
+      socket.emit('who:state', whoStateFor(r, pid));
+      break;
+    case 'who_guess_pending':
+      socket.emit('who:state', whoStateFor(r, pid));
+      if(r.who.pendingGuess) socket.emit('who:guess_submitted', { playerId:r.who.pendingGuess.playerId, playerName:r.players.get(r.who.pendingGuess.playerId)?.name, text:r.who.pendingGuess.text });
+      break;
     // imp_reveal/imp_manga_over/lie_round_over/subasta_duel_vote/subasta_tournament/subasta_card_result/wave_reveal
     // son pantallas cortas y de transición (se resuelven solas o esperan al anfitrión);
     // si alguien recarga justo ahí, el próximo evento de servidor lo pone al día.
@@ -881,7 +961,7 @@ io.on('connection', socket => {
 
   socket.on('host:select_game', ({code,gameType}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
-    if(!['impostor','mentiroso','subasta','wavelength'].includes(gameType))return;
+    if(!['impostor','mentiroso','subasta','wavelength','who'].includes(gameType))return;
     r.gameType=gameType; emitRoom(r);
   });
   socket.on('host:update_impostor_config', ({code,impostorCount,mangaCount,categories}) => {
@@ -909,6 +989,11 @@ io.on('connection', socket => {
     if(Number.isInteger(roundCount))r.waveConfig.roundCount=Math.min(Math.max(1,roundCount),20);
     emitRoom(r);
   });
+  socket.on('host:update_who_config', ({code,categories}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(Array.isArray(categories)){const v=categories.filter(c=>c==='futbolista'||c==='dt');r.whoConfig.categories=v.length?v:['futbolista','dt'];}
+    emitRoom(r);
+  });
 
   socket.on('host:start_match', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||!r.gameType)return;
@@ -917,6 +1002,7 @@ io.on('connection', socket => {
     else if(r.gameType==='mentiroso'){startLieSession(r);}
     else if(r.gameType==='subasta'){startFormationVote(r);}
     else if(r.gameType==='wavelength'){startWaveSession(r);}
+    else if(r.gameType==='who'){startWhoSession(r);}
   });
 
   // El Impostor
@@ -1059,6 +1145,34 @@ io.on('connection', socket => {
     startWaveRound(r);
   });
 
+  // ¿Quién Soy?
+  socket.on('player:who_answer', ({code,answer,turnToken}) => {
+    const r=rooms.get(code); if(!r||r.status!=='who_turn')return;
+    const activeId=whoActiveId(r); if(!activeId||socket.id===activeId)return;
+    if(turnToken!==r.who.turnToken)return; // pregunta vieja, ya se paso de turno
+    if(!['si','no','talvez'].includes(answer))return;
+    const answerer=r.players.get(socket.id);
+    io.to(r.code).emit('who:answer',{ answererName:answerer?.name, answer, activePlayerId:activeId, activePlayerName:r.players.get(activeId)?.name });
+    whoAdvanceTurn(r);
+  });
+  socket.on('player:who_guess', ({code,text}) => {
+    const r=rooms.get(code); if(!r||r.status!=='who_turn')return;
+    const activeId=whoActiveId(r); if(socket.id!==activeId)return;
+    const clean=(text||'').trim(); if(!clean)return;
+    r.who.pendingGuess={ playerId:socket.id, text:clean };
+    r.status='who_guess_pending';
+    io.to(r.code).emit('who:guess_submitted',{ playerId:socket.id, playerName:r.players.get(socket.id)?.name, text:clean });
+  });
+  socket.on('host:who_validate', ({code,correct}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='who_guess_pending')return;
+    const pg=r.who.pendingGuess; if(!pg)return;
+    const guesserId=pg.playerId;
+    if(correct){ r.who.revealed.add(guesserId); const p=r.players.get(guesserId); if(p)p.score+=3; }
+    r.who.pendingGuess=null; r.status='who_turn';
+    io.to(r.code).emit('who:guess_result',{ playerId:guesserId, playerName:r.players.get(guesserId)?.name, correct, identity: r.who.assignments.get(guesserId)?.name });
+    whoAdvanceTurn(r);
+  });
+
   socket.on('host:new_session', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
     clearLieTimer(r); clearSubTimer(r);
@@ -1066,6 +1180,7 @@ io.on('connection', socket => {
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
     r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
+    r.who={order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),pendingGuess:null};
     // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
     // y nunca volvieron. Si no, se quedan ocupando su nombre para siempre.
     for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);
@@ -1109,6 +1224,7 @@ io.on('connection', socket => {
         if(r.status==='subasta_play'&&checkAllResponded(r)&&!r.subasta.highestBid){clearSubTimer(r);resolveCard(r);}
         if(r.status==='wave_psychic'&&r.wave.psychicId===socket.id){ setTimeout(()=>{ const room=rooms.get(code); if(room&&room.status==='wave_psychic'&&room.wave.psychicId===socket.id) startWaveRound(room); },3000); }
         if(r.status==='wave_guessing'&&checkAllWaveLocked(r))resolveWaveRound(r);
+        if(r.status==='who_turn'&&whoActiveId(r)===socket.id)whoAdvanceTurn(r);
       }
       emitRoom(r);
     }
