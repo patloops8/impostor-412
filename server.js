@@ -111,6 +111,58 @@ function reassignHostIfNeeded(r){
   }
 }
 
+// Al reconectarse, el jugador recibe un socket.id nuevo (oldId -> newId).
+// Todas las estructuras de juego que guardan referencias a jugadores por id
+// (impostores, orden de turnos, votos, pujas de Subasta, bracket...) deben
+// actualizarse, o el jugador reconectado "desaparece" de la partida en curso.
+function remapPlayerId(r, oldId, newId){
+  if (!oldId || oldId===newId) return;
+  const swapKey=(map)=>{ if(map?.has(oldId)){ map.set(newId,map.get(oldId)); map.delete(oldId); } };
+  const swapArr=(arr)=> Array.isArray(arr) ? arr.map(id=>id===oldId?newId:id) : arr;
+
+  // Impostor
+  if (r.impostorIds.has(oldId)){ r.impostorIds.delete(oldId); r.impostorIds.add(newId); }
+  r.clueOrder = swapArr(r.clueOrder);
+  if (r.votes.has(oldId)){ r.votes.set(newId, r.votes.get(oldId)); r.votes.delete(oldId); }
+  for (const [voter,target] of r.votes.entries()) if (target===oldId) r.votes.set(voter,newId);
+
+  // Mentiroso
+  r.lie.turnOrder = swapArr(r.lie.turnOrder);
+  if (r.lie.lastClaimerId===oldId) r.lie.lastClaimerId=newId;
+  const ch=r.lie.challenge;
+  if (ch){
+    if (ch.accusedId===oldId) ch.accusedId=newId;
+    if (ch.accuserId===oldId) ch.accuserId=newId;
+    swapKey(ch.finalVotes);
+  }
+
+  // Subasta
+  const s=r.subasta;
+  swapKey(s.formationVotes);
+  swapKey(s.playerState);
+  swapKey(s.bids);
+  if (s.highestBid?.playerId===oldId) s.highestBid.playerId=newId;
+  if (s.rps){
+    s.rps.players = swapArr(s.rps.players);
+    swapKey(s.rps.choices);
+  }
+  if (s.teams?.has(oldId)){ const t=s.teams.get(oldId); t.id=newId; s.teams.set(newId,t); s.teams.delete(oldId); }
+  if (s.bracket){
+    const b=s.bracket;
+    b.alive = swapArr(b.alive);
+    b.eliminated = swapArr(b.eliminated);
+    b.byes = swapArr(b.byes);
+    b.winnersThisRound = swapArr(b.winnersThisRound);
+    if (Array.isArray(b.queue)) b.queue = b.queue.map(pair=>swapArr(pair));
+    if (b.currentDuel){
+      const d=b.currentDuel;
+      if (d.aId===oldId) d.aId=newId;
+      if (d.bId===oldId) d.bId=newId;
+      swapKey(d.votes);
+    }
+  }
+}
+
 /* ===================== EL IMPOSTOR ===================== */
 function startManga(r){
   const pool = CONCEPTS.filter(c=>r.impostorConfig.categories.includes(c.category));
@@ -620,6 +672,69 @@ function resolveFormationVote(r){
   setTimeout(()=>showCard(r),1500);
 }
 
+// Al reconectarse en medio de una partida, el jugador necesita que le reenvíen
+// el estado actual de SU juego (rol, de quién es el turno, etc.) para aterrizar
+// en la pantalla correcta en vez de quedarse pegado en el lobby/home.
+function sendResumeState(r, socket){
+  const pid=socket.id;
+  switch(r.status){
+    case 'imp_clue':
+    case 'imp_vote':
+    case 'imp_reveal':
+    case 'imp_manga_over': {
+      const isI=r.impostorIds.has(pid);
+      socket.emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:isI?null:r.concept?.category, concept:isI?null:r.concept?.name });
+      socket.emit('imp:manga_started', { mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, impostorCount:r.impostorIds.size });
+      if(r.status==='imp_clue'){
+        socket.emit('imp:round', { roundNumber:r.roundNumber, currentTurnPlayerId:r.clueOrder[0]||null });
+        socket.emit('imp:turn', { currentTurnPlayerId:r.clueOrder[r.clueTurnIndex] });
+      } else if(r.status==='imp_vote'){
+        socket.emit('imp:voting', { candidates: alive(r).map(p=>({id:p.id,name:p.name})) });
+      }
+      break;
+    }
+    case 'lie_claim':
+    case 'lie_naming':
+    case 'lie_final_vote':
+    case 'lie_round_over': {
+      socket.emit('lie:round',{ roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, category:r.lie.category, mode:r.mentirosoConfig.mode, currentTurnPlayerId:lieTurnId(r) });
+      if(r.status==='lie_claim'){
+        if(r.lie.currentClaim>0) socket.emit('lie:claim',{ amount:r.lie.currentClaim });
+      } else if(r.status==='lie_naming'){
+        const ch=r.lie.challenge;
+        if(ch){
+          socket.emit('lie:accused',{ accuserId:ch.accuserId, accuserName:r.players.get(ch.accuserId)?.name, accusedId:ch.accusedId, accusedName:r.players.get(ch.accusedId)?.name, target:ch.target, category:r.lie.category, mode:r.mentirosoConfig.mode, deadlineAt:ch.deadlineAt });
+          // Reponer el progreso ya hecho (respuestas nombradas antes de la reconexión)
+          if(r.mentirosoConfig.mode==='texto' && ch.namedSoFar.length){
+            ch.namedSoFar.forEach((text,i)=> socket.emit('lie:item',{text, count:i+1, target:ch.target, deadlineAt:ch.deadlineAt}));
+          } else if(ch.count>0){
+            socket.emit('lie:answer_marked',{count:ch.count, target:ch.target, deadlineAt:ch.deadlineAt});
+          }
+        }
+      } else if(r.status==='lie_final_vote'){
+        const ch=r.lie.challenge;
+        if(ch){ const elig=connected(r).filter(p=>p.id!==ch.accusedId); socket.emit('lie:final_vote',{ target:ch.target, mode:r.mentirosoConfig.mode, namedSoFar:r.mentirosoConfig.mode==='texto'?ch.namedSoFar:null, votesNeeded:elig.length, eligibleVoterIds:elig.map(p=>p.id) }); }
+      }
+      break;
+    }
+    case 'subasta_formation':
+      socket.emit('sub:formation_vote',{formations:ALL_FORMATIONS,secondsLeft:r.subasta.formationSecondsLeft});
+      break;
+    case 'subasta_play': {
+      const snap=subSnapshot(r); if(snap) socket.emit('sub:resync',snap);
+      const bid=r.subasta.bids.get(pid);
+      if(bid) socket.emit('sub:eligibility',{eligible:bid.eligible, skipsLeft:r.subasta.playerState.get(pid)?.skipsLeft??0});
+      break;
+    }
+    case 'subasta_rps':
+      if(r.subasta.rps) socket.emit('sub:rps_start',{ playerIds:r.subasta.rps.players, playerNames:r.subasta.rps.players.map(id=>r.players.get(id)?.name), positionLabel:POSITION_LABELS[r.subasta.rps.card.position] });
+      break;
+    // imp_reveal/imp_manga_over/lie_round_over/subasta_duel_vote/subasta_tournament/subasta_card_result
+    // son pantallas cortas y de transición (se resuelven solas o esperan al anfitrión);
+    // si alguien recarga justo ahí, el próximo evento de servidor lo pone al día.
+  }
+}
+
 /* ===================== SOCKET.IO ===================== */
 io.on('connection', socket => {
 
@@ -814,6 +929,10 @@ io.on('connection', socket => {
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
+    // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
+    // y nunca volvieron. Si no, se quedan ocupando su nombre para siempre.
+    for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);
+    reassignHostIfNeeded(r);
     for(const p of r.players.values()){p.alive=true;p.score=0;}
     emitRoom(r);
   });
@@ -824,15 +943,18 @@ io.on('connection', socket => {
     if(!r){cb&&cb({ok:false});return;}
     const existing=r.players.get(playerId);
     if(existing){
-      // reasignar el socket
+      // reasignar el socket: el jugador vuelve con un socket.id nuevo, así que
+      // hay que actualizar toda referencia a su id viejo en el estado de juego
+      // (impostores, turnos, votos, pujas...), o "desaparece" de la partida.
+      remapPlayerId(r, playerId, socket.id);
       r.players.delete(playerId);
       existing.id=socket.id; existing.connected=true;
       if(r.hostId===playerId)r.hostId=socket.id;
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
-      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id});
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
       emitRoom(r);
-      if(r.status==='subasta_play'){const snap=subSnapshot(r);if(snap)socket.emit('sub:resync',snap);}
+      sendResumeState(r, socket);
     } else { cb&&cb({ok:false}); }
   });
 

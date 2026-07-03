@@ -1,0 +1,30 @@
+# Config de despliegue para Fly.io.
+# El nombre de la app debe ser único a nivel global en Fly — si "412-futbol"
+# ya está tomado, cambialo acá (y en el paso `fly apps create`).
+app = "412-futbol"
+primary_region = "eze" # Ezeiza, Argentina — el más cercano para audiencia LatAm
+
+[build]
+
+[env]
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Clave para que NO se duerma: no detener la máquina por inactividad,
+  # y mantener siempre al menos 1 corriendo.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "get"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -11,14 +11,36 @@ const socket = io({
 
 /* ===== Conexión + reconexión ===== */
 const connBanner = document.getElementById('conn-banner');
-let myId = null, roomCode = null, myStoredId = null, isHost = false, currentGame = null;
+let myId = null, roomCode = null, myStoredId = null, isHost = false, currentGame = null, tvLink = '';
+
+// Persistimos sala + id en localStorage: si el celular recarga la página
+// (muy común al volver de segundo plano), podemos reintegrarnos solos en
+// vez de quedar bloqueados fuera de una partida ya empezada.
+const SESSION_KEY='412_session';
+function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({code:roomCode, playerId:myStoredId})); }catch(e){} }
+function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
+(function hydrateSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY); if(!raw)return;
+    const saved=JSON.parse(raw);
+    if(saved && saved.code && saved.playerId){ roomCode=saved.code; myStoredId=saved.playerId; }
+  }catch(e){}
+})();
 
 socket.on('connect', () => {
   connBanner.classList.add('hidden');
-  // Reconexión: si ya teníamos sala, reintegrarse
+  // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
   if (roomCode && myStoredId) {
     socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId }, (res) => {
-      if (res && res.ok) { myId = res.playerId; myStoredId = res.playerId; isHost = res.isHost; }
+      if (res && res.ok) {
+        myId = res.playerId; myStoredId = res.playerId; isHost = res.isHost;
+        if(res.categories) ALL_CATEGORIES=res.categories;
+        if(res.formations) ALL_FORMATIONS=res.formations;
+        saveSession();
+      } else {
+        // La sala ya no existe o el jugador no está: no insistir, volver a home limpio.
+        clearSession(); roomCode=null; myStoredId=null;
+      }
     });
   }
 });
@@ -40,6 +62,7 @@ function avatarHTML(id,name){
   const initial=esc((name||'?').trim().charAt(0).toUpperCase()||'?');
   return `<span class="player-avatar" style="background:${c.bg};color:${c.fg};">${initial}</span>`;
 }
+function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
 const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over'];
@@ -67,8 +90,10 @@ function onJoined(res){
   if(!res.ok){ showHomeError(res.error); return; }
   roomCode=res.code; myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
   ALL_CATEGORIES=res.categories||[]; ALL_FORMATIONS=res.formations||[];
+  saveSession();
   $('lobby-code').textContent=roomCode;
-  $('tv-hint').textContent='Vista TV: '+location.origin+'/tv?c='+roomCode;
+  tvLink = location.origin+'/tv?c='+roomCode;
+  $('tv-hint').textContent='📺 Vista TV';
   show('s-lobby');
 }
 
@@ -77,6 +102,12 @@ $('btn-share').addEventListener('click', async () => {
   const text = `¡Únete a mi partida de 412! Código: ${roomCode} — entra en ${location.origin}`;
   if(navigator.share){ try{ await navigator.share({text}); }catch(e){} }
   else { try{ await navigator.clipboard.writeText(text); $('btn-share').textContent='✓ Copiado'; setTimeout(()=>$('btn-share').textContent='📋 Copiar / compartir código',2000);}catch(e){} }
+});
+
+$('tv-hint').addEventListener('click', async () => {
+  if(!tvLink) return;
+  try{ await navigator.clipboard.writeText(tvLink); $('tv-hint').textContent='✓ Link copiado'; setTimeout(()=>$('tv-hint').textContent='📺 Vista TV',2000); }
+  catch(e){}
 });
 
 /* ===== LOBBY ===== */
@@ -91,8 +122,12 @@ socket.on('room:update', (st) => {
 
   if(st.status==='lobby'){
     renderLobby(st);
-    // Si veníamos de un resultado, volver al lobby
-    if(!['s-lobby','s-home'].includes(currentVisibleSection())) show('s-lobby');
+    // Asegurar que se vea el lobby en este estado: cubre volver de un resultado
+    // anterior Y reconectarse (recarga de página) mientras la sala sigue en el
+    // lobby, donde la sección visible por defecto es "s-home". Se evita llamar
+    // show() si ya estamos en el lobby, para no re-disparar la animación de
+    // entrada en cada actualización (p.ej. cada vez que alguien más se une).
+    if(currentVisibleSection()!=='s-lobby') show('s-lobby');
   }
 });
 
@@ -184,8 +219,8 @@ let impManga={n:1,c:3}, impTurn=null;
 socket.on('imp:manga_started',({mangaNumber,mangaCount})=>{ impManga={n:mangaNumber,c:mangaCount}; });
 socket.on('imp:role',({isImpostor,impostorCount,category,concept})=>{
   const card=$('imp-role-card');
-  if(isImpostor){ card.className='role-card impostor'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'No sabes el concepto. Disimula.'; }
-  else { card.className='role-card innocent'; $('imp-role-label').textContent='Concepto ('+category+')'; $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Da una pista relacionada.`:'Da una pista relacionada, sin decirlo directo.'; }
+  if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'No sabes el concepto. Disimula.'; }
+  else { card.className='role-card innocent'; $('imp-role-icon').textContent='⚽'; $('imp-role-label').textContent='Concepto ('+category+')'; $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Da una pista relacionada.`:'Da una pista relacionada, sin decirlo directo.'; }
   show('s-imp-role');
 });
 $('btn-imp-role-ok').addEventListener('click',()=>{ renderClue(); show('s-imp-clue'); });
@@ -199,18 +234,24 @@ function renderClue(){
   $('imp-my-turn').classList.toggle('hidden',!mine);
   $('imp-wait-turn').classList.toggle('hidden',mine);
   if(mine){ $('inp-clue').value=''; $('clue-error').classList.add('hidden'); }
-  else { const t=players.find(p=>p.id===impTurn); $('imp-turn-name').textContent=t?t.name:'—'; }
+  else {
+    const t=players.find(p=>p.id===impTurn);
+    $('imp-turn-name').textContent=t?t.name:'—';
+    const av=$('imp-turn-avatar'); const c=avatarFor(impTurn||'?');
+    av.style.background=c.bg; av.style.color=c.fg;
+    av.textContent=(t?t.name:'?').trim().charAt(0).toUpperCase()||'?';
+  }
 }
 $('btn-clue').addEventListener('click',()=>{ const w=$('inp-clue').value.trim(); if(w)socket.emit('player:submit_clue',{code:roomCode,word:w}); });
 $('inp-clue').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-clue').click(); });
 socket.on('imp:clue_rejected',({reason})=>{ $('clue-error').textContent=reason; $('clue-error').classList.remove('hidden'); });
 socket.on('imp:clue',({name,word})=>{ const log=$('imp-clue-log'); const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(word)}</span><span class="who">${esc(name)}</span>`; log.prepend(it); });
-socket.on('imp:clue_phase_ending',()=>{ $('imp-my-turn').classList.add('hidden'); $('imp-wait-turn').classList.remove('hidden'); $('imp-turn-name').textContent='Votación...'; });
+socket.on('imp:clue_phase_ending',()=>{ $('imp-my-turn').classList.add('hidden'); $('imp-wait-turn').classList.remove('hidden'); $('imp-turn-name').textContent='Votación...'; const av=$('imp-turn-avatar'); av.style.background='var(--bg2)'; av.style.color='var(--neon)'; av.textContent='⏳'; });
 let impVoted=false;
 socket.on('imp:voting',({candidates})=>{ impVoted=false; const g=$('imp-vote-grid'); g.innerHTML=''; candidates.filter(c=>c.id!==myId).forEach(c=>{ const b=document.createElement('button'); b.className='vote-btn'; b.textContent=c.name; b.addEventListener('click',()=>castVote(c.id,b)); g.appendChild(b); }); $('imp-vote-status').textContent=''; show('s-imp-vote'); });
 function castVote(id,btn){ if(impVoted)return; impVoted=true; document.querySelectorAll('#imp-vote-grid .vote-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); $('imp-vote-status').textContent='Voto enviado, esperando...'; socket.emit('player:submit_vote',{code:roomCode,targetId:id}); }
 socket.on('imp:vote_count',({votesIn,votesNeeded})=>{ if(impVoted)$('imp-vote-status').textContent=`Voto enviado (${votesIn}/${votesNeeded})`; });
-socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=wasImpostor?'¡Atrapado!':'Era inocente...'; $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?'Era impostor.':'La partida sigue...'; show('s-imp-reveal'); });
+socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=(wasImpostor?'🎯 ¡Atrapado!':'❌ Era inocente...'); $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?'Era impostor.':'La partida sigue...'; show('s-imp-reveal'); });
 socket.on('imp:tie',({tiedPlayers})=>{ $('imp-reveal-banner').className='reveal-banner escaped'; $('imp-reveal-eyebrow').textContent='Empate'; $('imp-reveal-title').textContent='Nadie sale'; $('imp-reveal-sub').textContent=(tiedPlayers||[]).join(' vs '); show('s-imp-reveal'); });
 let impLastFinal=false;
 socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount,isLastManga,scores})=>{
@@ -234,8 +275,8 @@ function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); functio
 function stopLieCd(){ if(lieCd){clearInterval(lieCd);lieCd=null;} }
 socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; renderLieClaim(); show('s-lie-claim'); });
 socket.on('lie:turn',({currentTurnPlayerId})=>{ lieTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-lie-claim')renderLieClaim(); });
-socket.on('lie:claim',({amount})=>{ lieClaim=amount; $('lie-claim-amount').textContent=amount; });
-function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0;}else{const t=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=t?t.name:'—';} }
+socket.on('lie:claim',({amount})=>{ lieClaim=amount; const el=$('lie-claim-amount'); el.textContent=amount; bump(el); });
+function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0;}else{const t=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=t?t.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(t?t.name:'?').trim().charAt(0).toUpperCase()||'?';} }
 $('btn-claim').addEventListener('click',()=>{ const v=Number($('inp-claim').value); if(!Number.isInteger(v)||v<=lieClaim){$('claim-error').textContent=`Debe ser mayor a ${lieClaim}.`;$('claim-error').classList.remove('hidden');return;} socket.emit('player:make_claim',{code:roomCode,amount:v}); });
 $('btn-accuse').addEventListener('click',()=>socket.emit('player:accuse_liar',{code:roomCode}));
 socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason; $('claim-error').classList.remove('hidden'); });
@@ -249,10 +290,10 @@ socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,cat
   startLieCd(deadlineAt); show('s-lie-naming');
 });
 $('btn-mark').addEventListener('click',()=>socket.emit('player:mark_answer',{code:roomCode}));
-socket.on('lie:answer_marked',({count,deadlineAt})=>{ $('lie-named-count').textContent=count; const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>Respuesta ${count}</span><span class="who">✓</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
+socket.on('lie:answer_marked',({count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>Respuesta ${count}</span><span class="who">✓</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
 $('btn-name-item').addEventListener('click',sendNameItem); $('inp-name-item').addEventListener('keydown',e=>{if(e.key==='Enter')sendNameItem();});
 function sendNameItem(){ const t=$('inp-name-item').value.trim(); if(!t)return; $('inp-name-item').value=''; socket.emit('player:name_item',{code:roomCode,text:t}); }
-socket.on('lie:item',({text,count,deadlineAt})=>{ $('lie-named-count').textContent=count; const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(text)}</span><span class="who">#${count}</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
+socket.on('lie:item',({text,count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(text)}</span><span class="who">#${count}</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
 let lieEligible=false;
 socket.on('lie:final_vote',({target,mode,namedSoFar,eligibleVoterIds})=>{
   stopLieCd(); lieEligible=eligibleVoterIds.includes(myId);
@@ -270,8 +311,9 @@ socket.on('lie:final_progress',({votesIn,votesNeeded})=>{ if($('lie-can-vote').c
 let lieLastFinal=false;
 socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,roundCount,isLastRound,scores})=>{
   stopLieCd(); lieLastFinal=isLastRound;
+  $('lie-over-banner').className='reveal-banner '+(success?'caught':'escaped');
   $('lie-over-eyebrow').textContent=`Ronda ${roundNumber}/${roundCount}`;
-  $('lie-over-title').textContent=success?`${accusedName} sí pudo`:(reason==='timeout'?`${accusedName} se quedó sin tiempo`:`${accusedName} no convenció`);
+  $('lie-over-title').textContent=success?`✅ ${accusedName} sí pudo`:(reason==='timeout'?`⏱ ${accusedName} se quedó sin tiempo`:`❌ ${accusedName} no convenció`);
   $('lie-over-sub').textContent=success?`${accuserName} pierde 1 punto.`:`${accuserName} gana 1 punto.`;
   const me=scores.find(s=>s.id===myId); $('lie-my-score').textContent=me?me.score:0;
   $('btn-lie-next').textContent=isLastRound?'Volver al inicio':'Siguiente ronda';
@@ -339,7 +381,7 @@ function tickSubClockLocal(){
   }
 }
 function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subClockIv);subClockIv=null;} subClockLastShown=-1; }
-function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; }
+function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; bump($('sub-budget')); bump($('sub-skips')); }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
 socket.on('sub:formation_vote',({formations,secondsLeft})=>{
@@ -363,6 +405,7 @@ socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,starti
   $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.add('hidden'); $('sub-ineligible').classList.add('hidden');
   updBidBtns();
   loadSil($('sub-img'),$('sub-img-placeholder'),$('sub-img-pos'),cardId,positionLabel,false);
+  const silBox=document.querySelector('#s-sub-play .silhouette-container'); silBox.classList.remove('flash'); void silBox.offsetWidth; silBox.classList.add('flash');
   show('s-sub-play');           // mostrar la pantalla primero...
   stopSubClock();               // ...resetear cualquier reloj previo...
   setSubCount(secondsLeft);     // ...y arrancar el reloj local ya en pantalla
@@ -389,6 +432,7 @@ socket.on('sub:bid_public',({name,amount,highestBid})=>{
   subHighest=highestBid.amount;
   const iAmHighest = highestBid.playerId === myId;
   $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;
+  bump($('sub-highest'));
   updBidBtns();
   // Registrar en el log de pujas
   const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--lime);font-family:var(--mono);">$${amount}M</span><span class="who">${esc(name)}</span>`;log.prepend(it);
@@ -492,6 +536,7 @@ socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,tota
   $('sub-duel-a-player').textContent=aCard?aCard.name:'(sin jugador)';
   $('sub-duel-b-player').textContent=bCard?bCard.name:'(sin jugador)';
   $('sub-duel-a-media').style.display='none'; $('sub-duel-b-media').style.display='none';
+  $('sub-duel-a-side').classList.remove('winner'); $('sub-duel-b-side').classList.remove('winner');
   loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,positionLabel,false);
   loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.cardId:null,positionLabel,false);
   const canVote=voterIds.includes(myId);
@@ -507,6 +552,7 @@ socket.on('sub:duel_position_result',({winner,mediaA,mediaB,scoreA,scoreB})=>{
   if(mediaA!==null){ $('sub-duel-a-media').style.display='block'; $('sub-duel-a-media').textContent='Media '+mediaA; }
   if(mediaB!==null){ $('sub-duel-b-media').style.display='block'; $('sub-duel-b-media').textContent='Media '+mediaB; }
   $('sub-duel-a-score').textContent=scoreA; $('sub-duel-b-score').textContent=scoreB;
+  $('sub-duel-a-side').classList.toggle('winner',winner==='A'); $('sub-duel-b-side').classList.toggle('winner',winner==='B');
   $('sub-duel-status').textContent=winner==='A'?'◄ Gana esta posición':'Gana esta posición ►';
 });
 socket.on('sub:duel_result',({winnerName,loserName,scoreA,scoreB})=>{

@@ -28,6 +28,7 @@
       </div>
       <p class="error-text hidden" id="home-error" style="margin-top:10px;"></p>
     </div>
+    <a href="https://paypal.me/patricioversan" target="_blank" rel="noopener" class="donate-link">💚 Apoyar este proyecto</a>
   </section>
 
   <!-- ===== LOBBY ===== -->
@@ -37,9 +38,9 @@
     <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;">📋 Copiar / compartir código</button>
 
     <div class="divider"></div>
-    <div class="between">
+    <div class="between lobby-players-head">
       <h2 style="font-size:1.3rem;">Jugadores (<span id="player-count">0</span>)</h2>
-      <span class="pill" id="tv-hint">Vista TV: /tv</span>
+      <button type="button" class="pill pill-btn" id="tv-hint">📺 Vista TV</button>
     </div>
     <div class="player-grid" id="lobby-players" style="margin-top:12px;"></div>
 
@@ -96,6 +97,7 @@
   <!-- ===== EL IMPOSTOR ===== -->
   <section id="s-imp-role" class="hidden center-flex">
     <div class="role-card" id="imp-role-card" style="width:100%;">
+      <span class="role-icon" id="imp-role-icon">🎭</span>
       <p class="label" id="imp-role-label">—</p>
       <p class="concept" id="imp-role-concept">—</p>
     </div>
@@ -104,17 +106,21 @@
   </section>
 
   <section id="s-imp-clue" class="hidden">
-    <p class="eyebrow"><span id="imp-manga-label">Manga 1/3</span> · Ronda <span id="imp-round">1</span></p>
+    <div class="screen-head">
+      <p class="eyebrow"><span id="imp-manga-label">Manga 1/3</span> · Ronda <span id="imp-round">1</span></p>
+      <h2>Ronda de pistas</h2>
+    </div>
     <div class="player-grid" id="imp-players" style="margin:14px 0;"></div>
     <div id="imp-my-turn" class="hidden card">
-      <h2 style="font-size:1.2rem;">¡Tu turno!</h2>
+      <h2 style="font-size:1.2rem;">🎤 ¡Tu turno!</h2>
       <p style="margin:6px 0 12px;">Di una palabra relacionada (sin repetir).</p>
       <input type="text" id="inp-clue" placeholder="Tu pista..." />
       <p class="error-text hidden" id="clue-error" style="margin-top:8px;"></p>
       <button class="btn-primary" id="btn-clue" style="width:100%;margin-top:10px;">Enviar pista</button>
     </div>
-    <div id="imp-wait-turn" class="hidden center-flex" style="padding:14px;">
-      <p class="eyebrow">Turno de</p><h2 id="imp-turn-name" style="font-size:1.5rem;">—</h2>
+    <div id="imp-wait-turn" class="hidden turn-banner">
+      <div class="turn-avatar" id="imp-turn-avatar">—</div>
+      <p class="eyebrow">Turno de</p><h2 id="imp-turn-name">—</h2>
     </div>
     <div class="divider"></div>
     <h3 style="font-size:1rem;margin-bottom:8px;">Pistas</h3>
@@ -151,28 +157,36 @@
 
   <!-- ===== MENTIROSO ===== -->
   <section id="s-lie-claim" class="hidden">
-    <p class="eyebrow">Ronda <span id="lie-round">1</span>/<span id="lie-round-count">5</span></p>
-    <div class="card" style="margin:12px 0;">
-      <p style="font-size:0.72rem;font-family:var(--mono);text-transform:uppercase;color:var(--text-dim);">Categoría</p>
-      <p style="font-size:1.2rem;font-weight:800;margin-top:6px;color:var(--text);" id="lie-category">—</p>
+    <div class="screen-head">
+      <p class="eyebrow">Ronda <span id="lie-round">1</span>/<span id="lie-round-count">5</span></p>
+      <h2>Mentiroso Futbolero</h2>
     </div>
-    <p style="text-align:center;font-family:var(--mono);color:var(--text-dim);">Apuesta actual</p>
-    <p style="text-align:center;font-family:var(--mono);font-size:2.4rem;color:var(--lime);" id="lie-claim-amount">0</p>
+    <div class="category-card">
+      <p class="cat-label">Categoría</p>
+      <p class="cat-value" id="lie-category">—</p>
+    </div>
+    <div class="claim-counter">
+      <p class="claim-label">Apuesta actual</p>
+      <p class="claim-value" id="lie-claim-amount">0</p>
+    </div>
     <div id="lie-my-turn" class="hidden card" style="margin-top:14px;">
-      <h2 style="font-size:1.1rem;">¡Tu turno!</h2>
+      <h2 style="font-size:1.1rem;">🎲 ¡Tu turno!</h2>
       <input type="number" inputmode="numeric" id="inp-claim" placeholder="Sube la apuesta..." style="margin-top:10px;" />
       <p class="error-text hidden" id="claim-error" style="margin-top:8px;"></p>
       <button class="btn-primary" id="btn-claim" style="width:100%;margin-top:10px;">Subir apuesta</button>
       <button class="btn-secondary" id="btn-accuse" style="width:100%;margin-top:8px;">¡Mentiroso!</button>
     </div>
-    <div id="lie-wait-turn" class="hidden center-flex" style="padding:14px;">
-      <p class="eyebrow">Turno de</p><h2 id="lie-turn-name" style="font-size:1.5rem;">—</h2>
+    <div id="lie-wait-turn" class="hidden turn-banner">
+      <div class="turn-avatar" id="lie-turn-avatar">—</div>
+      <p class="eyebrow">Turno de</p><h2 id="lie-turn-name">—</h2>
     </div>
   </section>
 
   <section id="s-lie-naming" class="hidden">
-    <p class="eyebrow">¡Mentiroso!</p>
-    <h2 style="font-size:1.2rem;margin-bottom:12px;" id="lie-naming-heading">—</h2>
+    <div class="screen-head">
+      <p class="eyebrow">🚨 ¡Mentiroso!</p>
+      <h2 id="lie-naming-heading">—</h2>
+    </div>
     <div class="countdown-row"><div class="countdown-circle" id="lie-countdown">10</div>
       <p style="font-family:var(--mono);color:var(--lime);font-size:1.2rem;"><span id="lie-named-count">0</span> / <span id="lie-target">0</span></p></div>
     <button class="big-tap-btn hidden" id="btn-mark" style="margin-top:18px;">Marcar respuesta ✓</button>
@@ -185,8 +199,10 @@
   </section>
 
   <section id="s-lie-final" class="hidden">
-    <p class="eyebrow">¿El grupo le cree?</p>
-    <h2 style="font-size:1.3rem;margin-bottom:14px;" id="lie-final-title">—</h2>
+    <div class="screen-head">
+      <p class="eyebrow">¿El grupo le cree?</p>
+      <h2 id="lie-final-title">—</h2>
+    </div>
     <div class="clue-log" id="lie-final-list" style="margin-bottom:14px;"></div>
     <div id="lie-can-vote" class="hidden vote-grid">
       <button class="vote-btn" id="btn-lie-valid">Válido ✓</button>
@@ -196,9 +212,11 @@
   </section>
 
   <section id="s-lie-over" class="hidden center-flex">
-    <p class="eyebrow" id="lie-over-eyebrow">—</p>
-    <h1 style="font-size:1.7rem;" id="lie-over-title">—</h1>
-    <p id="lie-over-sub"></p>
+    <div class="reveal-banner" id="lie-over-banner" style="width:100%;">
+      <p class="eyebrow" id="lie-over-eyebrow">—</p>
+      <h1 style="font-size:1.7rem;" id="lie-over-title">—</h1>
+      <p id="lie-over-sub"></p>
+    </div>
     <div class="card" style="width:100%;"><p style="font-size:0.85rem;">Tu puntaje</p><p style="font-family:var(--mono);font-size:2rem;color:var(--lime);margin-top:4px;" id="lie-my-score">0</p></div>
     <button class="btn-primary hidden" id="btn-lie-next" style="width:100%;">Siguiente ronda</button>
     <p id="lie-over-wait" class="hidden">Esperando al anfitrión...</p>
@@ -206,8 +224,10 @@
 
   <!-- ===== SUBASTA ===== -->
   <section id="s-sub-formation" class="hidden">
-    <p class="eyebrow">Subasta Futbolera</p>
-    <h2 style="font-size:1.5rem;margin-bottom:6px;">Voten la formación</h2>
+    <div class="screen-head">
+      <p class="eyebrow">Subasta Futbolera</p>
+      <h2>Voten la formación</h2>
+    </div>
     <div class="countdown-row" style="margin-bottom:14px;"><div class="countdown-circle" id="sub-form-countdown">45</div><p id="sub-form-votes">0 votos</p></div>
     <div id="sub-form-buttons" style="display:flex;flex-direction:column;gap:10px;"></div>
     <p id="sub-form-voted" class="hidden" style="text-align:center;margin-top:14px;color:var(--lime);font-weight:700;">¡Voto enviado!</p>
@@ -291,29 +311,30 @@
       <p class="eyebrow" id="sub-duel-round">Ronda 1</p>
       <p class="eyebrow" id="sub-duel-progress">Pos 1/11</p>
     </div>
-    <div class="between" style="margin-bottom:12px;">
-      <div style="text-align:center;flex:1;"><div style="font-weight:800;" id="sub-duel-a-name">Equipo A</div><div style="font-family:var(--mono);font-size:1.4rem;color:var(--lime);" id="sub-duel-a-score">0</div></div>
-      <div style="font-family:var(--display);font-size:1.5rem;color:var(--text-dim);">VS</div>
-      <div style="text-align:center;flex:1;"><div style="font-weight:800;" id="sub-duel-b-name">Equipo B</div><div style="font-family:var(--mono);font-size:1.4rem;color:var(--lime);" id="sub-duel-b-score">0</div></div>
+    <div class="duel-scoreheader">
+      <div class="side"><div class="name" id="sub-duel-a-name">Equipo A</div><div class="score" id="sub-duel-a-score">0</div></div>
+      <div class="vs">VS</div>
+      <div class="side"><div class="name" id="sub-duel-b-name">Equipo B</div><div class="score" id="sub-duel-b-score">0</div></div>
     </div>
     <div class="card center-flex" style="padding:16px;">
       <span class="position-badge" id="sub-duel-pos">Portero</span>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-top:12px;">
-        <div style="text-align:center;">
-          <div class="silhouette-container" style="max-width:120px;margin:0 auto 8px;"><img id="sub-duel-a-img" class="silhouette-img" src=""/><div id="sub-duel-a-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
-          <div style="font-size:0.82rem;font-weight:700;" id="sub-duel-a-player">—</div>
-          <div style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;display:none;" id="sub-duel-a-media">—</div>
+      <div class="duel-board">
+        <div class="duel-side" id="sub-duel-a-side">
+          <div class="silhouette-container duel-silhouette"><img id="sub-duel-a-img" class="silhouette-img" src=""/><div id="sub-duel-a-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
+          <div class="duel-player-name" id="sub-duel-a-player">—</div>
+          <div class="duel-media" id="sub-duel-a-media">—</div>
         </div>
-        <div style="text-align:center;">
-          <div class="silhouette-container" style="max-width:120px;margin:0 auto 8px;"><img id="sub-duel-b-img" class="silhouette-img" src=""/><div id="sub-duel-b-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
-          <div style="font-size:0.82rem;font-weight:700;" id="sub-duel-b-player">—</div>
-          <div style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;display:none;" id="sub-duel-b-media">—</div>
+        <div class="duel-vs-badge">⚔️</div>
+        <div class="duel-side" id="sub-duel-b-side">
+          <div class="silhouette-container duel-silhouette"><img id="sub-duel-b-img" class="silhouette-img" src=""/><div id="sub-duel-b-ph" class="silhouette-placeholder hidden"><span>?</span></div></div>
+          <div class="duel-player-name" id="sub-duel-b-player">—</div>
+          <div class="duel-media" id="sub-duel-b-media">—</div>
         </div>
       </div>
     </div>
     <div id="sub-duel-can-vote" class="hidden vote-grid" style="margin-top:14px;">
-      <button class="vote-btn" id="sub-duel-vote-a">Mejor el de la izquierda</button>
-      <button class="vote-btn" id="sub-duel-vote-b">Mejor el de la derecha</button>
+      <button class="vote-btn" id="sub-duel-vote-a">◄ El de la izquierda</button>
+      <button class="vote-btn" id="sub-duel-vote-b">El de la derecha ►</button>
     </div>
     <p id="sub-duel-status" style="text-align:center;margin-top:12px;"></p>
   </section>
