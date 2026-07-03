@@ -889,9 +889,9 @@ socket.on('who:guess_submitted', ({playerId,playerName,text})=>{
 });
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
 $('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:false}));
-socket.on('who:guess_result', ({playerName,correct,identity})=>{
+socket.on('who:guess_result', ({playerName,correct,identity,points})=>{
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
-  it.innerHTML=correct?`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">✓</span>`:`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
+  it.innerHTML=correct?`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`:`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
   log.prepend(it);
 });
 socket.on('who:game_over', ({scores})=>{

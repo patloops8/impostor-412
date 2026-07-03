@@ -1167,9 +1167,17 @@ io.on('connection', socket => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='who_guess_pending')return;
     const pg=r.who.pendingGuess; if(!pg)return;
     const guesserId=pg.playerId;
-    if(correct){ r.who.revealed.add(guesserId); const p=r.players.get(guesserId); if(p)p.score+=3; }
+    let points=0;
+    if(correct){
+      r.who.revealed.add(guesserId);
+      // Puntaje por orden de llegada: el primero en adivinar se lleva tantos
+      // puntos como jugadores haya, el segundo uno menos, y asi hasta 1.
+      const position=r.who.revealed.size; // 1er, 2do, 3er... en adivinar
+      points=Math.max(1, r.players.size - position + 1);
+      const p=r.players.get(guesserId); if(p)p.score+=points;
+    }
     r.who.pendingGuess=null; r.status='who_turn';
-    io.to(r.code).emit('who:guess_result',{ playerId:guesserId, playerName:r.players.get(guesserId)?.name, correct, identity: r.who.assignments.get(guesserId)?.name });
+    io.to(r.code).emit('who:guess_result',{ playerId:guesserId, playerName:r.players.get(guesserId)?.name, correct, identity: r.who.assignments.get(guesserId)?.name, points });
     whoAdvanceTurn(r);
   });
 

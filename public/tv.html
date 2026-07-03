@@ -199,8 +199,8 @@ socket.on('who:answer',({answererName,answer,activePlayerName})=>{
 socket.on('who:guess_submitted',({playerName,text})=>{
   $('tv-content').innerHTML=`<div class="center-flex"><p class="eyebrow">¿Le pegó?</p><h1 style="font-size:2rem;">${esc(playerName)} dice que es...</h1><h2 style="font-size:1.8rem;color:var(--lime);">${esc(text)}</h2></div>`;
 });
-socket.on('who:guess_result',({playerName,correct,identity})=>{
-  $('tv-content').innerHTML=`<div class="reveal-banner ${correct?'caught':'escaped'} center-flex"><h1 style="font-size:2rem;">${correct?`¡Era ${esc(identity)}!`:'No era...'}</h1><p>${esc(playerName)} ${correct?'acertó':'falló'}</p></div>`;
+socket.on('who:guess_result',({playerName,correct,identity,points})=>{
+  $('tv-content').innerHTML=`<div class="reveal-banner ${correct?'caught':'escaped'} center-flex"><h1 style="font-size:2rem;">${correct?`¡Era ${esc(identity)}!`:'No era...'}</h1><p>${esc(playerName)} ${correct?`acertó (+${points} pts)`:'falló'}</p></div>`;
 });
 socket.on('who:game_over',({scores})=>{
   let h='<h1 style="font-size:2rem;text-align:center;margin-bottom:20px;">Resultado Final</h1><div class="card">';
