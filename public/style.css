@@ -165,16 +165,14 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 
 /* Tarjetas de minijuegos con imagen de fondo */
 .game-pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius);padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;aspect-ratio:16/11;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
+.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius);padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;aspect-ratio:3/4;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
 .game-pick-card::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center top;opacity:0.92;z-index:0;}
 .game-pick-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, transparent 35%, rgba(7,11,16,0.55) 60%, rgba(7,11,16,0.96) 100%);z-index:1;}
 .game-pick-card > *{position:relative;z-index:2;}
 .game-pick-card.g-impostor::before{background-image:url('/images/ui/tarjeta-impostor.jpg');}
 .game-pick-card.g-subasta::before{background-image:url('/images/ui/tarjeta-subasta.jpg');}
 .game-pick-card.g-mentiroso::before{background-image:url('/images/ui/tarjeta-mentiroso.jpg');}
-/* Sin arte propio todavia: gradiente en vez de foto. Reemplazar por
-   background-image:url('/images/ui/tarjeta-frecuencia.jpg') cuando exista. */
-.game-pick-card.g-wavelength::before{background:linear-gradient(160deg, var(--blue) 0%, #1b3a57 70%, var(--bg2) 100%);}
+.game-pick-card.g-wavelength::before{background-image:url('/images/ui/tarjeta-frecuencia.jpg');}
 .game-pick-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 .game-pick-card.selected{border-color:var(--neon);box-shadow:0 0 0 1px var(--neon), 0 0 22px rgba(182,255,46,0.25);animation:selectPop .28s ease-out;}
 .game-pick-card.g-impostor.selected{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple), 0 0 22px rgba(139,84,224,0.3);}
