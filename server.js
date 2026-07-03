@@ -24,6 +24,7 @@ const CONCEPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'concep
 const ALL_CATEGORIES = [...new Set(CONCEPTS.map(c => c.category))];
 const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8'));
 const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
+const WAVE_PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wavelength-pairs.json'), 'utf-8'));
 
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
@@ -46,7 +47,7 @@ const rooms = new Map();
 const timers = new Map(); // code -> intervalId (reloj único por sala)
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2 };
+const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2 };
 
 function genCode() {
   let c;
@@ -77,6 +78,11 @@ function newRoom(code, hostId) {
       auctionPhase:null, secondsLeft:0, totalEligible:0,
       bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[], rps:null, rpsTimer:null, teams:null, bracket:null,
     },
+    waveConfig: { roundCount: 5 },
+    wave: {
+      roundNumber:0, order:[], orderIndex:0, psychicId:null, pair:null, target:null,
+      usedPairIndexes:new Set(), guesses:new Map(), secondsLeft:0, deadlineAt:null,
+    },
   };
 }
 
@@ -99,6 +105,7 @@ function emitRoom(r){
     impostorConfig: r.impostorConfig,
     mentirosoConfig: r.mentirosoConfig,
     subastaConfig: r.subastaConfig,
+    waveConfig: r.waveConfig,
     maxImpostors: maxImpostorsFor(r.players.size),
     minPlayers: r.gameType ? MIN_PLAYERS[r.gameType] : 3,
   });
@@ -161,6 +168,11 @@ function remapPlayerId(r, oldId, newId){
       swapKey(d.votes);
     }
   }
+
+  // La Frecuencia
+  r.wave.order = swapArr(r.wave.order);
+  if (r.wave.psychicId===oldId) r.wave.psychicId=newId;
+  swapKey(r.wave.guesses);
 }
 
 /* ===================== EL IMPOSTOR ===================== */
@@ -672,6 +684,93 @@ function resolveFormationVote(r){
   setTimeout(()=>showCard(r),1500);
 }
 
+/* ===================== LA FRECUENCIA (estilo Wavelength) ===================== */
+const WAVE_GUESS_S = 45;
+// Bandas de puntaje segun que tan cerca cayo la aguja (escala 0-100) del centro de la zona objetivo.
+function waveScore(target, guess){
+  const d = Math.abs(target - guess);
+  if (d <= 4) return 4;
+  if (d <= 9) return 3;
+  if (d <= 16) return 2;
+  return 0;
+}
+function startWaveSession(r){
+  r.wave.roundNumber=0; r.wave.order=shuffle([...r.players.keys()]); r.wave.orderIndex=0; r.wave.usedPairIndexes=new Set();
+  startWaveRound(r);
+}
+function pickWavePair(r){
+  if (r.wave.usedPairIndexes.size>=WAVE_PAIRS.length) r.wave.usedPairIndexes=new Set();
+  let idx;
+  do { idx=Math.floor(Math.random()*WAVE_PAIRS.length); } while (r.wave.usedPairIndexes.has(idx));
+  r.wave.usedPairIndexes.add(idx);
+  return WAVE_PAIRS[idx];
+}
+function startWaveRound(r){
+  clearSubTimer(r);
+  r.wave.order = r.wave.order.filter(id=>r.players.has(id));
+  if(!r.wave.order.length) r.wave.order=[...r.players.keys()];
+  if(!r.wave.order.length) return;
+  r.wave.roundNumber++;
+  r.wave.psychicId = r.wave.order[r.wave.orderIndex % r.wave.order.length];
+  r.wave.orderIndex++;
+  r.wave.pair = pickWavePair(r);
+  r.wave.target = 10 + Math.floor(Math.random()*81); // 10..90, deja margen para que las bandas no se corten
+  r.wave.guesses = new Map();
+  r.status='wave_psychic';
+  const psy=r.players.get(r.wave.psychicId);
+  io.to(r.code).emit('wave:round', {
+    roundNumber:r.wave.roundNumber, roundCount:r.waveConfig.roundCount,
+    left:r.wave.pair.left, right:r.wave.pair.right,
+    psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?',
+  });
+}
+function startWaveGuessing(r){
+  r.status='wave_guessing'; r.wave.guesses=new Map();
+  r.wave.secondsLeft=WAVE_GUESS_S; r.wave.deadlineAt=Date.now()+WAVE_GUESS_S*1000;
+  io.to(r.code).emit('wave:guessing_start', { secondsLeft:r.wave.secondsLeft, left:r.wave.pair.left, right:r.wave.pair.right });
+  startWaveClock(r);
+}
+function startWaveClock(r){
+  clearSubTimer(r); const code=r.code;
+  const iv=setInterval(()=>{
+    const room=rooms.get(code);
+    if(!room||room.status!=='wave_guessing'){clearInterval(iv);timers.delete(code);return;}
+    room.wave.secondsLeft--;
+    io.to(code).volatile.emit('wave:tick',{secondsLeft:Math.max(0,room.wave.secondsLeft)});
+    if(room.wave.secondsLeft<=0){ clearInterval(iv); timers.delete(code); resolveWaveRound(room); }
+  },1000);
+  timers.set(code,iv);
+}
+const waveEligibleGuessers = r => playersArr(r).filter(p=>p.id!==r.wave.psychicId);
+function checkAllWaveLocked(r){
+  const elig = waveEligibleGuessers(r).filter(p=>p.connected);
+  return elig.length===0 || elig.every(p=>r.wave.guesses.has(p.id));
+}
+function resolveWaveRound(r){
+  clearSubTimer(r);
+  const guessersAll = waveEligibleGuessers(r);
+  // A quien no llego a bloquear (se le acabo el tiempo) se le pone el centro por defecto.
+  for(const p of guessersAll) if(!r.wave.guesses.has(p.id)) r.wave.guesses.set(p.id,50);
+  const results=[]; let sum=0;
+  for(const p of guessersAll){
+    const value=r.wave.guesses.get(p.id);
+    const score=waveScore(r.wave.target,value);
+    sum+=score; p.score+=score;
+    results.push({id:p.id,name:p.name,value,score});
+  }
+  const psychicScore = guessersAll.length ? Math.round(sum/guessersAll.length) : 0;
+  const psy=r.players.get(r.wave.psychicId);
+  if(psy) psy.score+=psychicScore;
+  r.status='wave_reveal';
+  const isLast = r.wave.roundNumber>=r.waveConfig.roundCount;
+  io.to(r.code).emit('wave:reveal', {
+    target:r.wave.target, left:r.wave.pair.left, right:r.wave.pair.right,
+    psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?', psychicScore,
+    guesses:results, roundNumber:r.wave.roundNumber, roundCount:r.waveConfig.roundCount,
+    isLastRound:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score),
+  });
+}
+
 // Al reconectarse en medio de una partida, el jugador necesita que le reenvíen
 // el estado actual de SU juego (rol, de quién es el turno, etc.) para aterrizar
 // en la pantalla correcta en vez de quedarse pegado en el lobby/home.
@@ -729,7 +828,16 @@ function sendResumeState(r, socket){
     case 'subasta_rps':
       if(r.subasta.rps) socket.emit('sub:rps_start',{ playerIds:r.subasta.rps.players, playerNames:r.subasta.rps.players.map(id=>r.players.get(id)?.name), positionLabel:POSITION_LABELS[r.subasta.rps.card.position] });
       break;
-    // imp_reveal/imp_manga_over/lie_round_over/subasta_duel_vote/subasta_tournament/subasta_card_result
+    case 'wave_psychic':
+      if(r.wave.pair) socket.emit('wave:round', { roundNumber:r.wave.roundNumber, roundCount:r.waveConfig.roundCount, left:r.wave.pair.left, right:r.wave.pair.right, psychicId:r.wave.psychicId, psychicName:r.players.get(r.wave.psychicId)?.name });
+      break;
+    case 'wave_guessing':
+      if(r.wave.pair){
+        const secondsLeft=Math.max(0,Math.round((r.wave.deadlineAt-Date.now())/1000));
+        socket.emit('wave:guessing_start', { secondsLeft, left:r.wave.pair.left, right:r.wave.pair.right });
+      }
+      break;
+    // imp_reveal/imp_manga_over/lie_round_over/subasta_duel_vote/subasta_tournament/subasta_card_result/wave_reveal
     // son pantallas cortas y de transición (se resuelven solas o esperan al anfitrión);
     // si alguien recarga justo ahí, el próximo evento de servidor lo pone al día.
   }
@@ -773,7 +881,7 @@ io.on('connection', socket => {
 
   socket.on('host:select_game', ({code,gameType}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
-    if(!['impostor','mentiroso','subasta'].includes(gameType))return;
+    if(!['impostor','mentiroso','subasta','wavelength'].includes(gameType))return;
     r.gameType=gameType; emitRoom(r);
   });
   socket.on('host:update_impostor_config', ({code,impostorCount,mangaCount,categories}) => {
@@ -796,6 +904,11 @@ io.on('connection', socket => {
     if(winMode==='ovr'||winMode==='votacion')r.subastaConfig.winMode=winMode;
     emitRoom(r);
   });
+  socket.on('host:update_wave_config', ({code,roundCount}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(Number.isInteger(roundCount))r.waveConfig.roundCount=Math.min(Math.max(1,roundCount),20);
+    emitRoom(r);
+  });
 
   socket.on('host:start_match', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||!r.gameType)return;
@@ -803,6 +916,7 @@ io.on('connection', socket => {
     if(r.gameType==='impostor'){r.mangaNumber=1;startManga(r);}
     else if(r.gameType==='mentiroso'){startLieSession(r);}
     else if(r.gameType==='subasta'){startFormationVote(r);}
+    else if(r.gameType==='wavelength'){startWaveSession(r);}
   });
 
   // El Impostor
@@ -923,12 +1037,35 @@ io.on('connection', socket => {
     advanceToNextUsefulCard(r);
   });
 
+  // La Frecuencia
+  socket.on('player:wave_peek', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='wave_psychic'||socket.id!==r.wave.psychicId)return;
+    socket.emit('wave:target', { target:r.wave.target });
+  });
+  socket.on('player:wave_ready', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='wave_psychic'||socket.id!==r.wave.psychicId)return;
+    startWaveGuessing(r);
+  });
+  socket.on('player:wave_lock', ({code,value}) => {
+    const r=rooms.get(code); if(!r||r.status!=='wave_guessing'||socket.id===r.wave.psychicId)return;
+    const v=Number(value); if(!Number.isFinite(v))return;
+    r.wave.guesses.set(socket.id, Math.min(100,Math.max(0,v)));
+    io.to(r.code).emit('wave:lock_progress', { lockedIn:r.wave.guesses.size, needed:waveEligibleGuessers(r).filter(p=>p.connected).length });
+    if(checkAllWaveLocked(r)) resolveWaveRound(r);
+  });
+  socket.on('host:wave_next_round', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.gameType!=='wavelength')return;
+    if(r.wave.roundNumber>=r.waveConfig.roundCount)return;
+    startWaveRound(r);
+  });
+
   socket.on('host:new_session', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
     clearLieTimer(r); clearSubTimer(r);
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
+    r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
     // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
     // y nunca volvieron. Si no, se quedan ocupando su nombre para siempre.
     for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);
@@ -970,6 +1107,8 @@ io.on('connection', socket => {
         if(r.status==='imp_vote'&&r.votes.size>=connectedAlive(r).length&&connectedAlive(r).length>0)resolveVotes(r);
         if(r.status==='lie_claim'&&lieTurnId(r)===socket.id)advLie(r);
         if(r.status==='subasta_play'&&checkAllResponded(r)&&!r.subasta.highestBid){clearSubTimer(r);resolveCard(r);}
+        if(r.status==='wave_psychic'&&r.wave.psychicId===socket.id){ setTimeout(()=>{ const room=rooms.get(code); if(room&&room.status==='wave_psychic'&&room.wave.psychicId===socket.id) startWaveRound(room); },3000); }
+        if(r.status==='wave_guessing'&&checkAllWaveLocked(r))resolveWaveRound(r);
       }
       emitRoom(r);
     }

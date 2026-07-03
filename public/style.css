@@ -16,7 +16,7 @@
   --line2:#2a3d4f;
   --ink:#eef4ee;            /* texto claro */
   --ink-soft:#9fb0ad;       /* texto secundario */
-  --gold:#e9b949; --purple:#8b54e0; --red:#ff4d4d;
+  --gold:#e9b949; --purple:#8b54e0; --red:#ff4d4d; --blue:#4e8ecb;
   --white:#ffffff;
 
   --display:'Oswald',sans-serif; --body:'Libre Franklin',sans-serif; --mono:'Libre Franklin',sans-serif;
@@ -164,19 +164,23 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .conn-banner.error{background:var(--red);color:#fff;}
 
 /* Tarjetas de minijuegos con imagen de fondo */
-.game-pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius);padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;aspect-ratio:3/4.4;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
+.game-pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.game-pick-card{position:relative;border:1px solid var(--line2);border-radius:var(--radius);padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;aspect-ratio:16/11;justify-content:flex-end;overflow:hidden;background:var(--card);transition:transform .14s, box-shadow .14s, border-color .14s;}
 .game-pick-card::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center top;opacity:0.92;z-index:0;}
 .game-pick-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg, transparent 35%, rgba(7,11,16,0.55) 60%, rgba(7,11,16,0.96) 100%);z-index:1;}
 .game-pick-card > *{position:relative;z-index:2;}
 .game-pick-card.g-impostor::before{background-image:url('/images/ui/tarjeta-impostor.jpg');}
 .game-pick-card.g-subasta::before{background-image:url('/images/ui/tarjeta-subasta.jpg');}
 .game-pick-card.g-mentiroso::before{background-image:url('/images/ui/tarjeta-mentiroso.jpg');}
+/* Sin arte propio todavia: gradiente en vez de foto. Reemplazar por
+   background-image:url('/images/ui/tarjeta-frecuencia.jpg') cuando exista. */
+.game-pick-card.g-wavelength::before{background:linear-gradient(160deg, var(--blue) 0%, #1b3a57 70%, var(--bg2) 100%);}
 .game-pick-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
 .game-pick-card.selected{border-color:var(--neon);box-shadow:0 0 0 1px var(--neon), 0 0 22px rgba(182,255,46,0.25);animation:selectPop .28s ease-out;}
 .game-pick-card.g-impostor.selected{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple), 0 0 22px rgba(139,84,224,0.3);}
 .game-pick-card.g-subasta.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold), 0 0 22px rgba(233,185,73,0.3);}
 .game-pick-card.g-mentiroso.selected{border-color:var(--red);box-shadow:0 0 0 1px var(--red), 0 0 22px rgba(255,77,77,0.3);}
+.game-pick-card.g-wavelength.selected{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue), 0 0 22px rgba(78,142,203,0.35);}
 .game-pick-title{font-family:var(--display);font-size:0.92rem;line-height:1.05;color:var(--white);letter-spacing:0.01em;text-shadow:0 2px 8px rgba(0,0,0,0.9);}
 .game-pick-desc{display:none;}
 
@@ -272,3 +276,19 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .pitch-pos{font-family:var(--display);font-size:0.52rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--neon);text-shadow:0 1px 2px rgba(0,0,0,0.9);}
 .pitch-val{font-family:var(--mono);font-size:0.6rem;font-weight:700;color:var(--neon);text-shadow:0 1px 2px rgba(0,0,0,0.9);font-variant-numeric:tabular-nums;}
 .pitch-empty .pitch-token{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.3);}
+
+/* ===== La Frecuencia: ruleta/dial semicircular ===== */
+.wave-dial-wrap{width:100%;max-width:340px;margin:0 auto;}
+.wave-dial{position:relative;width:100%;touch-action:none;user-select:none;}
+.wave-dial svg{width:100%;height:auto;display:block;overflow:visible;}
+.wave-dial.interactive{cursor:grab;}
+.wave-dial.interactive:active{cursor:grabbing;}
+.wave-arc-track{fill:none;stroke:var(--line2);stroke-width:3;}
+.wave-zone-outer{fill:var(--red);opacity:0.28;}
+.wave-zone-mid{fill:var(--gold);opacity:0.5;}
+.wave-zone-bullseye{fill:var(--neon);opacity:0.85;}
+.wave-label{font-family:var(--display);font-weight:700;font-size:11px;fill:var(--ink);text-transform:uppercase;letter-spacing:0.02em;}
+.wave-needle-line{stroke-width:3.5;stroke-linecap:round;}
+.wave-needle-dot{stroke:var(--bg);stroke-width:2;}
+.wave-needle-name{font-family:var(--display);font-weight:700;font-size:10px;text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:3;stroke-linejoin:round;}
+.wave-pivot{fill:var(--ink-soft);}

@@ -65,7 +65,7 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -156,9 +156,11 @@ function renderGamePicker(g){
   $('pick-impostor').classList.toggle('selected',g==='impostor');
   $('pick-mentiroso').classList.toggle('selected',g==='mentiroso');
   $('pick-subasta').classList.toggle('selected',g==='subasta');
+  $('pick-wavelength').classList.toggle('selected',g==='wavelength');
   $('cfg-impostor').classList.toggle('hidden',g!=='impostor');
   $('cfg-mentiroso').classList.toggle('hidden',g!=='mentiroso');
   $('cfg-subasta').classList.toggle('hidden',g!=='subasta');
+  $('cfg-wavelength').classList.toggle('hidden',g!=='wavelength');
 }
 function updateStartBtn(n){
   const can=n>=minPlayers&&currentGame;
@@ -170,6 +172,7 @@ function updateStartBtn(n){
 $('pick-impostor').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'impostor'}));
 $('pick-mentiroso').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'mentiroso'}));
 $('pick-subasta').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'subasta'}));
+$('pick-wavelength').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'wavelength'}));
 
 let impCfgRendered=false;
 function renderImpostorCfg(cfg){
@@ -211,6 +214,9 @@ document.querySelectorAll('input[name=wm]').forEach(r=>r.addEventListener('chang
   $('win-mode-desc').textContent=ovr?'OVR: gana quien tenga el equipo con mayor media promedio.':'Votación: al final se debate posición por posición y el grupo vota. Torneo de eliminación.';
   sendSubCfg();
 }));
+
+function sendWaveCfg(){ socket.emit('host:update_wave_config',{code:roomCode,roundCount:Number($('cfg-wave-rounds').value)}); }
+$('cfg-wave-rounds').addEventListener('change',sendWaveCfg);
 
 $('btn-start').addEventListener('click',()=>socket.emit('host:start_match',{code:roomCode}));
 
@@ -638,3 +644,170 @@ $('btn-sub-new').addEventListener('click',()=>socket.emit('host:new_session',{co
 
 // Reconexión a subasta: pedir estado
 socket.on('connect',()=>{ if(roomCode&&currentVisibleSection()==='s-sub-play')socket.emit('player:request_sub_sync',{code:roomCode}); });
+
+/* ===================== LA FRECUENCIA (estilo Wavelength) ===================== */
+// Dial semicircular dibujado a mano en SVG. Escala de valores: 0 (extremo
+// izquierdo) a 100 (extremo derecho), 50 = arriba del todo.
+const WAVE_CX=150, WAVE_CY=148, WAVE_R=128;
+function waveXY(value,r){
+  const angleDeg = 180 - (value/100)*180;
+  const rad = angleDeg*Math.PI/180;
+  return { x: WAVE_CX + r*Math.cos(rad), y: WAVE_CY - r*Math.sin(rad) };
+}
+function waveWedgePath(centerVal,halfWidth,r){
+  const startV=Math.max(0,centerVal-halfWidth), endV=Math.min(100,centerVal+halfWidth);
+  const p1=waveXY(startV,r), p2=waveXY(endV,r);
+  return `M ${WAVE_CX},${WAVE_CY} L ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${r},${r} 0 0,1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)} Z`;
+}
+function waveArcTrackPath(r){
+  const p1=waveXY(0,r), p2=waveXY(100,r);
+  return `M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${r},${r} 0 0,1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
+}
+// Corta un texto largo en varias lineas (sin partir palabras) para que quepa
+// junto al dial sin pisarse con la etiqueta del otro extremo.
+function waveLabelLines(text,maxChars){
+  const words=(text||'').split(' '); const lines=[]; let cur='';
+  for(const w of words){ const test=cur?cur+' '+w:w; if(test.length>maxChars&&cur){lines.push(cur);cur=w;} else cur=test; }
+  if(cur)lines.push(cur);
+  return lines;
+}
+function waveLabelSvg(x,y,anchor,text){
+  const lines=waveLabelLines(text,15);
+  let out=`<text class="wave-label" x="${x.toFixed(2)}" text-anchor="${anchor}">`;
+  lines.forEach((line,i)=>{ out+=`<tspan x="${x.toFixed(2)}" y="${(y+i*13).toFixed(2)}">${esc(line)}</tspan>`; });
+  return out+`</text>`;
+}
+// Dibuja el dial dentro de containerId. opts.target (0-100 o null=oculto),
+// opts.needles=[{value,color,label}] para la revelacion, opts.interactive
+// habilita arrastrar mi propia aguja (sin avisar al servidor hasta bloquear).
+function renderWaveDial(containerId, opts){
+  const el=$(containerId); if(!el)return;
+  const { leftLabel='', rightLabel='', target=null, needles=[], interactive=false, value=50 } = opts;
+  let svg=`<svg viewBox="0 0 300 172">`;
+  if(target!=null){
+    svg+=`<path class="wave-zone-outer" d="${waveWedgePath(target,16,WAVE_R)}"/>`;
+    svg+=`<path class="wave-zone-mid" d="${waveWedgePath(target,9,WAVE_R)}"/>`;
+    svg+=`<path class="wave-zone-bullseye" d="${waveWedgePath(target,4,WAVE_R)}"/>`;
+  }
+  svg+=`<path class="wave-arc-track" d="${waveArcTrackPath(WAVE_R)}"/>`;
+  const lp=waveXY(2,WAVE_R+14), rp=waveXY(98,WAVE_R+14);
+  svg+=waveLabelSvg(lp.x,lp.y,'start',leftLabel);
+  svg+=waveLabelSvg(rp.x,rp.y,'end',rightLabel);
+  needles.forEach(n=>{
+    const tip=waveXY(n.value,WAVE_R-14), namePos=waveXY(n.value,WAVE_R-34);
+    svg+=`<line class="wave-needle-line" x1="${WAVE_CX}" y1="${WAVE_CY}" x2="${tip.x.toFixed(2)}" y2="${tip.y.toFixed(2)}" style="stroke:${n.color}"/>`;
+    svg+=`<circle class="wave-needle-dot" cx="${tip.x.toFixed(2)}" cy="${tip.y.toFixed(2)}" r="7" style="fill:${n.color}"/>`;
+    svg+=`<text class="wave-needle-name" x="${namePos.x.toFixed(2)}" y="${namePos.y.toFixed(2)}" style="fill:${n.color}">${esc(n.label||'')}</text>`;
+  });
+  if(interactive){
+    const tip=waveXY(value,WAVE_R-14);
+    svg+=`<line id="wave-my-needle-line" class="wave-needle-line" x1="${WAVE_CX}" y1="${WAVE_CY}" x2="${tip.x.toFixed(2)}" y2="${tip.y.toFixed(2)}" style="stroke:var(--neon)"/>`;
+    svg+=`<circle id="wave-my-needle-dot" class="wave-needle-dot" cx="${tip.x.toFixed(2)}" cy="${tip.y.toFixed(2)}" r="9" style="fill:var(--neon)"/>`;
+  }
+  svg+=`<circle class="wave-pivot" cx="${WAVE_CX}" cy="${WAVE_CY}" r="4"/>`;
+  svg+=`</svg>`;
+  el.innerHTML=svg;
+  el.classList.toggle('interactive',!!interactive);
+  if(!interactive)return;
+  const svgEl=el.querySelector('svg');
+  let dragging=false;
+  function valueFromEvent(evt){
+    const rect=svgEl.getBoundingClientRect();
+    const scaleX=300/rect.width, scaleY=172/rect.height;
+    const px=(evt.clientX-rect.left)*scaleX, py=(evt.clientY-rect.top)*scaleY;
+    const dx=px-WAVE_CX, dy=WAVE_CY-py;
+    let angleDeg=Math.atan2(dy,dx)*180/Math.PI; // -180..180 (matematico, arriba=positivo)
+    if(angleDeg<0) angleDeg = (angleDeg<-90) ? 180 : 0; // debajo de la base: pegar al extremo mas cercano
+    angleDeg=Math.min(180,Math.max(0,angleDeg));
+    return 100 - (angleDeg/180)*100;
+  }
+  function updateNeedle(v){
+    const tip=waveXY(v,WAVE_R-14);
+    const line=$('wave-my-needle-line'), dot=$('wave-my-needle-dot');
+    if(line){line.setAttribute('x2',tip.x.toFixed(2));line.setAttribute('y2',tip.y.toFixed(2));}
+    if(dot){dot.setAttribute('cx',tip.x.toFixed(2));dot.setAttribute('cy',tip.y.toFixed(2));}
+  }
+  function onMove(evt){
+    if(!dragging)return;
+    const v=valueFromEvent(evt);
+    updateNeedle(v);
+    if(opts.onChange)opts.onChange(v);
+  }
+  svgEl.addEventListener('pointerdown', e=>{ dragging=true; svgEl.setPointerCapture(e.pointerId); onMove(e); });
+  svgEl.addEventListener('pointermove', onMove);
+  svgEl.addEventListener('pointerup', ()=>{ dragging=false; });
+  svgEl.addEventListener('pointercancel', ()=>{ dragging=false; });
+}
+
+let waveRoundInfo={n:1,c:5}, waveIsPsychic=false, waveMyValue=50, waveLocked=false;
+let waveLeft='', waveRight='', wavePeekTarget=null, wavePeeking=false, waveLastRound=false;
+
+socket.on('wave:round', ({roundNumber,roundCount,left,right,psychicId,psychicName})=>{
+  waveRoundInfo={n:roundNumber,c:roundCount}; waveLeft=left; waveRight=right;
+  waveIsPsychic = psychicId===myId; wavePeekTarget=null; wavePeeking=false;
+  $('wave-round').textContent=roundNumber; $('wave-round-count').textContent=roundCount;
+  $('wave-round-2').textContent=roundNumber; $('wave-round-count-2').textContent=roundCount;
+  renderWaveDial('wave-dial-psychic', {leftLabel:left, rightLabel:right});
+  $('wave-psychic-controls').classList.toggle('hidden', !waveIsPsychic);
+  $('wave-psychic-wait').classList.toggle('hidden', waveIsPsychic);
+  $('btn-wave-peek').textContent='👁 Ver la zona';
+  if(!waveIsPsychic){
+    $('wave-psychic-name').textContent = psychicName || '—';
+    const av=$('wave-psychic-avatar'); const c=avatarFor(psychicId||'?');
+    av.style.background=c.bg; av.style.color=c.fg;
+    av.textContent=(psychicName||'?').trim().charAt(0).toUpperCase()||'?';
+  }
+  show('s-wave-psychic');
+});
+$('btn-wave-peek').addEventListener('click', ()=>{
+  if(wavePeekTarget==null){ socket.emit('player:wave_peek',{code:roomCode}); return; }
+  wavePeeking=!wavePeeking;
+  $('btn-wave-peek').textContent = wavePeeking ? '🙈 Ocultar' : '👁 Ver la zona';
+  renderWaveDial('wave-dial-psychic', {leftLabel:waveLeft, rightLabel:waveRight, target: wavePeeking?wavePeekTarget:null});
+});
+socket.on('wave:target', ({target})=>{
+  wavePeekTarget=target; wavePeeking=true;
+  $('btn-wave-peek').textContent='🙈 Ocultar';
+  renderWaveDial('wave-dial-psychic', {leftLabel:waveLeft, rightLabel:waveRight, target});
+});
+$('btn-wave-ready').addEventListener('click', ()=>socket.emit('player:wave_ready',{code:roomCode}));
+
+socket.on('wave:guessing_start', ({secondsLeft,left,right})=>{
+  waveLocked=false; waveMyValue=50; waveLeft=left; waveRight=right;
+  renderWaveDial('wave-dial-guess', {leftLabel:left, rightLabel:right, interactive:!waveIsPsychic, value:50, onChange:v=>{waveMyValue=v;}});
+  $('wave-guess-controls').classList.toggle('hidden', waveIsPsychic);
+  $('wave-guess-wait').classList.toggle('hidden', !waveIsPsychic);
+  $('wave-lock-status').textContent = waveIsPsychic ? 'Esperando a que adivinen...' : 'Movés tu aguja y bloqueás cuando estés list@.';
+  setWaveCount(secondsLeft);
+  show('s-wave-guess');
+});
+function setWaveCount(s){ const el=$('wave-countdown'); if(el){el.textContent=s; el.classList.toggle('urgent',s<=8);} }
+socket.on('wave:tick', ({secondsLeft})=>setWaveCount(secondsLeft));
+$('btn-wave-lock').addEventListener('click', ()=>{
+  if(waveLocked||waveIsPsychic)return; waveLocked=true;
+  $('wave-guess-controls').classList.add('hidden');
+  $('wave-guess-wait').classList.remove('hidden');
+  $('wave-lock-status').textContent='Respuesta bloqueada. Esperando a los demás...';
+  socket.emit('player:wave_lock',{code:roomCode, value:waveMyValue});
+});
+socket.on('wave:lock_progress', ({lockedIn,needed})=>{
+  if(waveLocked||waveIsPsychic) $('wave-lock-status').textContent = `${lockedIn}/${needed} ya bloquearon...`;
+});
+
+socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,roundNumber,roundCount,isLastRound,scores})=>{
+  const needles = guesses.map(g=>({ value:g.value, color:avatarFor(g.id).bg, label:g.name }));
+  renderWaveDial('wave-dial-reveal', {leftLabel:left, rightLabel:right, target, needles});
+  $('wave-reveal-eyebrow').textContent = `Ronda ${roundNumber}/${roundCount}`;
+  const list=$('wave-reveal-list'); list.innerHTML='';
+  const psyRow=document.createElement('div'); psyRow.className='clue-item';
+  psyRow.innerHTML=`<span>🔮 ${esc(psychicName)} (Psíquico)</span><span class="who">+${psychicScore} pts</span>`;
+  list.appendChild(psyRow);
+  guesses.forEach(g=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(g.name)}</span><span class="who">+${g.score} pts</span>`; list.appendChild(it); });
+  renderScores('wave-scoreboard', scores);
+  waveLastRound=isLastRound;
+  $('btn-wave-next').textContent = isLastRound ? 'Volver al inicio' : 'Siguiente ronda';
+  $('btn-wave-next').classList.toggle('hidden', !isHost);
+  $('wave-over-wait').classList.toggle('hidden', isHost);
+  show('s-wave-reveal');
+});
+$('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });

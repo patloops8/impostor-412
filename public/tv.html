@@ -114,6 +114,66 @@ socket.on('sub:game_over',({mode,scores,championName})=>{
   h+='</div>'; $('tv-content').innerHTML=h;
 });
 
+// La Frecuencia (vista de solo lectura: sin interaccion, solo estado + revelacion)
+const AVATAR_PALETTE=[{bg:'#b6ff2e'},{bg:'#e9b949'},{bg:'#8b54e0'},{bg:'#ff4d4d'},{bg:'#4e8ecb'}];
+function avatarColor(id){ let h=0; for(let i=0;i<(id||'').length;i++)h=(h*31+id.charCodeAt(i))>>>0; return AVATAR_PALETTE[h%AVATAR_PALETTE.length].bg; }
+const WAVE_CX=150, WAVE_CY=148, WAVE_R=128;
+function waveXY(value,r){ const rad=(180-(value/100)*180)*Math.PI/180; return { x:WAVE_CX+r*Math.cos(rad), y:WAVE_CY-r*Math.sin(rad) }; }
+function waveWedgePath(centerVal,halfWidth,r){
+  const p1=waveXY(Math.max(0,centerVal-halfWidth),r), p2=waveXY(Math.min(100,centerVal+halfWidth),r);
+  return `M ${WAVE_CX},${WAVE_CY} L ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${r},${r} 0 0,1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)} Z`;
+}
+function waveArcTrackPath(r){ const p1=waveXY(0,r), p2=waveXY(100,r); return `M ${p1.x.toFixed(2)},${p1.y.toFixed(2)} A ${r},${r} 0 0,1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`; }
+// Corta un texto largo en varias lineas (sin partir palabras) para que quepa
+// junto al dial sin pisarse con la etiqueta del otro extremo.
+function waveLabelLines(text,maxChars){
+  const words=(text||'').split(' '); const lines=[]; let cur='';
+  for(const w of words){ const test=cur?cur+' '+w:w; if(test.length>maxChars&&cur){lines.push(cur);cur=w;} else cur=test; }
+  if(cur)lines.push(cur);
+  return lines;
+}
+function waveLabelSvg(x,y,anchor,text){
+  const lines=waveLabelLines(text,15);
+  let out=`<text class="wave-label" x="${x.toFixed(2)}" text-anchor="${anchor}">`;
+  lines.forEach((line,i)=>{ out+=`<tspan x="${x.toFixed(2)}" y="${(y+i*13).toFixed(2)}">${esc(line)}</tspan>`; });
+  return out+`</text>`;
+}
+function renderTvWaveDial(left,right,target,needles){
+  let svg=`<svg viewBox="0 0 300 172" style="width:100%;max-width:420px;display:block;margin:0 auto;">`;
+  if(target!=null){
+    svg+=`<path class="wave-zone-outer" d="${waveWedgePath(target,16,WAVE_R)}"/>`;
+    svg+=`<path class="wave-zone-mid" d="${waveWedgePath(target,9,WAVE_R)}"/>`;
+    svg+=`<path class="wave-zone-bullseye" d="${waveWedgePath(target,4,WAVE_R)}"/>`;
+  }
+  svg+=`<path class="wave-arc-track" d="${waveArcTrackPath(WAVE_R)}"/>`;
+  const lp=waveXY(2,WAVE_R+14), rp=waveXY(98,WAVE_R+14);
+  svg+=waveLabelSvg(lp.x,lp.y,'start',left);
+  svg+=waveLabelSvg(rp.x,rp.y,'end',right);
+  (needles||[]).forEach(n=>{
+    const tip=waveXY(n.value,WAVE_R-14), namePos=waveXY(n.value,WAVE_R-34);
+    svg+=`<line class="wave-needle-line" x1="${WAVE_CX}" y1="${WAVE_CY}" x2="${tip.x.toFixed(2)}" y2="${tip.y.toFixed(2)}" style="stroke:${n.color}"/>`;
+    svg+=`<circle class="wave-needle-dot" cx="${tip.x.toFixed(2)}" cy="${tip.y.toFixed(2)}" r="7" style="fill:${n.color}"/>`;
+    svg+=`<text class="wave-needle-name" x="${namePos.x.toFixed(2)}" y="${namePos.y.toFixed(2)}" style="fill:${n.color}">${esc(n.label||'')}</text>`;
+  });
+  svg+=`<circle class="wave-pivot" cx="${WAVE_CX}" cy="${WAVE_CY}" r="4"/></svg>`;
+  return svg;
+}
+socket.on('wave:round',({roundNumber,roundCount,left,right,psychicName})=>{
+  $('tv-status-label').textContent=`La Frecuencia · Ronda ${roundNumber}/${roundCount}`;
+  $('tv-content').innerHTML=`<div class="center-flex"><h1 style="font-size:1.8rem;text-align:center;">🔮 ${esc(psychicName)} está pensando su pista...</h1>${renderTvWaveDial(left,right,null,[])}</div>`;
+});
+socket.on('wave:guessing_start',({left,right})=>{
+  $('tv-content').innerHTML=`<div class="center-flex"><h1 style="font-size:1.8rem;">Todos están adivinando...</h1>${renderTvWaveDial(left,right,null,[])}</div>`;
+});
+socket.on('wave:reveal',({target,left,right,psychicName,psychicScore,guesses})=>{
+  const needles=(guesses||[]).map(g=>({value:g.value,color:avatarColor(g.id),label:g.name}));
+  let h=`<div class="center-flex">${renderTvWaveDial(left,right,target,needles)}<div class="card" style="width:100%;max-width:420px;margin-top:16px;">`;
+  h+=`<div class="score-row"><span style="flex:1;">🔮 ${esc(psychicName)} (Psíquico)</span><span class="points">+${psychicScore} pts</span></div>`;
+  (guesses||[]).forEach(g=>{ h+=`<div class="score-row"><span style="flex:1;">${esc(g.name)}</span><span class="points">+${g.score} pts</span></div>`; });
+  h+='</div></div>';
+  $('tv-content').innerHTML=h;
+});
+
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 // Misma lógica que public/app.js: imágenes propias del servidor, no Wikipedia.
 //   revealed=false -> silueta (/images/siluetas/<id>.png), revealed=true -> foto (/images/reales/<id>.png)
