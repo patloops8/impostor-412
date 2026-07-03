@@ -796,7 +796,7 @@ socket.on('wave:guessing_start', ({secondsLeft,left,right})=>{
   renderWaveDial('wave-dial-guess', {leftLabel:left, rightLabel:right, interactive:!waveIsPsychic, value:50, onChange:v=>{waveMyValue=v;}});
   $('wave-guess-controls').classList.toggle('hidden', waveIsPsychic);
   $('wave-guess-wait').classList.toggle('hidden', !waveIsPsychic);
-  $('wave-lock-status').textContent = waveIsPsychic ? 'Esperando a que adivinen...' : 'Movés tu aguja y bloqueás cuando estés list@.';
+  $('wave-lock-status').textContent = waveIsPsychic ? 'Esperando a que adivinen...' : 'Mueve tu aguja y bloquea cuando estés list@.';
   setWaveCount(secondsLeft);
   show('s-wave-guess');
 });
@@ -842,9 +842,9 @@ function renderWhoGrid(cards, activeId){
     const div=document.createElement('div');
     div.className='who-card'+(c.id===activeId?' active':'')+(mine?' mine':'')+(!c.hidden&&mine?' revealed':'');
     if(c.hidden){
-      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (vos)':''}</div><div class="who-hidden-glyph">?</div>`;
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (tú)':''}</div><div class="who-hidden-glyph">?</div>`;
     } else {
-      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (vos)':''}</div><div class="who-identity">${esc(c.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[c.category]||c.category)}</div>`;
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (tú)':''}</div><div class="who-identity">${esc(c.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[c.category]||c.category)}</div>`;
     }
     grid.appendChild(div);
   });
