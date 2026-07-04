@@ -16,7 +16,7 @@
   --line2:#2a3d4f;
   --ink:#eef4ee;            /* texto claro */
   --ink-soft:#9fb0ad;       /* texto secundario */
-  --gold:#e9b949; --purple:#8b54e0; --red:#ff4d4d; --blue:#4e8ecb; --teal:#2dd4bf;
+  --gold:#e9b949; --purple:#8b54e0; --red:#ff4d4d; --cyan:#22d3ee; --teal:#2dd4bf;
   --white:#ffffff;
 
   --display:'Oswald',sans-serif; --body:'Libre Franklin',sans-serif; --mono:'Libre Franklin',sans-serif;
@@ -178,13 +178,13 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .game-pick-card.g-impostor:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(139,84,224,0.35);}
 .game-pick-card.g-subasta:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(233,185,73,0.35);}
 .game-pick-card.g-mentiroso:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(255,77,77,0.35);}
-.game-pick-card.g-wavelength:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(78,142,203,0.35);}
+.game-pick-card.g-wavelength:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(34,211,238,0.35);}
 .game-pick-card.g-who:hover{box-shadow:0 10px 30px rgba(0,0,0,0.5), 0 0 24px rgba(45,212,191,0.35);}
 .game-pick-card.selected{border-color:var(--neon);box-shadow:0 0 0 1px var(--neon), 0 0 22px rgba(182,255,46,0.25);animation:selectPop .28s ease-out;}
 .game-pick-card.g-impostor.selected{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple), 0 0 22px rgba(139,84,224,0.3);}
 .game-pick-card.g-subasta.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold), 0 0 22px rgba(233,185,73,0.3);}
 .game-pick-card.g-mentiroso.selected{border-color:var(--red);box-shadow:0 0 0 1px var(--red), 0 0 22px rgba(255,77,77,0.3);}
-.game-pick-card.g-wavelength.selected{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue), 0 0 22px rgba(78,142,203,0.35);}
+.game-pick-card.g-wavelength.selected{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan), 0 0 22px rgba(34,211,238,0.35);}
 .game-pick-card.g-who.selected{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal), 0 0 22px rgba(45,212,191,0.35);}
 .game-pick-title{font-family:var(--display);font-size:0.92rem;line-height:1.05;color:var(--white);letter-spacing:0.01em;text-shadow:0 2px 8px rgba(0,0,0,0.9);}
 .game-pick-desc{display:none;}
