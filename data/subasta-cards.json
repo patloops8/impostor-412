@@ -1,123 +1,12 @@
 [
   {
-    "id": "lev_yashin",
-    "name": "Lev Yashin",
-    "label": "Lev Yashin (Dinamo Moscú)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Lev Yashin"
-  },
-  {
-    "id": "gianluigi_buffon",
-    "name": "Gianluigi Buffon",
-    "label": "Gianluigi Buffon (Juventus)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Gianluigi Buffon"
-  },
-  {
-    "id": "iker_casillas",
-    "name": "Iker Casillas",
-    "label": "Iker Casillas (Real Madrid)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Iker Casillas"
-  },
-  {
-    "id": "oliver_kahn",
-    "name": "Oliver Kahn",
-    "label": "Oliver Kahn (Bayern Múnich)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Oliver Kahn"
-  },
-  {
-    "id": "peter_schmeichel",
-    "name": "Peter Schmeichel",
-    "label": "Peter Schmeichel (Manchester United)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Peter Schmeichel"
-  },
-  {
-    "id": "edwin_van_der_sar",
-    "name": "Edwin van der Sar",
-    "label": "Edwin van der Sar (Manchester United)",
-    "position": "POR",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Edwin van der Sar"
-  },
-  {
-    "id": "thibaut_courtois",
-    "name": "Thibaut Courtois",
-    "label": "Thibaut Courtois (Real Madrid)",
-    "position": "POR",
-    "rareza": "top",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Thibaut Courtois"
-  },
-  {
-    "id": "alisson_becker",
-    "name": "Alisson Becker",
-    "label": "Alisson Becker (Liverpool)",
-    "position": "POR",
-    "rareza": "top",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Alisson Becker"
-  },
-  {
-    "id": "marc_andre_ter_stegen",
-    "name": "Marc-André ter Stegen",
-    "label": "Marc-André ter Stegen (FC Barcelona)",
-    "position": "POR",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Marc-André ter Stegen"
-  },
-  {
-    "id": "ederson",
-    "name": "Ederson",
-    "label": "Ederson (Manchester City)",
-    "position": "POR",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Ederson (footballer)"
-  },
-  {
-    "id": "gianluigi_donnarumma",
-    "name": "Gianluigi Donnarumma",
-    "label": "Gianluigi Donnarumma (PSG)",
-    "position": "POR",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Gianluigi Donnarumma"
-  },
-  {
     "id": "mike_maignan",
     "name": "Mike Maignan",
     "label": "Mike Maignan (AC Milan)",
     "position": "POR",
     "rareza": "mediano",
     "media": 85,
-    "troll": false,
-    "wikiTitle": "Mike Maignan"
+    "troll": false
   },
   {
     "id": "jan_oblak",
@@ -126,8 +15,7 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 85,
-    "troll": false,
-    "wikiTitle": "Jan Oblak"
+    "troll": false
   },
   {
     "id": "emiliano_martinez",
@@ -136,8 +24,7 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 84,
-    "troll": false,
-    "wikiTitle": "Emiliano Martínez"
+    "troll": false
   },
   {
     "id": "gregor_kobel",
@@ -146,18 +33,7 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 82,
-    "troll": false,
-    "wikiTitle": "Gregor Kobel"
-  },
-  {
-    "id": "andre_onana",
-    "name": "André Onana",
-    "label": "André Onana (Manchester United)",
-    "position": "POR",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "André Onana"
+    "troll": false
   },
   {
     "id": "diogo_costa",
@@ -166,18 +42,7 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 82,
-    "troll": false,
-    "wikiTitle": "Diogo Costa"
-  },
-  {
-    "id": "unai_simon",
-    "name": "Unai Simón",
-    "label": "Unai Simón (Athletic Club)",
-    "position": "POR",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Unai Simón"
+    "troll": false
   },
   {
     "id": "david_raya",
@@ -186,18 +51,16 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 82,
-    "troll": false,
-    "wikiTitle": "David Raya"
+    "troll": false
   },
   {
-    "id": "giorgi_mamardashvili",
-    "name": "Giorgi Mamardashvili",
-    "label": "Giorgi Mamardashvili (Valencia)",
+    "id": "unai_simon",
+    "name": "Unai Simón",
+    "label": "Unai Simón (Athletic Club)",
     "position": "POR",
     "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Giorgi Mamardashvili"
+    "media": 81,
+    "troll": false
   },
   {
     "id": "bono",
@@ -206,28 +69,124 @@
     "position": "POR",
     "rareza": "mediano",
     "media": 81,
-    "troll": false,
-    "wikiTitle": "Yassine Bounou"
+    "troll": false
   },
   {
-    "id": "manuel_neuer_troll",
-    "name": "Manuel Neuer",
-    "label": "Manuel Neuer (Bayern Múnich (líbero loco))",
+    "id": "andre_onana",
+    "name": "André Onana",
+    "label": "André Onana (Manchester United)",
     "position": "POR",
-    "rareza": "troll",
-    "media": 58,
-    "troll": true,
-    "wikiTitle": "Manuel Neuer"
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
   },
   {
-    "id": "loris_karius",
-    "name": "Loris Karius",
-    "label": "Loris Karius (Liverpool (final 2018))",
+    "id": "giorgi_mamardashvili",
+    "name": "Giorgi Mamardashvili",
+    "label": "Giorgi Mamardashvili (Liverpool)",
     "position": "POR",
-    "rareza": "troll",
-    "media": 45,
-    "troll": true,
-    "wikiTitle": "Loris Karius"
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "thibaut_courtois",
+    "name": "Thibaut Courtois",
+    "label": "Thibaut Courtois (Real Madrid)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "alisson_becker",
+    "name": "Alisson Becker",
+    "label": "Alisson Becker (Liverpool)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "marc_andre_ter_stegen",
+    "name": "Marc-André ter Stegen",
+    "label": "Marc-André ter Stegen (FC Barcelona)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "ederson",
+    "name": "Ederson",
+    "label": "Ederson (Fenerbahce)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "gianluigi_donnarumma",
+    "name": "Gianluigi Donnarumma",
+    "label": "Gianluigi Donnarumma (Manchester City)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "lev_yashin",
+    "name": "Lev Yashin",
+    "label": "Lev Yashin (Dinamo Moscú)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "gianluigi_buffon",
+    "name": "Gianluigi Buffon",
+    "label": "Gianluigi Buffon (Juventus)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "iker_casillas",
+    "name": "Iker Casillas",
+    "label": "Iker Casillas (Real Madrid)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "oliver_kahn",
+    "name": "Oliver Kahn",
+    "label": "Oliver Kahn (Bayern Múnich)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "peter_schmeichel",
+    "name": "Peter Schmeichel",
+    "label": "Peter Schmeichel (Manchester United)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "edwin_van_der_sar",
+    "name": "Edwin van der Sar",
+    "label": "Edwin van der Sar (Manchester United)",
+    "position": "POR",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
   },
   {
     "id": "david_de_gea_troll",
@@ -236,108 +195,25 @@
     "position": "POR",
     "rareza": "troll",
     "media": 55,
-    "troll": true,
-    "wikiTitle": "David de Gea"
+    "troll": true
   },
   {
-    "id": "cafu",
-    "name": "Cafu",
-    "label": "Cafu (Roma / Milan)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Cafu"
+    "id": "loris_karius",
+    "name": "Loris Karius",
+    "label": "Loris Karius (Liverpool final 2018)",
+    "position": "POR",
+    "rareza": "troll",
+    "media": 45,
+    "troll": true
   },
   {
-    "id": "javier_zanetti",
-    "name": "Javier Zanetti",
-    "label": "Javier Zanetti (Inter de Milán)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Javier Zanetti"
-  },
-  {
-    "id": "philipp_lahm",
-    "name": "Philipp Lahm",
-    "label": "Philipp Lahm (Bayern Múnich)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Philipp Lahm"
-  },
-  {
-    "id": "dani_alves",
-    "name": "Dani Alves",
-    "label": "Dani Alves (FC Barcelona)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Dani Alves"
-  },
-  {
-    "id": "cafu_br",
-    "name": "Cafú",
-    "label": "Cafú (Brasil)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Cafu"
-  },
-  {
-    "id": "trent_alexander_arnold",
-    "name": "Trent Alexander-Arnold",
-    "label": "Trent Alexander-Arnold (Real Madrid)",
-    "position": "LD",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Trent Alexander-Arnold"
-  },
-  {
-    "id": "achraf_hakimi",
-    "name": "Achraf Hakimi",
-    "label": "Achraf Hakimi (PSG)",
-    "position": "LD",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Achraf Hakimi"
-  },
-  {
-    "id": "kyle_walker",
-    "name": "Kyle Walker",
-    "label": "Kyle Walker (Manchester City)",
-    "position": "LD",
-    "rareza": "top",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Kyle Walker"
-  },
-  {
-    "id": "dani_carvajal",
-    "name": "Dani Carvajal",
-    "label": "Dani Carvajal (Real Madrid)",
-    "position": "LD",
-    "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Dani Carvajal"
-  },
-  {
-    "id": "joao_cancelo",
-    "name": "João Cancelo",
-    "label": "João Cancelo (Al-Hilal)",
-    "position": "LD",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "João Cancelo"
+    "id": "Teo_412",
+    "name": "Teo D'Elia",
+    "label": "Teo D'Elia",
+    "position": "POR",
+    "rareza": "troll",
+    "media": 40,
+    "troll": true
   },
   {
     "id": "jules_kounde",
@@ -346,8 +222,16 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 84,
-    "troll": false,
-    "wikiTitle": "Jules Koundé"
+    "troll": false
+  },
+  {
+    "id": "joao_cancelo",
+    "name": "João Cancelo",
+    "label": "João Cancelo (Barcelonal)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
   },
   {
     "id": "reece_james",
@@ -356,8 +240,7 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 83,
-    "troll": false,
-    "wikiTitle": "Reece James"
+    "troll": false
   },
   {
     "id": "pedro_porro",
@@ -366,18 +249,16 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 81,
-    "troll": false,
-    "wikiTitle": "Pedro Porro"
+    "troll": false
   },
   {
     "id": "denzel_dumfries",
     "name": "Denzel Dumfries",
-    "label": "Denzel Dumfries (Inter de Milán)",
+    "label": "Denzel Dumfries (Real Madrid)",
     "position": "LD",
     "rareza": "mediano",
     "media": 80,
-    "troll": false,
-    "wikiTitle": "Denzel Dumfries"
+    "troll": false
   },
   {
     "id": "jeremie_frimpong",
@@ -386,28 +267,7 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 80,
-    "troll": false,
-    "wikiTitle": "Jeremie Frimpong"
-  },
-  {
-    "id": "vanderson",
-    "name": "Vanderson",
-    "label": "Vanderson (Mónaco)",
-    "position": "LD",
-    "rareza": "mediano",
-    "media": 78,
-    "troll": false,
-    "wikiTitle": "Vanderson (footballer, born 2001)"
-  },
-  {
-    "id": "maicon",
-    "name": "Maicon",
-    "label": "Maicon (Inter de Milán)",
-    "position": "LD",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Maicon (footballer, born 1981)"
+    "troll": false
   },
   {
     "id": "lisandro_martinez",
@@ -416,1828 +276,106 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 80,
-    "troll": false,
-    "wikiTitle": "Lisandro Martínez"
+    "troll": false
   },
   {
-    "id": "franz_beckenbauer",
-    "name": "Franz Beckenbauer",
-    "label": "Franz Beckenbauer (Bayern Múnich)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 93,
-    "troll": false,
-    "wikiTitle": "Franz Beckenbauer"
-  },
-  {
-    "id": "paolo_maldini",
-    "name": "Paolo Maldini",
-    "label": "Paolo Maldini (AC Milan)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 93,
-    "troll": false,
-    "wikiTitle": "Paolo Maldini"
-  },
-  {
-    "id": "franco_baresi",
-    "name": "Franco Baresi",
-    "label": "Franco Baresi (AC Milan)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Franco Baresi"
-  },
-  {
-    "id": "fabio_cannavaro",
-    "name": "Fabio Cannavaro",
-    "label": "Fabio Cannavaro (Real Madrid)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Fabio Cannavaro"
-  },
-  {
-    "id": "sergio_ramos",
-    "name": "Sergio Ramos",
-    "label": "Sergio Ramos (Real Madrid)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Sergio Ramos"
-  },
-  {
-    "id": "carles_puyol",
-    "name": "Carles Puyol",
-    "label": "Carles Puyol (FC Barcelona)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Carles Puyol"
-  },
-  {
-    "id": "alessandro_nesta",
-    "name": "Alessandro Nesta",
-    "label": "Alessandro Nesta (AC Milan)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Alessandro Nesta"
-  },
-  {
-    "id": "rio_ferdinand",
-    "name": "Rio Ferdinand",
-    "label": "Rio Ferdinand (Manchester United)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Rio Ferdinand"
-  },
-  {
-    "id": "giorgio_chiellini",
-    "name": "Giorgio Chiellini",
-    "label": "Giorgio Chiellini (Juventus)",
-    "position": "DFC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Giorgio Chiellini"
-  },
-  {
-    "id": "virgil_van_dijk",
-    "name": "Virgil van Dijk",
-    "label": "Virgil van Dijk (Liverpool)",
-    "position": "DFC",
-    "rareza": "top",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Virgil van Dijk"
-  },
-  {
-    "id": "ruben_dias",
-    "name": "Rúben Dias",
-    "label": "Rúben Dias (Manchester City)",
-    "position": "DFC",
-    "rareza": "top",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Rúben Dias"
-  },
-  {
-    "id": "antonio_rudiger",
-    "name": "Antonio Rüdiger",
-    "label": "Antonio Rüdiger (Real Madrid)",
-    "position": "DFC",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Antonio Rüdiger"
-  },
-  {
-    "id": "william_saliba",
-    "name": "William Saliba",
-    "label": "William Saliba (Arsenal)",
-    "position": "DFC",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "William Saliba"
-  },
-  {
-    "id": "marquinhos",
-    "name": "Marquinhos",
-    "label": "Marquinhos (PSG)",
-    "position": "DFC",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Marquinhos"
-  },
-  {
-    "id": "alessandro_bastoni",
-    "name": "Alessandro Bastoni",
-    "label": "Alessandro Bastoni (Inter de Milán)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Alessandro Bastoni"
-  },
-  {
-    "id": "josko_gvardiol",
-    "name": "Josko Gvardiol",
-    "label": "Josko Gvardiol (Manchester City)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Joško Gvardiol"
-  },
-  {
-    "id": "ibrahima_konate",
-    "name": "Ibrahima Konaté",
-    "label": "Ibrahima Konaté (Liverpool)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Ibrahima Konaté"
-  },
-  {
-    "id": "gabriel_magalhaes",
-    "name": "Gabriel Magalhães",
-    "label": "Gabriel Magalhães (Arsenal)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Gabriel Magalhães"
-  },
-  {
-    "id": "matthijs_de_ligt",
-    "name": "Matthijs de Ligt",
-    "label": "Matthijs de Ligt (Manchester United)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Matthijs de Ligt"
-  },
-  {
-    "id": "ronald_araujo",
-    "name": "Ronald Araújo",
-    "label": "Ronald Araújo (FC Barcelona)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Ronald Araújo"
-  },
-  {
-    "id": "pau_cubarsi",
-    "name": "Pau Cubarsí",
-    "label": "Pau Cubarsí (FC Barcelona)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Pau Cubarsí"
-  },
-  {
-    "id": "castello_lukeba",
-    "name": "Castello Lukeba",
-    "label": "Castello Lukeba (RB Leipzig)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false,
-    "wikiTitle": "Castello Lukeba"
-  },
-  {
-    "id": "cristian_romero",
-    "name": "Cristian Romero",
-    "label": "Cristian Romero (Tottenham)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Cristian Romero"
-  },
-  {
-    "id": "eder_militao",
-    "name": "Éder Militão",
-    "label": "Éder Militão (Real Madrid)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Éder Militão"
-  },
-  {
-    "id": "dayot_upamecano",
-    "name": "Dayot Upamecano",
-    "label": "Dayot Upamecano (Bayern Múnich)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Dayot Upamecano"
-  },
-  {
-    "id": "lutsharel_geertruida",
-    "name": "Lutsharel Geertruida",
-    "label": "Lutsharel Geertruida (RB Leipzig)",
-    "position": "DFC",
+    "id": "vanderson",
+    "name": "Vanderson",
+    "label": "Vanderson (Mónaco)",
+    "position": "LD",
     "rareza": "mediano",
     "media": 78,
-    "troll": false,
-    "wikiTitle": "Lutsharel Geertruida"
+    "troll": false
   },
   {
-    "id": "pepe",
-    "name": "Pepe",
-    "label": "Pepe (Real Madrid (patadas))",
-    "position": "DFC",
-    "rareza": "troll",
-    "media": 60,
-    "troll": true,
-    "wikiTitle": "Pepe (footballer, born 1983)"
-  },
-  {
-    "id": "sergio_ramos_troll",
-    "name": "Sergio Ramos",
-    "label": "Sergio Ramos (Sevilla (tarjetas rojas))",
-    "position": "DFC",
-    "rareza": "troll",
-    "media": 61,
-    "troll": true,
-    "wikiTitle": "Sergio Ramos"
-  },
-  {
-    "id": "roberto_carlos",
-    "name": "Roberto Carlos",
-    "label": "Roberto Carlos (Real Madrid)",
-    "position": "LI",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Roberto Carlos"
-  },
-  {
-    "id": "paolo_maldini_li",
-    "name": "Paolo Maldini",
-    "label": "Paolo Maldini (AC Milan (lateral))",
-    "position": "LI",
-    "rareza": "leyenda",
-    "media": 92,
-    "troll": false,
-    "wikiTitle": "Paolo Maldini"
-  },
-  {
-    "id": "ashley_cole",
-    "name": "Ashley Cole",
-    "label": "Ashley Cole (Chelsea)",
-    "position": "LI",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Ashley Cole"
-  },
-  {
-    "id": "marcelo",
-    "name": "Marcelo",
-    "label": "Marcelo (Real Madrid)",
-    "position": "LI",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Marcelo (footballer, born 1988)"
-  },
-  {
-    "id": "alphonso_davies",
-    "name": "Alphonso Davies",
-    "label": "Alphonso Davies (Bayern Múnich)",
-    "position": "LI",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Alphonso Davies"
-  },
-  {
-    "id": "theo_hernandez",
-    "name": "Theo Hernández",
-    "label": "Theo Hernández (AC Milan)",
-    "position": "LI",
-    "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Theo Hernández"
-  },
-  {
-    "id": "andrew_robertson",
-    "name": "Andrew Robertson",
-    "label": "Andrew Robertson (Liverpool)",
-    "position": "LI",
-    "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Andrew Robertson"
-  },
-  {
-    "id": "alejandro_balde",
-    "name": "Alejandro Balde",
-    "label": "Alejandro Balde (FC Barcelona)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Alejandro Balde"
-  },
-  {
-    "id": "ferland_mendy",
-    "name": "Ferland Mendy",
-    "label": "Ferland Mendy (Real Madrid)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Ferland Mendy"
-  },
-  {
-    "id": "david_alaba",
-    "name": "David Alaba",
-    "label": "David Alaba (Real Madrid)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "David Alaba"
-  },
-  {
-    "id": "alex_grimaldo",
-    "name": "Álex Grimaldo",
-    "label": "Álex Grimaldo (Bayer Leverkusen)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Álex Grimaldo"
-  },
-  {
-    "id": "nuno_mendes",
-    "name": "Nuno Mendes",
-    "label": "Nuno Mendes (PSG)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Nuno Mendes"
-  },
-  {
-    "id": "destiny_udogie",
-    "name": "Destiny Udogie",
-    "label": "Destiny Udogie (Tottenham)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Destiny Udogie"
-  },
-  {
-    "id": "miguel_gutierrez",
-    "name": "Miguel Gutiérrez",
-    "label": "Miguel Gutiérrez (Girona)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 78,
-    "troll": false,
-    "wikiTitle": "Miguel Gutiérrez"
-  },
-  {
-    "id": "maxim_de_cuyper",
-    "name": "Maxim De Cuyper",
-    "label": "Maxim De Cuyper (Brujas)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 77,
-    "troll": false,
-    "wikiTitle": "Maxim De Cuyper"
-  },
-  {
-    "id": "claude_makelele",
-    "name": "Claude Makélélé",
-    "label": "Claude Makélélé (Real Madrid / Chelsea)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Claude Makélélé"
-  },
-  {
-    "id": "andrea_pirlo",
-    "name": "Andrea Pirlo",
-    "label": "Andrea Pirlo (AC Milan / Juventus)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Andrea Pirlo"
-  },
-  {
-    "id": "sergio_busquets",
-    "name": "Sergio Busquets",
-    "label": "Sergio Busquets (FC Barcelona)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Sergio Busquets"
-  },
-  {
-    "id": "patrick_vieira",
-    "name": "Patrick Vieira",
-    "label": "Patrick Vieira (Arsenal)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Patrick Vieira"
-  },
-  {
-    "id": "roy_keane",
-    "name": "Roy Keane",
-    "label": "Roy Keane (Manchester United)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Roy Keane"
-  },
-  {
-    "id": "javier_mascherano",
-    "name": "Javier Mascherano",
-    "label": "Javier Mascherano (FC Barcelona)",
-    "position": "MCD",
-    "rareza": "leyenda",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Javier Mascherano"
-  },
-  {
-    "id": "rodri",
-    "name": "Rodri",
-    "label": "Rodri (Manchester City)",
-    "position": "MCD",
-    "rareza": "top",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Rodri (footballer, born 1996)"
-  },
-  {
-    "id": "declan_rice",
-    "name": "Declan Rice",
-    "label": "Declan Rice (Arsenal)",
-    "position": "MCD",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Declan Rice"
-  },
-  {
-    "id": "joshua_kimmich",
-    "name": "Joshua Kimmich",
-    "label": "Joshua Kimmich (Bayern Múnich)",
-    "position": "MCD",
+    "id": "trent_alexander_arnold",
+    "name": "Trent Alexander-Arnold",
+    "label": "Trent Alexander-Arnold (Real Madrid)",
+    "position": "LD",
     "rareza": "top",
     "media": 87,
-    "troll": false,
-    "wikiTitle": "Joshua Kimmich"
+    "troll": false
   },
   {
-    "id": "casemiro",
-    "name": "Casemiro",
-    "label": "Casemiro (Manchester United)",
-    "position": "MCD",
+    "id": "achraf_hakimi",
+    "name": "Achraf Hakimi",
+    "label": "Achraf Hakimi (PSG)",
+    "position": "LD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "dani_carvajal",
+    "name": "Dani Carvajal",
+    "label": "Dani Carvajal (Real Madrid)",
+    "position": "LD",
     "rareza": "top",
     "media": 85,
-    "troll": false,
-    "wikiTitle": "Casemiro"
+    "troll": false
   },
   {
-    "id": "ngolo_kante",
-    "name": "N'Golo Kanté",
-    "label": "N'Golo Kanté (Al-Ittihad)",
-    "position": "MCD",
+    "id": "kyle_walker",
+    "name": "Kyle Walker",
+    "label": "Kyle Walker (Burnley)",
+    "position": "LD",
     "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "N'Golo Kanté"
-  },
-  {
-    "id": "aurelien_tchouameni",
-    "name": "Aurélien Tchouaméni",
-    "label": "Aurélien Tchouaméni (Real Madrid)",
-    "position": "MCD",
-    "rareza": "mediano",
     "media": 84,
-    "troll": false,
-    "wikiTitle": "Aurélien Tchouaméni"
+    "troll": false
   },
   {
-    "id": "moises_caicedo",
-    "name": "Moisés Caicedo",
-    "label": "Moisés Caicedo (Chelsea)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Moisés Caicedo"
-  },
-  {
-    "id": "manuel_locatelli",
-    "name": "Manuel Locatelli",
-    "label": "Manuel Locatelli (Juventus)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Manuel Locatelli"
-  },
-  {
-    "id": "ederson_2",
-    "name": "Éderson",
-    "label": "Éderson (Atalanta)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Éderson (footballer, born 1999)"
-  },
-  {
-    "id": "joao_palhinha",
-    "name": "João Palhinha",
-    "label": "João Palhinha (Bayern Múnich)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "João Palhinha"
-  },
-  {
-    "id": "ryan_gravenberch",
-    "name": "Ryan Gravenberch",
-    "label": "Ryan Gravenberch (Liverpool)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Ryan Gravenberch"
-  },
-  {
-    "id": "khephren_thuram",
-    "name": "Khéphren Thuram",
-    "label": "Khéphren Thuram (Juventus)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Khéphren Thuram"
-  },
-  {
-    "id": "warren_zaire_emery",
-    "name": "Warren Zaïre-Emery",
-    "label": "Warren Zaïre-Emery (PSG)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Warren Zaïre-Emery"
-  },
-  {
-    "id": "andres_iniesta",
-    "name": "Andrés Iniesta",
-    "label": "Andrés Iniesta (FC Barcelona)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 92,
-    "troll": false,
-    "wikiTitle": "Andrés Iniesta"
-  },
-  {
-    "id": "xavi_hernandez",
-    "name": "Xavi Hernández",
-    "label": "Xavi Hernández (FC Barcelona)",
-    "position": "MC",
+    "id": "cafu",
+    "name": "Cafu",
+    "label": "Cafu (Milan)",
+    "position": "LD",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false,
-    "wikiTitle": "Xavi Hernández"
+    "troll": false
   },
   {
-    "id": "steven_gerrard",
-    "name": "Steven Gerrard",
-    "label": "Steven Gerrard (Liverpool)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Steven Gerrard"
-  },
-  {
-    "id": "frank_lampard",
-    "name": "Frank Lampard",
-    "label": "Frank Lampard (Chelsea)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Frank Lampard"
-  },
-  {
-    "id": "paul_scholes",
-    "name": "Paul Scholes",
-    "label": "Paul Scholes (Manchester United)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Paul Scholes"
-  },
-  {
-    "id": "toni_kroos",
-    "name": "Toni Kroos",
-    "label": "Toni Kroos (Real Madrid)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Toni Kroos"
-  },
-  {
-    "id": "luka_modric",
-    "name": "Luka Modrić",
-    "label": "Luka Modrić (Real Madrid)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Luka Modrić"
-  },
-  {
-    "id": "bastian_schweinsteiger",
-    "name": "Bastian Schweinsteiger",
-    "label": "Bastian Schweinsteiger (Bayern Múnich)",
-    "position": "MC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Bastian Schweinsteiger"
-  },
-  {
-    "id": "jude_bellingham",
-    "name": "Jude Bellingham",
-    "label": "Jude Bellingham (Real Madrid)",
-    "position": "MC",
-    "rareza": "top",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Jude Bellingham"
-  },
-  {
-    "id": "federico_valverde",
-    "name": "Federico Valverde",
-    "label": "Federico Valverde (Real Madrid)",
-    "position": "MC",
-    "rareza": "top",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Federico Valverde"
-  },
-  {
-    "id": "pedri",
-    "name": "Pedri",
-    "label": "Pedri (FC Barcelona)",
-    "position": "MC",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Pedri"
-  },
-  {
-    "id": "gavi",
-    "name": "Gavi",
-    "label": "Gavi (FC Barcelona)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Gavi (footballer)"
-  },
-  {
-    "id": "enzo_fernandez",
-    "name": "Enzo Fernández",
-    "label": "Enzo Fernández (Chelsea)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Enzo Fernández"
-  },
-  {
-    "id": "nicolo_barella",
-    "name": "Nicolò Barella",
-    "label": "Nicolò Barella (Inter de Milán)",
-    "position": "MC",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Nicolò Barella"
-  },
-  {
-    "id": "dominik_szoboszlai",
-    "name": "Dominik Szoboszlai",
-    "label": "Dominik Szoboszlai (Liverpool)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Dominik Szoboszlai"
-  },
-  {
-    "id": "alexis_mac_allister",
-    "name": "Alexis Mac Allister",
-    "label": "Alexis Mac Allister (Liverpool)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Alexis Mac Allister"
-  },
-  {
-    "id": "frenkie_de_jong",
-    "name": "Frenkie de Jong",
-    "label": "Frenkie de Jong (FC Barcelona)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Frenkie de Jong"
-  },
-  {
-    "id": "ilkay_gundogan",
-    "name": "İlkay Gündoğan",
-    "label": "İlkay Gündoğan (Manchester City)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "İlkay Gündoğan"
-  },
-  {
-    "id": "eduardo_camavinga",
-    "name": "Eduardo Camavinga",
-    "label": "Eduardo Camavinga (Real Madrid)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Eduardo Camavinga"
-  },
-  {
-    "id": "youri_tielemans",
-    "name": "Youri Tielemans",
-    "label": "Youri Tielemans (Aston Villa)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Youri Tielemans"
-  },
-  {
-    "id": "bruno_guimaraes",
-    "name": "Bruno Guimarães",
-    "label": "Bruno Guimarães (Newcastle)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false,
-    "wikiTitle": "Bruno Guimarães"
-  },
-  {
-    "id": "adam_wharton",
-    "name": "Adam Wharton",
-    "label": "Adam Wharton (Crystal Palace)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 78,
-    "troll": false,
-    "wikiTitle": "Adam Wharton"
-  },
-  {
-    "id": "joao_neves",
-    "name": "João Neves",
-    "label": "João Neves (PSG)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "João Neves"
-  },
-  {
-    "id": "zinedine_zidane",
-    "name": "Zinedine Zidane",
-    "label": "Zinedine Zidane (Real Madrid)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 95,
-    "troll": false,
-    "wikiTitle": "Zinedine Zidane"
-  },
-  {
-    "id": "diego_maradona",
-    "name": "Diego Maradona",
-    "label": "Diego Maradona (Napoli)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 96,
-    "troll": false,
-    "wikiTitle": "Diego Maradona"
-  },
-  {
-    "id": "ronaldinho",
-    "name": "Ronaldinho",
-    "label": "Ronaldinho (FC Barcelona)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 93,
-    "troll": false,
-    "wikiTitle": "Ronaldinho"
-  },
-  {
-    "id": "michel_platini",
-    "name": "Michel Platini",
-    "label": "Michel Platini (Juventus)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Michel Platini"
-  },
-  {
-    "id": "kaka",
-    "name": "Kaká",
-    "label": "Kaká (AC Milan)",
-    "position": "MCO",
+    "id": "philipp_lahm",
+    "name": "Philipp Lahm",
+    "label": "Philipp Lahm (Bayern Múnich)",
+    "position": "LD",
     "rareza": "leyenda",
     "media": 90,
-    "troll": false,
-    "wikiTitle": "Kaká"
+    "troll": false
   },
   {
-    "id": "francesco_totti",
-    "name": "Francesco Totti",
-    "label": "Francesco Totti (AS Roma)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Francesco Totti"
-  },
-  {
-    "id": "juan_roman_riquelme",
-    "name": "Juan Román Riquelme",
-    "label": "Juan Román Riquelme (Boca Juniors)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Juan Román Riquelme"
-  },
-  {
-    "id": "mesut_ozil",
-    "name": "Mesut Özil",
-    "label": "Mesut Özil (Real Madrid)",
-    "position": "MCO",
-    "rareza": "leyenda",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Mesut Özil"
-  },
-  {
-    "id": "kevin_de_bruyne",
-    "name": "Kevin De Bruyne",
-    "label": "Kevin De Bruyne (Manchester City)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Kevin De Bruyne"
-  },
-  {
-    "id": "martin_degaard",
-    "name": "Martin Ødegaard",
-    "label": "Martin Ødegaard (Arsenal)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Martin Ødegaard"
-  },
-  {
-    "id": "florian_wirtz",
-    "name": "Florian Wirtz",
-    "label": "Florian Wirtz (Bayer Leverkusen)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Florian Wirtz"
-  },
-  {
-    "id": "jamal_musiala",
-    "name": "Jamal Musiala",
-    "label": "Jamal Musiala (Bayern Múnich)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Jamal Musiala"
-  },
-  {
-    "id": "cole_palmer",
-    "name": "Cole Palmer",
-    "label": "Cole Palmer (Chelsea)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Cole Palmer"
-  },
-  {
-    "id": "phil_foden",
-    "name": "Phil Foden",
-    "label": "Phil Foden (Manchester City)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Phil Foden"
-  },
-  {
-    "id": "bruno_fernandes",
-    "name": "Bruno Fernandes",
-    "label": "Bruno Fernandes (Manchester United)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Bruno Fernandes"
-  },
-  {
-    "id": "james_maddison",
-    "name": "James Maddison",
-    "label": "James Maddison (Tottenham)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "James Maddison"
-  },
-  {
-    "id": "dani_olmo",
-    "name": "Dani Olmo",
-    "label": "Dani Olmo (FC Barcelona)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Dani Olmo"
-  },
-  {
-    "id": "rodrigo_de_paul",
-    "name": "Rodrigo De Paul",
-    "label": "Rodrigo De Paul (Atlético de Madrid)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Rodrigo De Paul"
-  },
-  {
-    "id": "nico_williams",
-    "name": "Nico Williams",
-    "label": "Nico Williams (Athletic Club)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Nico Williams"
-  },
-  {
-    "id": "julian_alvarez",
-    "name": "Julián Álvarez",
-    "label": "Julián Álvarez (Atlético de Madrid)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Julián Álvarez"
-  },
-  {
-    "id": "lamine_yamal",
-    "name": "Lamine Yamal",
-    "label": "Lamine Yamal (FC Barcelona)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Lamine Yamal"
-  },
-  {
-    "id": "luis_figo",
-    "name": "Luís Figo",
-    "label": "Luís Figo (Real Madrid)",
-    "position": "ED",
+    "id": "cafu_br",
+    "name": "Cafú",
+    "label": "Cafú (Brasil)",
+    "position": "LD",
     "rareza": "leyenda",
     "media": 90,
-    "troll": false,
-    "wikiTitle": "Luís Figo"
+    "troll": false
   },
   {
-    "id": "garrincha",
-    "name": "Garrincha",
-    "label": "Garrincha (Botafogo)",
-    "position": "ED",
+    "id": "javier_zanetti",
+    "name": "Javier Zanetti",
+    "label": "Javier Zanetti (Inter de Milán)",
+    "position": "LD",
     "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Garrincha"
+    "media": 89,
+    "troll": false
   },
   {
-    "id": "david_beckham",
-    "name": "David Beckham",
-    "label": "David Beckham (Manchester United)",
-    "position": "ED",
+    "id": "dani_alves",
+    "name": "Dani Alves",
+    "label": "Dani Alves (FC Barcelona)",
+    "position": "LD",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "maicon",
+    "name": "Maicon",
+    "label": "Maicon (Inter de Milán)",
+    "position": "LD",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false,
-    "wikiTitle": "David Beckham"
-  },
-  {
-    "id": "arjen_robben",
-    "name": "Arjen Robben",
-    "label": "Arjen Robben (Bayern Múnich)",
-    "position": "ED",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Arjen Robben"
-  },
-  {
-    "id": "mohamed_salah",
-    "name": "Mohamed Salah",
-    "label": "Mohamed Salah (Liverpool)",
-    "position": "ED",
-    "rareza": "top",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Mohamed Salah"
-  },
-  {
-    "id": "bukayo_saka",
-    "name": "Bukayo Saka",
-    "label": "Bukayo Saka (Arsenal)",
-    "position": "ED",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Bukayo Saka"
-  },
-  {
-    "id": "bernardo_silva",
-    "name": "Bernardo Silva",
-    "label": "Bernardo Silva (Manchester City)",
-    "position": "ED",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Bernardo Silva"
-  },
-  {
-    "id": "ousmane_dembele",
-    "name": "Ousmane Dembélé",
-    "label": "Ousmane Dembélé (PSG)",
-    "position": "ED",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Ousmane Dembélé"
-  },
-  {
-    "id": "federico_chiesa",
-    "name": "Federico Chiesa",
-    "label": "Federico Chiesa (Liverpool)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Federico Chiesa"
-  },
-  {
-    "id": "angel_di_maria",
-    "name": "Ángel Di María",
-    "label": "Ángel Di María (Benfica)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Ángel Di María"
-  },
-  {
-    "id": "riyad_mahrez",
-    "name": "Riyad Mahrez",
-    "label": "Riyad Mahrez (Al-Ahli)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Riyad Mahrez"
-  },
-  {
-    "id": "antony",
-    "name": "Antony",
-    "label": "Antony (Real Betis)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 78,
-    "troll": false,
-    "wikiTitle": "Antony (footballer, born 2000)"
-  },
-  {
-    "id": "jadon_sancho",
-    "name": "Jadon Sancho",
-    "label": "Jadon Sancho (Borussia Dortmund)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false,
-    "wikiTitle": "Jadon Sancho"
-  },
-  {
-    "id": "noni_madueke",
-    "name": "Noni Madueke",
-    "label": "Noni Madueke (Chelsea)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false,
-    "wikiTitle": "Noni Madueke"
-  },
-  {
-    "id": "karim_adeyemi",
-    "name": "Karim Adeyemi",
-    "label": "Karim Adeyemi (Borussia Dortmund)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Karim Adeyemi"
-  },
-  {
-    "id": "bradley_barcola",
-    "name": "Bradley Barcola",
-    "label": "Bradley Barcola (PSG)",
-    "position": "ED",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Bradley Barcola"
-  },
-  {
-    "id": "cristiano_ronaldo",
-    "name": "Cristiano Ronaldo",
-    "label": "Cristiano Ronaldo (Real Madrid)",
-    "position": "EI",
-    "rareza": "leyenda",
-    "media": 95,
-    "troll": false,
-    "wikiTitle": "Cristiano Ronaldo"
-  },
-  {
-    "id": "george_best",
-    "name": "George Best",
-    "label": "George Best (Manchester United)",
-    "position": "EI",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "George Best"
-  },
-  {
-    "id": "ryan_giggs",
-    "name": "Ryan Giggs",
-    "label": "Ryan Giggs (Manchester United)",
-    "position": "EI",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Ryan Giggs"
-  },
-  {
-    "id": "gareth_bale",
-    "name": "Gareth Bale",
-    "label": "Gareth Bale (Real Madrid)",
-    "position": "EI",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Gareth Bale"
-  },
-  {
-    "id": "vinicius_junior",
-    "name": "Vinícius Júnior",
-    "label": "Vinícius Júnior (Real Madrid)",
-    "position": "EI",
-    "rareza": "top",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Vinícius Júnior"
-  },
-  {
-    "id": "kylian_mbappe",
-    "name": "Kylian Mbappé",
-    "label": "Kylian Mbappé (Real Madrid)",
-    "position": "EI",
-    "rareza": "top",
-    "media": 92,
-    "troll": false,
-    "wikiTitle": "Kylian Mbappé"
-  },
-  {
-    "id": "rafael_leao",
-    "name": "Rafael Leão",
-    "label": "Rafael Leão (AC Milan)",
-    "position": "EI",
-    "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Rafael Leão"
-  },
-  {
-    "id": "heung_min_son",
-    "name": "Heung-min Son",
-    "label": "Heung-min Son (Tottenham)",
-    "position": "EI",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Son Heung-min"
-  },
-  {
-    "id": "khvicha_kvaratskhelia",
-    "name": "Khvicha Kvaratskhelia",
-    "label": "Khvicha Kvaratskhelia (PSG)",
-    "position": "EI",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Khvicha Kvaratskhelia"
-  },
-  {
-    "id": "raheem_sterling",
-    "name": "Raheem Sterling",
-    "label": "Raheem Sterling (Arsenal)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Raheem Sterling"
-  },
-  {
-    "id": "leroy_sane",
-    "name": "Leroy Sané",
-    "label": "Leroy Sané (Bayern Múnich)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Leroy Sané"
-  },
-  {
-    "id": "kingsley_coman",
-    "name": "Kingsley Coman",
-    "label": "Kingsley Coman (Bayern Múnich)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Kingsley Coman"
-  },
-  {
-    "id": "anthony_gordon",
-    "name": "Anthony Gordon",
-    "label": "Anthony Gordon (Newcastle)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Anthony Gordon"
-  },
-  {
-    "id": "nico_gonzalez",
-    "name": "Nico González",
-    "label": "Nico González (Juventus)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false,
-    "wikiTitle": "Nicolás González (footballer, born 1998)"
-  },
-  {
-    "id": "savinho",
-    "name": "Savinho",
-    "label": "Savinho (Manchester City)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Sávio (footballer, born 2004)"
-  },
-  {
-    "id": "marcus_rashford",
-    "name": "Marcus Rashford",
-    "label": "Marcus Rashford (Aston Villa)",
-    "position": "EI",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Marcus Rashford"
-  },
-  {
-    "id": "pele",
-    "name": "Pelé",
-    "label": "Pelé (Santos)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 96,
-    "troll": false,
-    "wikiTitle": "Pelé"
-  },
-  {
-    "id": "ronaldo_nazario",
-    "name": "Ronaldo Nazário",
-    "label": "Ronaldo Nazário (Real Madrid)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 95,
-    "troll": false,
-    "wikiTitle": "Ronaldo (Brazilian footballer)"
-  },
-  {
-    "id": "marco_van_basten",
-    "name": "Marco van Basten",
-    "label": "Marco van Basten (AC Milan)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 92,
-    "troll": false,
-    "wikiTitle": "Marco van Basten"
-  },
-  {
-    "id": "gerd_muller",
-    "name": "Gerd Müller",
-    "label": "Gerd Müller (Bayern Múnich)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Gerd Müller"
-  },
-  {
-    "id": "romario",
-    "name": "Romário",
-    "label": "Romário (FC Barcelona)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Romário"
-  },
-  {
-    "id": "thierry_henry",
-    "name": "Thierry Henry",
-    "label": "Thierry Henry (Arsenal)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Thierry Henry"
-  },
-  {
-    "id": "ronaldo_nazario_inter",
-    "name": "Ronaldo Nazário",
-    "label": "Ronaldo Nazário (Inter (fenómeno))",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 94,
-    "troll": false,
-    "wikiTitle": "Ronaldo (Brazilian footballer)"
-  },
-  {
-    "id": "andriy_shevchenko",
-    "name": "Andriy Shevchenko",
-    "label": "Andriy Shevchenko (AC Milan)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Andriy Shevchenko"
-  },
-  {
-    "id": "samuel_etoo",
-    "name": "Samuel Eto'o",
-    "label": "Samuel Eto'o (FC Barcelona)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Samuel Eto'o"
-  },
-  {
-    "id": "didier_drogba",
-    "name": "Didier Drogba",
-    "label": "Didier Drogba (Chelsea)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Didier Drogba"
-  },
-  {
-    "id": "raul_gonzalez",
-    "name": "Raúl González",
-    "label": "Raúl González (Real Madrid)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "Raúl (footballer)"
-  },
-  {
-    "id": "david_villa",
-    "name": "David Villa",
-    "label": "David Villa (FC Barcelona)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 88,
-    "troll": false,
-    "wikiTitle": "David Villa"
-  },
-  {
-    "id": "fernando_torres",
-    "name": "Fernando Torres",
-    "label": "Fernando Torres (Liverpool)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Fernando Torres"
-  },
-  {
-    "id": "filippo_inzaghi",
-    "name": "Filippo Inzaghi",
-    "label": "Filippo Inzaghi (AC Milan)",
-    "position": "DC",
-    "rareza": "leyenda",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Filippo Inzaghi"
-  },
-  {
-    "id": "erling_haaland",
-    "name": "Erling Haaland",
-    "label": "Erling Haaland (Manchester City)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 91,
-    "troll": false,
-    "wikiTitle": "Erling Haaland"
-  },
-  {
-    "id": "harry_kane",
-    "name": "Harry Kane",
-    "label": "Harry Kane (Bayern Múnich)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 90,
-    "troll": false,
-    "wikiTitle": "Harry Kane"
-  },
-  {
-    "id": "robert_lewandowski",
-    "name": "Robert Lewandowski",
-    "label": "Robert Lewandowski (FC Barcelona)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 89,
-    "troll": false,
-    "wikiTitle": "Robert Lewandowski"
-  },
-  {
-    "id": "lautaro_martinez",
-    "name": "Lautaro Martínez",
-    "label": "Lautaro Martínez (Inter de Milán)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 87,
-    "troll": false,
-    "wikiTitle": "Lautaro Martínez"
-  },
-  {
-    "id": "victor_osimhen",
-    "name": "Victor Osimhen",
-    "label": "Victor Osimhen (Galatasaray)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "wikiTitle": "Victor Osimhen"
-  },
-  {
-    "id": "alexander_isak",
-    "name": "Alexander Isak",
-    "label": "Alexander Isak (Newcastle)",
-    "position": "DC",
-    "rareza": "top",
-    "media": 85,
-    "troll": false,
-    "wikiTitle": "Alexander Isak"
-  },
-  {
-    "id": "darwin_nunez",
-    "name": "Darwin Núñez",
-    "label": "Darwin Núñez (Liverpool)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Darwin Núñez"
-  },
-  {
-    "id": "dusan_vlahovic",
-    "name": "Dušan Vlahović",
-    "label": "Dušan Vlahović (Juventus)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false,
-    "wikiTitle": "Dušan Vlahović"
-  },
-  {
-    "id": "gabriel_jesus",
-    "name": "Gabriel Jesus",
-    "label": "Gabriel Jesus (Arsenal)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Gabriel Jesus"
-  },
-  {
-    "id": "benjamin_sesko",
-    "name": "Benjamin Šeško",
-    "label": "Benjamin Šeško (RB Leipzig)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Benjamin Šeško"
-  },
-  {
-    "id": "hugo_ekitike",
-    "name": "Hugo Ekitike",
-    "label": "Hugo Ekitike (Eintracht Frankfurt)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Hugo Ekitike"
-  },
-  {
-    "id": "jonathan_david",
-    "name": "Jonathan David",
-    "label": "Jonathan David (Lille)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 82,
-    "troll": false,
-    "wikiTitle": "Jonathan David"
-  },
-  {
-    "id": "santiago_gimenez",
-    "name": "Santiago Giménez",
-    "label": "Santiago Giménez (AC Milan)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Santiago Giménez"
-  },
-  {
-    "id": "artem_dovbyk",
-    "name": "Artem Dovbyk",
-    "label": "Artem Dovbyk (AS Roma)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false,
-    "wikiTitle": "Artem Dovbyk"
-  },
-  {
-    "id": "mateo_retegui",
-    "name": "Mateo Retegui",
-    "label": "Mateo Retegui (Atalanta)",
-    "position": "DC",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false,
-    "wikiTitle": "Mateo Retegui"
-  },
-  {
-    "id": "lionel_messi_mls",
-    "name": "Lionel Messi",
-    "label": "Lionel Messi (Inter Miami (MLS))",
-    "position": "EI",
-    "rareza": "troll",
-    "media": 62,
-    "troll": true,
-    "wikiTitle": "Lionel Messi"
-  },
-  {
-    "id": "cristiano_ronaldo_alnassr",
-    "name": "Cristiano Ronaldo",
-    "label": "Cristiano Ronaldo (Al-Nassr (Arabia))",
-    "position": "DC",
-    "rareza": "troll",
-    "media": 61,
-    "troll": true,
-    "wikiTitle": "Cristiano Ronaldo"
-  },
-  {
-    "id": "neymar_alhilal",
-    "name": "Neymar",
-    "label": "Neymar (Al-Hilal (lesionado))",
-    "position": "EI",
-    "rareza": "troll",
-    "media": 58,
-    "troll": true,
-    "wikiTitle": "Neymar"
-  },
-  {
-    "id": "diego_maradona_dt",
-    "name": "Diego Maradona",
-    "label": "Diego Maradona (DT Dorados)",
-    "position": "MCO",
-    "rareza": "troll",
-    "media": 45,
-    "troll": true,
-    "wikiTitle": "Diego Maradona"
-  },
-  {
-    "id": "ronaldinho_retiro",
-    "name": "Ronaldinho",
-    "label": "Ronaldinho (retiro / fiestas)",
-    "position": "MCO",
-    "rareza": "troll",
-    "media": 50,
-    "troll": true,
-    "wikiTitle": "Ronaldinho"
-  },
-  {
-    "id": "zlatan_ibrahimovic_galaxy",
-    "name": "Zlatan Ibrahimović",
-    "label": "Zlatan Ibrahimović (LA Galaxy)",
-    "position": "DC",
-    "rareza": "troll",
-    "media": 60,
-    "troll": true,
-    "wikiTitle": "Zlatan Ibrahimović"
-  },
-  {
-    "id": "gareth_bale_golf",
-    "name": "Gareth Bale",
-    "label": "Gareth Bale (golf)",
-    "position": "EI",
-    "rareza": "troll",
-    "media": 40,
-    "troll": true,
-    "wikiTitle": "Gareth Bale"
-  },
-  {
-    "id": "wayne_rooney_dt",
-    "name": "Wayne Rooney",
-    "label": "Wayne Rooney (DT (entrenador))",
-    "position": "DC",
-    "rareza": "troll",
-    "media": 48,
-    "troll": true,
-    "wikiTitle": "Wayne Rooney"
-  },
-  {
-    "id": "alexis_sanchez_united",
-    "name": "Alexis Sánchez",
-    "label": "Alexis Sánchez (Manchester United (£500k))",
-    "position": "EI",
-    "rareza": "troll",
-    "media": 52,
-    "troll": true,
-    "wikiTitle": "Alexis Sánchez"
-  },
-  {
-    "id": "philippe_coutinho_barca",
-    "name": "Philippe Coutinho",
-    "label": "Philippe Coutinho (Barça (fracaso))",
-    "position": "MCO",
-    "rareza": "troll",
-    "media": 54,
-    "troll": true,
-    "wikiTitle": "Philippe Coutinho"
-  },
-  {
-    "id": "eden_hazard_madrid",
-    "name": "Eden Hazard",
-    "label": "Eden Hazard (Real Madrid (lesiones))",
-    "position": "EI",
-    "rareza": "troll",
-    "media": 50,
-    "troll": true,
-    "wikiTitle": "Eden Hazard"
-  },
-  {
-    "id": "paul_pogba_susp",
-    "name": "Paul Pogba",
-    "label": "Paul Pogba (suspendido)",
-    "position": "MC",
-    "rareza": "troll",
-    "media": 55,
-    "troll": true,
-    "wikiTitle": "Paul Pogba"
-  },
-  {
-    "id": "antoine_griezmann_clausula",
-    "name": "Antoine Griezmann",
-    "label": "Antoine Griezmann (Barça (cláusula))",
-    "position": "MCO",
-    "rareza": "troll",
-    "media": 60,
-    "troll": true,
-    "wikiTitle": "Antoine Griezmann"
-  },
-  {
-    "id": "mesut_ozil_banca",
-    "name": "Mesut Özil",
-    "label": "Mesut Özil (Arsenal (banca))",
-    "position": "MCO",
-    "rareza": "troll",
-    "media": 53,
-    "troll": true,
-    "wikiTitle": "Mesut Özil"
-  },
-  {
-    "id": "nemanja_matic_fin",
-    "name": "Nemanja Matić",
-    "label": "Nemanja Matić (fin de carrera)",
-    "position": "MCD",
-    "rareza": "troll",
-    "media": 50,
-    "troll": true,
-    "wikiTitle": "Nemanja Matić"
+    "troll": false
   },
   {
     "id": "bacary_sagna",
@@ -2246,8 +384,790 @@
     "position": "LD",
     "rareza": "troll",
     "media": 48,
-    "troll": true,
-    "wikiTitle": "Bacary Sagna"
+    "troll": true
+  },
+  {
+    "id": "alessandro_bastoni",
+    "name": "Alessandro Bastoni",
+    "label": "Alessandro Bastoni (Inter de Milán)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "josko_gvardiol",
+    "name": "Josko Gvardiol",
+    "label": "Josko Gvardiol (Manchester City)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "gabriel_magalhaes",
+    "name": "Gabriel Magalhães",
+    "label": "Gabriel Magalhães (Arsenal)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "cristian_romero",
+    "name": "Cristian Romero",
+    "label": "Cristian Romero (Tottenham)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "eder_militao",
+    "name": "Éder Militão",
+    "label": "Éder Militão (Real Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "ibrahima_konate",
+    "name": "Ibrahima Konaté",
+    "label": "Ibrahima Konaté (Real Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "matthijs_de_ligt",
+    "name": "Matthijs de Ligt",
+    "label": "Matthijs de Ligt (Manchester United)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "ronald_araujo",
+    "name": "Ronald Araújo",
+    "label": "Ronald Araújo (FC Barcelona)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "dayot_upamecano",
+    "name": "Dayot Upamecano",
+    "label": "Dayot Upamecano (Bayern Múnich)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "pau_cubarsi",
+    "name": "Pau Cubarsí",
+    "label": "Pau Cubarsí (FC Barcelona)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "castello_lukeba",
+    "name": "Castello Lukeba",
+    "label": "Castello Lukeba (RB Leipzig)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "lutsharel_geertruida",
+    "name": "Lutsharel Geertruida",
+    "label": "Lutsharel Geertruida (RB Leipzig)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "virgil_van_dijk",
+    "name": "Virgil van Dijk",
+    "label": "Virgil van Dijk (Liverpool)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "ruben_dias",
+    "name": "Rúben Dias",
+    "label": "Rúben Dias (Manchester City)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "antonio_rudiger",
+    "name": "Antonio Rüdiger",
+    "label": "Antonio Rüdiger (Real Madrid)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "william_saliba",
+    "name": "William Saliba",
+    "label": "William Saliba (Arsenal)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "marquinhos",
+    "name": "Marquinhos",
+    "label": "Marquinhos (PSG)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "franz_beckenbauer",
+    "name": "Franz Beckenbauer",
+    "label": "Franz Beckenbauer (Bayern Múnich)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 93,
+    "troll": false
+  },
+  {
+    "id": "paolo_maldini",
+    "name": "Paolo Maldini",
+    "label": "Paolo Maldini (AC Milan)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 93,
+    "troll": false
+  },
+  {
+    "id": "franco_baresi",
+    "name": "Franco Baresi",
+    "label": "Franco Baresi (AC Milan)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "fabio_cannavaro",
+    "name": "Fabio Cannavaro",
+    "label": "Fabio Cannavaro (Real Madrid)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "sergio_ramos",
+    "name": "Sergio Ramos",
+    "label": "Sergio Ramos (Real Madrid)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "alessandro_nesta",
+    "name": "Alessandro Nesta",
+    "label": "Alessandro Nesta (AC Milan)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "carles_puyol",
+    "name": "Carles Puyol",
+    "label": "Carles Puyol (FC Barcelona)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "rio_ferdinand",
+    "name": "Rio Ferdinand",
+    "label": "Rio Ferdinand (Manchester United)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "giorgio_chiellini",
+    "name": "Giorgio Chiellini",
+    "label": "Giorgio Chiellini (Juventus)",
+    "position": "DFC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "sergio_ramos_troll",
+    "name": "Sergio Ramos",
+    "label": "Sergio Ramos (Expulsado)",
+    "position": "DFC",
+    "rareza": "troll",
+    "media": 61,
+    "troll": true
+  },
+  {
+    "id": "pepe",
+    "name": "Pepe",
+    "label": "Pepe (Carnicero)",
+    "position": "DFC",
+    "rareza": "troll",
+    "media": 60,
+    "troll": true
+  },
+  {
+    "id": "Benito_412",
+    "name": "Benito SDR",
+    "label": "Benito SDR",
+    "position": "DFC",
+    "rareza": "troll",
+    "media": 38,
+    "troll": true
+  },
+  {
+    "id": "david_alaba",
+    "name": "David Alaba",
+    "label": "David Alaba (Real Madrid)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "alex_grimaldo",
+    "name": "Álex Grimaldo",
+    "label": "Álex Grimaldo (Bayer Leverkusen)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "nuno_mendes",
+    "name": "Nuno Mendes",
+    "label": "Nuno Mendes (PSG)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "alejandro_balde",
+    "name": "Alejandro Balde",
+    "label": "Alejandro Balde (FC Barcelona)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "ferland_mendy",
+    "name": "Ferland Mendy",
+    "label": "Ferland Mendy (Real Madrid)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "destiny_udogie",
+    "name": "Destiny Udogie",
+    "label": "Destiny Udogie (Tottenham)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "miguel_gutierrez",
+    "name": "Miguel Gutiérrez",
+    "label": "Miguel Gutiérrez (Girona)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "maxim_de_cuyper",
+    "name": "Maxim De Cuyper",
+    "label": "Maxim De Cuyper (Brujas)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "alphonso_davies",
+    "name": "Alphonso Davies",
+    "label": "Alphonso Davies (Bayern Múnich)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "theo_hernandez",
+    "name": "Theo Hernández",
+    "label": "Theo Hernández (Al-Hilal)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "andrew_robertson",
+    "name": "Andrew Robertson",
+    "label": "Andrew Robertson (Spurs)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "paolo_maldini_li",
+    "name": "Paolo Maldini",
+    "label": "Paolo Maldini (AC Milan (lateral))",
+    "position": "LI",
+    "rareza": "leyenda",
+    "media": 92,
+    "troll": false
+  },
+  {
+    "id": "roberto_carlos",
+    "name": "Roberto Carlos",
+    "label": "Roberto Carlos (Real Madrid)",
+    "position": "LI",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "ashley_cole",
+    "name": "Ashley Cole",
+    "label": "Ashley Cole (Chelsea)",
+    "position": "LI",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "marcelo",
+    "name": "Marcelo",
+    "label": "Marcelo (Real Madrid)",
+    "position": "LI",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "aurelien_tchouameni",
+    "name": "Aurélien Tchouaméni",
+    "label": "Aurélien Tchouaméni (Real Madrid)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "moises_caicedo",
+    "name": "Moisés Caicedo",
+    "label": "Moisés Caicedo (Chelsea)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "manuel_locatelli",
+    "name": "Manuel Locatelli",
+    "label": "Manuel Locatelli (Juventus)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "ederson_2",
+    "name": "Éderson",
+    "label": "Éderson (Atalanta)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "joao_palhinha",
+    "name": "João Palhinha",
+    "label": "João Palhinha (Bayern Múnich)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "ryan_gravenberch",
+    "name": "Ryan Gravenberch",
+    "label": "Ryan Gravenberch (Liverpool)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "khephren_thuram",
+    "name": "Khéphren Thuram",
+    "label": "Khéphren Thuram (Juventus)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "warren_zaire_emery",
+    "name": "Warren Zaïre-Emery",
+    "label": "Warren Zaïre-Emery (PSG)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "rodri",
+    "name": "Rodri",
+    "label": "Rodri (Manchester City)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "joshua_kimmich",
+    "name": "Joshua Kimmich",
+    "label": "Joshua Kimmich (Bayern Múnich)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "declan_rice",
+    "name": "Declan Rice",
+    "label": "Declan Rice (Arsenal)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "casemiro",
+    "name": "Casemiro",
+    "label": "Casemiro (Manchester United)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "ngolo_kante",
+    "name": "N'Golo Kanté",
+    "label": "N'Golo Kanté (Al-Ittihad)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "andrea_pirlo",
+    "name": "Andrea Pirlo",
+    "label": "Andrea Pirlo (AC Milan / Juventus)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "claude_makelele",
+    "name": "Claude Makélélé",
+    "label": "Claude Makélélé (Real Madrid / Chelsea)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "sergio_busquets",
+    "name": "Sergio Busquets",
+    "label": "Sergio Busquets (FC Barcelona)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "patrick_vieira",
+    "name": "Patrick Vieira",
+    "label": "Patrick Vieira (Arsenal)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "roy_keane",
+    "name": "Roy Keane",
+    "label": "Roy Keane (Manchester United)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "javier_mascherano",
+    "name": "Javier Mascherano",
+    "label": "Javier Mascherano (FC Barcelona)",
+    "position": "MCD",
+    "rareza": "leyenda",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "frenkie_de_jong",
+    "name": "Frenkie de Jong",
+    "label": "Frenkie de Jong (FC Barcelona)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "alexis_mac_allister",
+    "name": "Alexis Mac Allister",
+    "label": "Alexis Mac Allister (Liverpool)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "ilkay_gundogan",
+    "name": "İlkay Gündoğan",
+    "label": "İlkay Gündoğan (Galatasaray)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "bruno_guimaraes",
+    "name": "Bruno Guimarães",
+    "label": "Bruno Guimarães (Newcastle)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "gavi",
+    "name": "Gavi",
+    "label": "Gavi (FC Barcelona)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "enzo_fernandez",
+    "name": "Enzo Fernández",
+    "label": "Enzo Fernández (Chelsea)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "dominik_szoboszlai",
+    "name": "Dominik Szoboszlai",
+    "label": "Dominik Szoboszlai (Liverpool)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "eduardo_camavinga",
+    "name": "Eduardo Camavinga",
+    "label": "Eduardo Camavinga (Real Madrid)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "joao_neves",
+    "name": "João Neves",
+    "label": "João Neves (PSG)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "youri_tielemans",
+    "name": "Youri Tielemans",
+    "label": "Youri Tielemans (Aston Villa)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "adam_wharton",
+    "name": "Adam Wharton",
+    "label": "Adam Wharton (Crystal Palace)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "jude_bellingham",
+    "name": "Jude Bellingham",
+    "label": "Jude Bellingham (Real Madrid)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "federico_valverde",
+    "name": "Federico Valverde",
+    "label": "Federico Valverde (Real Madrid)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "pedri",
+    "name": "Pedri",
+    "label": "Pedri (FC Barcelona)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "nicolo_barella",
+    "name": "Nicolò Barella",
+    "label": "Nicolò Barella (Inter de Milán)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "andres_iniesta",
+    "name": "Andrés Iniesta",
+    "label": "Andrés Iniesta (FC Barcelona)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 92,
+    "troll": false
+  },
+  {
+    "id": "xavi_hernandez",
+    "name": "Xavi Hernández",
+    "label": "Xavi Hernández (FC Barcelona)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "steven_gerrard",
+    "name": "Steven Gerrard",
+    "label": "Steven Gerrard (Liverpool)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "toni_kroos",
+    "name": "Toni Kroos",
+    "label": "Toni Kroos (Real Madrid)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "luka_modric",
+    "name": "Luka Modrić",
+    "label": "Luka Modrić (Real Madrid)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "frank_lampard",
+    "name": "Frank Lampard",
+    "label": "Frank Lampard (Chelsea)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "paul_scholes",
+    "name": "Paul Scholes",
+    "label": "Paul Scholes (Manchester United)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "bastian_schweinsteiger",
+    "name": "Bastian Schweinsteiger",
+    "label": "Bastian Schweinsteiger (Bayern Múnich)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "paul_pogba_susp",
+    "name": "Paul Pogba",
+    "label": "Paul Pogba (suspendido)",
+    "position": "MC",
+    "rareza": "troll",
+    "media": 55,
+    "troll": true
   },
   {
     "id": "fred",
@@ -2256,17 +1176,888 @@
     "position": "MC",
     "rareza": "troll",
     "media": 52,
-    "troll": true,
-    "wikiTitle": "Fred (footballer, born 1993)"
+    "troll": true
   },
   {
-    "id": "andy_carroll",
-    "name": "Andy Carroll",
-    "label": "Andy Carroll (Liverpool (£35M))",
+    "id": "Agusneta",
+    "name": "Agusneta",
+    "label": "Agusneta",
+    "position": "MC",
+    "rareza": "troll",
+    "media": 38,
+    "troll": true
+  },
+  {
+    "id": "bruno_fernandes",
+    "name": "Bruno Fernandes",
+    "label": "Bruno Fernandes (Manchester United)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "julian_alvarez",
+    "name": "Julián Álvarez",
+    "label": "Julián Álvarez (Atlético de Madrid)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "dani_olmo",
+    "name": "Dani Olmo",
+    "label": "Dani Olmo (FC Barcelona)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "nico_williams",
+    "name": "Nico Williams",
+    "label": "Nico Williams (Athletic Club)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "james_maddison",
+    "name": "James Maddison",
+    "label": "James Maddison (Tottenham)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "rodrigo_de_paul",
+    "name": "Rodrigo De Paul",
+    "label": "Rodrigo De Paul (Inter Miami)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "kevin_de_bruyne",
+    "name": "Kevin De Bruyne",
+    "label": "Kevin De Bruyne (Napoli)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "florian_wirtz",
+    "name": "Florian Wirtz",
+    "label": "Florian Wirtz (Liverpool)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "jamal_musiala",
+    "name": "Jamal Musiala",
+    "label": "Jamal Musiala (Bayern Múnich)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "martin_degaard",
+    "name": "Martin Ødegaard",
+    "label": "Martin Ødegaard (Arsenal)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "phil_foden",
+    "name": "Phil Foden",
+    "label": "Phil Foden (Manchester City)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "lamine_yamal",
+    "name": "Lamine Yamal",
+    "label": "Lamine Yamal (FC Barcelona)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "cole_palmer",
+    "name": "Cole Palmer",
+    "label": "Cole Palmer (Chelsea)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "diego_maradona",
+    "name": "Diego Maradona",
+    "label": "Diego Maradona (Napoli)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 96,
+    "troll": false
+  },
+  {
+    "id": "zinedine_zidane",
+    "name": "Zinedine Zidane",
+    "label": "Zinedine Zidane (Real Madrid)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 95,
+    "troll": false
+  },
+  {
+    "id": "ronaldinho",
+    "name": "Ronaldinho",
+    "label": "Ronaldinho (FC Barcelona)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 93,
+    "troll": false
+  },
+  {
+    "id": "michel_platini",
+    "name": "Michel Platini",
+    "label": "Michel Platini (Juventus)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "kaka",
+    "name": "Kaká",
+    "label": "Kaká (AC Milan)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "francesco_totti",
+    "name": "Francesco Totti",
+    "label": "Francesco Totti (AS Roma)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "juan_roman_riquelme",
+    "name": "Juan Román Riquelme",
+    "label": "Juan Román Riquelme (Boca Juniors)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "mesut_ozil",
+    "name": "Mesut Özil",
+    "label": "Mesut Özil (Real Madrid)",
+    "position": "MCO",
+    "rareza": "leyenda",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "antoine_griezmann_clausula",
+    "name": "Antoine Griezmann",
+    "label": "Antoine Griezmann (Barça (cláusula))",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 60,
+    "troll": true
+  },
+  {
+    "id": "philippe_coutinho_barca",
+    "name": "Philippe Coutinho",
+    "label": "Philippe Coutinho (Barça (fracaso))",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 54,
+    "troll": true
+  },
+  {
+    "id": "mesut_ozil_banca",
+    "name": "Mesut Özil",
+    "label": "Mesut Özil (fisicoculturista)",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 53,
+    "troll": true
+  },
+  {
+    "id": "ronaldinho_retiro",
+    "name": "Ronaldinho",
+    "label": "Ronaldinho (Retirado)",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 50,
+    "troll": true
+  },
+  {
+    "id": "diego_maradona_dt",
+    "name": "Diego Maradona",
+    "label": "Diego Maradona (DT Dorados)",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 45,
+    "troll": true
+  },
+  {
+    "id": "Davo",
+    "name": "Davo Xeneize",
+    "label": "Davo Xeneize",
+    "position": "MCO",
+    "rareza": "troll",
+    "media": 35,
+    "troll": true
+  },
+  {
+    "id": "angel_di_maria",
+    "name": "Ángel Di María",
+    "label": "Ángel Di María (Benfica)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "riyad_mahrez",
+    "name": "Riyad Mahrez",
+    "label": "Riyad Mahrez (Al-Ahli)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "federico_chiesa",
+    "name": "Federico Chiesa",
+    "label": "Federico Chiesa (Liverpool)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "bradley_barcola",
+    "name": "Bradley Barcola",
+    "label": "Bradley Barcola (PSG)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "karim_adeyemi",
+    "name": "Karim Adeyemi",
+    "label": "Karim Adeyemi (Borussia Dortmund)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "jadon_sancho",
+    "name": "Jadon Sancho",
+    "label": "Jadon Sancho (Aston Villa)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "noni_madueke",
+    "name": "Noni Madueke",
+    "label": "Noni Madueke (Arsenal)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "antony",
+    "name": "Antony",
+    "label": "Antony (Real Betis)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "mohamed_salah",
+    "name": "Mohamed Salah",
+    "label": "Mohamed Salah (Liverpool)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "bukayo_saka",
+    "name": "Bukayo Saka",
+    "label": "Bukayo Saka (Arsenal)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "bernardo_silva",
+    "name": "Bernardo Silva",
+    "label": "Bernardo Silva (Manchester City)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "ousmane_dembele",
+    "name": "Ousmane Dembélé",
+    "label": "Ousmane Dembélé (PSG)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "garrincha",
+    "name": "Garrincha",
+    "label": "Garrincha (Botafogo)",
+    "position": "ED",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "luis_figo",
+    "name": "Luís Figo",
+    "label": "Luís Figo (Real Madrid)",
+    "position": "ED",
+    "rareza": "leyenda",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "arjen_robben",
+    "name": "Arjen Robben",
+    "label": "Arjen Robben (Bayern Múnich)",
+    "position": "ED",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "david_beckham",
+    "name": "David Beckham",
+    "label": "David Beckham (Manchester United)",
+    "position": "MC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "leroy_sane",
+    "name": "Leroy Sané",
+    "label": "Leroy Sané (Galatasaray)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "kingsley_coman",
+    "name": "Kingsley Coman",
+    "label": "Kingsley Coman (Al-Nassr)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "marcus_rashford",
+    "name": "Marcus Rashford",
+    "label": "Marcus Rashford (Manchester United)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "raheem_sterling",
+    "name": "Raheem Sterling",
+    "label": "Raheem Sterling (Feyenoord)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "anthony_gordon",
+    "name": "Anthony Gordon",
+    "label": "Anthony Gordon (Barcelona)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "savinho",
+    "name": "Savinho",
+    "label": "Savinho (Manchester City)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "nico_gonzalez",
+    "name": "Nico González",
+    "label": "Nico González (ATM)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "kylian_mbappe",
+    "name": "Kylian Mbappé",
+    "label": "Kylian Mbappé (Real Madrid)",
+    "position": "EI",
+    "rareza": "top",
+    "media": 92,
+    "troll": false
+  },
+  {
+    "id": "vinicius_junior",
+    "name": "Vinícius Júnior",
+    "label": "Vinícius Júnior (Real Madrid)",
+    "position": "EI",
+    "rareza": "top",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "heung_min_son",
+    "name": "Heung-min Son",
+    "label": "Heung-min Son (LAFC)",
+    "position": "EI",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "khvicha_kvaratskhelia",
+    "name": "Khvicha Kvaratskhelia",
+    "label": "Khvicha Kvaratskhelia (PSG)",
+    "position": "EI",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "rafael_leao",
+    "name": "Rafael Leão",
+    "label": "Rafael Leão (AC Milan)",
+    "position": "EI",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "cristiano_ronaldo",
+    "name": "Cristiano Ronaldo",
+    "label": "Cristiano Ronaldo (Real Madrid)",
+    "position": "EI",
+    "rareza": "leyenda",
+    "media": 98,
+    "troll": false
+  },
+  {
+    "id": "george_best",
+    "name": "George Best",
+    "label": "George Best (Manchester United)",
+    "position": "EI",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "ryan_giggs",
+    "name": "Ryan Giggs",
+    "label": "Ryan Giggs (Manchester United)",
+    "position": "EI",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "gareth_bale",
+    "name": "Gareth Bale",
+    "label": "Gareth Bale (Real Madrid)",
+    "position": "EI",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "lionel_messi_mls",
+    "name": "Lionel Messi",
+    "label": "Lionel Messi (Portero)",
+    "position": "POR",
+    "rareza": "troll",
+    "media": 62,
+    "troll": true
+  },
+  {
+    "id": "neymar_alhilal",
+    "name": "Neymar",
+    "label": "Neymar (Carnaval)",
+    "position": "EI",
+    "rareza": "troll",
+    "media": 58,
+    "troll": true
+  },
+  {
+    "id": "alexis_sanchez_united",
+    "name": "Alexis Sánchez",
+    "label": "Alexis Sánchez (Manchester United (£500k))",
+    "position": "EI",
+    "rareza": "troll",
+    "media": 52,
+    "troll": true
+  },
+  {
+    "id": "eden_hazard_madrid",
+    "name": "Eden Hazard",
+    "label": "Eden Hazard (Real Madrid)",
+    "position": "EI",
+    "rareza": "troll",
+    "media": 50,
+    "troll": true
+  },
+  {
+    "id": "gareth_bale_golf",
+    "name": "Gareth Bale",
+    "label": "Gareth Bale (golf)",
+    "position": "EI",
+    "rareza": "troll",
+    "media": 40,
+    "troll": true
+  },
+  {
+    "id": "dusan_vlahovic",
+    "name": "Dušan Vlahović",
+    "label": "Dušan Vlahović (Juventus)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "benjamin_sesko",
+    "name": "Benjamin Šeško",
+    "label": "Benjamin Šeško (Manchester United)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "jonathan_david",
+    "name": "Jonathan David",
+    "label": "Jonathan David (Juventus)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "darwin_nunez",
+    "name": "Darwin Núñez",
+    "label": "Darwin Núñez (Al-Hilal)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "gabriel_jesus",
+    "name": "Gabriel Jesus",
+    "label": "Gabriel Jesus (Arsenal)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "mateo_retegui",
+    "name": "Mateo Retegui",
+    "label": "Mateo Retegui (Qadisiyah F. C.)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "hugo_ekitike",
+    "name": "Hugo Ekitike",
+    "label": "Hugo Ekitike (Liverpool)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "santiago_gimenez",
+    "name": "Santiago Giménez",
+    "label": "Santiago Giménez (AC Milan)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "artem_dovbyk",
+    "name": "Artem Dovbyk",
+    "label": "Artem Dovbyk (AS Roma)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "erling_haaland",
+    "name": "Erling Haaland",
+    "label": "Erling Haaland (Manchester City)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "harry_kane",
+    "name": "Harry Kane",
+    "label": "Harry Kane (Bayern Múnich)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 90,
+    "troll": false
+  },
+  {
+    "id": "robert_lewandowski",
+    "name": "Robert Lewandowski",
+    "label": "Robert Lewandowski (Chicago Fire)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "lautaro_martinez",
+    "name": "Lautaro Martínez",
+    "label": "Lautaro Martínez (Inter de Milán)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "victor_osimhen",
+    "name": "Victor Osimhen",
+    "label": "Victor Osimhen (Galatasaray)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "alexander_isak",
+    "name": "Alexander Isak",
+    "label": "Alexander Isak (Liverpool)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "pele",
+    "name": "Pelé",
+    "label": "Pelé (Santos)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 96,
+    "troll": false
+  },
+  {
+    "id": "ronaldo_nazario",
+    "name": "Ronaldo Nazário",
+    "label": "Ronaldo Nazário (Real Madrid)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 95,
+    "troll": false
+  },
+  {
+    "id": "ronaldo_nazario_inter",
+    "name": "Ronaldo Nazário",
+    "label": "Ronaldo Nazário (Inter (fenómeno))",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 94,
+    "troll": false
+  },
+  {
+    "id": "marco_van_basten",
+    "name": "Marco van Basten",
+    "label": "Marco van Basten (AC Milan)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 92,
+    "troll": false
+  },
+  {
+    "id": "gerd_muller",
+    "name": "Gerd Müller",
+    "label": "Gerd Müller (Bayern Múnich)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "romario",
+    "name": "Romário",
+    "label": "Romário (FC Barcelona)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "thierry_henry",
+    "name": "Thierry Henry",
+    "label": "Thierry Henry (Arsenal)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 91,
+    "troll": false
+  },
+  {
+    "id": "andriy_shevchenko",
+    "name": "Andriy Shevchenko",
+    "label": "Andriy Shevchenko (AC Milan)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "samuel_etoo",
+    "name": "Samuel Eto'o",
+    "label": "Samuel Eto'o (FC Barcelona)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "didier_drogba",
+    "name": "Didier Drogba",
+    "label": "Didier Drogba (Chelsea)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "raul_gonzalez",
+    "name": "Raúl González",
+    "label": "Raúl González (Real Madrid)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "david_villa",
+    "name": "David Villa",
+    "label": "David Villa (FC Barcelona)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "fernando_torres",
+    "name": "Fernando Torres",
+    "label": "Fernando Torres (Liverpool)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "filippo_inzaghi",
+    "name": "Filippo Inzaghi",
+    "label": "Filippo Inzaghi (AC Milan)",
+    "position": "DC",
+    "rareza": "leyenda",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "cristiano_ronaldo_alnassr",
+    "name": "Cristiano Ronaldo",
+    "label": "Cristiano Ronaldo (Fase de KO mundiales)",
     "position": "DC",
     "rareza": "troll",
-    "media": 49,
-    "troll": true,
-    "wikiTitle": "Andy Carroll"
+    "media": 61,
+    "troll": true
+  },
+  {
+    "id": "zlatan_ibrahimovic_galaxy",
+    "name": "Zlatan Ibrahimović",
+    "label": "Zlatan Ibrahimović (Karate)",
+    "position": "DC",
+    "rareza": "troll",
+    "media": 60,
+    "troll": true
+  },
+  {
+    "id": "wayne_rooney_dt",
+    "name": "Wayne Rooney",
+    "label": "Wayne Rooney (DT (entrenador))",
+    "position": "DC",
+    "rareza": "troll",
+    "media": 48,
+    "troll": true
+  },
+  {
+    "id": "cobrix",
+    "name": "La Cobra",
+    "label": "La Cobra",
+    "position": "DC",
+    "rareza": "troll",
+    "media": 35,
+    "troll": true
   }
 ]
