@@ -510,10 +510,10 @@ $('rps-piedra').addEventListener('click',()=>rpsChoose('piedra'));
 $('rps-papel').addEventListener('click',()=>rpsChoose('papel'));
 $('rps-tijera').addEventListener('click',()=>rpsChoose('tijera'));
 socket.on('sub:rps_progress',({chosen,total})=>{ if(!rpsAmIn)$('sub-rps-status').textContent=`${chosen}/${total} ya eligieron...`; });
-const RPS_EMOJI={piedra:'🪨',papel:'📄',tijera:'✂️'};
+const RPS_LABEL={piedra:'Piedra',papel:'Papel',tijera:'Tijera'};
 socket.on('sub:rps_result',({choices,loserName,decided})=>{
   const box=$('sub-rps-reveal'); box.innerHTML='';
-  for(const [name,ch] of Object.entries(choices)){ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${RPS_EMOJI[ch]||''} ${esc(ch)}</span><span class="who">${esc(name)}</span>`; box.appendChild(it); }
+  for(const [name,ch] of Object.entries(choices)){ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span><img class="rps-choice-icon" src="/images/ui/rps-${ch}.png" alt="${esc(RPS_LABEL[ch]||ch)}"/>${esc(RPS_LABEL[ch]||ch)}</span><span class="who">${esc(name)}</span>`; box.appendChild(it); }
   if(decided){ $('sub-rps-title').textContent='¡'+loserName+' se la queda!'; $('sub-rps-sub').textContent='Perdió el piedra-papel-tijera'; $('sub-rps-choose').classList.add('hidden'); $('sub-rps-status').textContent=''; }
   else { $('sub-rps-title').textContent='¡Empate! Otra vez'; $('sub-rps-sub').textContent='Se repite entre los empatados'; }
 });
@@ -588,15 +588,33 @@ socket.on('sub:duel_result',({winnerName,loserName,scoreA,scoreB})=>{
   show('s-sub-tournament');
 });
 
+let subOverScores=[], subOverMode='ovr', subOverChampionName='';
+// Muestra la cancha final de cualquier jugador (no solo la propia). isMine
+// controla el titulo y si el total mostrado es el presupuesto usado o el OVR
+// del equipo elegido.
+function showSubPitchFor(pid, isMine){
+  const s=subOverScores.find(x=>x.id===pid); if(!s)return;
+  document.querySelectorAll('#sub-scoreboard .score-row').forEach(r=>r.classList.remove('selected'));
+  const idx=subOverScores.indexOf(s);
+  const row=document.querySelectorAll('#sub-scoreboard .score-row')[idx];
+  if(row)row.classList.add('selected');
+  $('sub-pitch-title').textContent = isMine ? 'Tu alineación' : `Alineación de ${s.name}`;
+  if(subOverMode==='votacion'){ $('sub-my-total').textContent = subOverChampionName===s.name ? '🏆 Campeón' : ''; }
+  else { $('sub-my-total').textContent = `OVR ${s.ovr.toFixed(1)}`; }
+  drawPitch($('sub-pitch'), currentFormation, s.cards||[]);
+}
 socket.on('sub:game_over',({mode,scores,formation,championName})=>{
   if(formation)currentFormation=formation;
-  const me=scores.find(s=>s.id===myId);
-  // Encabezado según modo
-  if(mode==='votacion'){ $('sub-my-total').textContent=championName?('🏆 '+championName):''; }
-  else { $('sub-my-total').textContent=me?('OVR '+me.ovr):''; }
-  drawPitch($('sub-pitch'), currentFormation, me?me.cards:[]);
+  subOverScores=scores; subOverMode=mode; subOverChampionName=championName||'';
+  showSubPitchFor(myId, true);
   const sb=$('sub-scoreboard'); sb.innerHTML='';
-  scores.forEach((s,i)=>{ const r=document.createElement('div'); r.className='score-row'; const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):('OVR '+s.ovr); r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${detail}</span>`; sb.appendChild(r); });
+  scores.forEach((s,i)=>{
+    const r=document.createElement('div'); r.className='score-row sub-score-clickable'+(s.id===myId?' me':'');
+    const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):(`OVR ${s.ovr.toFixed(1)}`);
+    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?' (tú)':''}</span><span class="points">${detail}</span>`;
+    r.addEventListener('click', ()=>showSubPitchFor(s.id, s.id===myId));
+    sb.appendChild(r);
+  });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
   show('s-sub-over');

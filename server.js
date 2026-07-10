@@ -517,7 +517,9 @@ function buildTeams(r){
   for(const [pid,ps] of s.playerState.entries()){
     const pl=r.players.get(pid); if(!pl)continue;
     const cards=teamCards.get(pid)||[];
-    const ovr=cards.length?Math.round(cards.reduce((a,c)=>a+c.media,0)/cards.length):0;
+    // Sin redondear: el promedio exacto define al ganador. Redondear aca
+    // generaba empates artificiales que en realidad no existian.
+    const ovr=cards.length?cards.reduce((a,c)=>a+c.media,0)/cards.length:0;
     teams.set(pid,{id:pid,name:pl.name,cards,ovr,budgetLeft:ps.budget});
   }
   return teams;

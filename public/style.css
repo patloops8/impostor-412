@@ -148,6 +148,13 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .vote-btn.selected{border-color:var(--neon);background:var(--neon);color:#0a1400;box-shadow:0 0 18px rgba(182,255,46,0.35);animation:selectPop .28s ease-out;}
 @keyframes selectPop{0%{transform:scale(1);}45%{transform:scale(1.06);}100%{transform:scale(1);}}
 
+/* Piedra, papel o tijera con imagenes (los emoji fallaban en algunos telefonos) */
+.rps-choose-grid{display:flex;gap:12px;justify-content:center;}
+.rps-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 16px;flex:1;max-width:110px;}
+.rps-btn img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));}
+.rps-btn span{font-size:0.8rem;}
+.rps-choice-icon{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:4px;}
+
 .reveal-banner{border-radius:var(--radius-lg);padding:26px 20px;text-align:center;animation:bannerIn .35s ease-out;}
 @keyframes bannerIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
 .reveal-banner.caught{background:linear-gradient(160deg,#1f6f3d 0%,#0e2a18 100%);border:1px solid var(--neon-dim);color:var(--white);}
@@ -159,6 +166,9 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .score-row:last-child{border-bottom:none;}
 .score-row .points{font-family:var(--display);font-weight:700;color:var(--neon);font-size:1.05rem;letter-spacing:0.03em;}
 .score-row .rank{font-family:var(--display);color:var(--ink-soft);width:28px;font-weight:700;font-size:1.05rem;}
+.sub-score-clickable{cursor:pointer;border-radius:8px;transition:background .15s;margin:0 -8px;padding-left:8px;padding-right:8px;}
+.sub-score-clickable:hover{background:rgba(182,255,46,0.06);}
+.sub-score-clickable.selected{background:rgba(182,255,46,0.12);box-shadow:inset 2px 0 0 var(--neon);}
 
 .conn-banner{position:fixed;top:0;left:0;right:0;z-index:999;background:var(--neon);color:#0a1400;font-family:var(--display);font-size:0.82rem;letter-spacing:0.06em;font-weight:700;text-align:center;padding:8px 10px;text-transform:uppercase;}
 .conn-banner.error{background:var(--red);color:#fff;}

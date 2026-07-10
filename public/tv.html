@@ -110,7 +110,7 @@ socket.on('sub:game_over',({mode,scores,championName})=>{
   let h='<h1 style="font-size:2rem;text-align:center;margin-bottom:20px;">Resultado Final</h1>';
   if(mode==='votacion'&&championName) h+=`<h2 style="text-align:center;color:var(--lime);margin-bottom:16px;">🏆 ${esc(championName)}</h2>`;
   h+='<div class="card">';
-  scores.forEach((s,i)=>{ const det=mode==='votacion'?(i===0?'🏆':''):('OVR '+s.ovr); h+=`<div class="score-row"><span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${det}</span></div>`; });
+  scores.forEach((s,i)=>{ const det=mode==='votacion'?(i===0?'🏆':''):('OVR '+s.ovr.toFixed(1)); h+=`<div class="score-row"><span class="rank">#${i+1}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}</span><span class="points">${det}</span></div>`; });
   h+='</div>'; $('tv-content').innerHTML=h;
 });
 
