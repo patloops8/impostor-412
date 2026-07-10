@@ -27,6 +27,18 @@ function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} 
   }catch(e){}
 })();
 
+// Setea los campos que dependen del codigo de sala (el display del lobby y
+// el link de Vista TV). Se usa tanto al crear/unirse como al reconectarse
+// solo — antes esto SOLO se llamaba desde onJoined, asi que un reingreso
+// automatico via player:rejoin dejaba el codigo en "----" (el placeholder
+// del HTML) aunque la sala fuera real.
+function applyRoomCode(code){
+  roomCode=code;
+  $('lobby-code').textContent=roomCode;
+  tvLink = location.origin+'/tv?c='+roomCode;
+  $('tv-hint').textContent='📺 Vista TV';
+}
+
 socket.on('connect', () => {
   connBanner.classList.add('hidden');
   // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
@@ -36,6 +48,7 @@ socket.on('connect', () => {
         myId = res.playerId; myStoredId = res.playerId; isHost = res.isHost;
         if(res.categories) ALL_CATEGORIES=res.categories;
         if(res.formations) ALL_FORMATIONS=res.formations;
+        applyRoomCode(res.code);
         saveSession();
       } else {
         // La sala ya no existe o el jugador no está: no insistir, volver a home limpio.
@@ -88,12 +101,10 @@ $('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')$('btn-join').
 function showHomeError(m){ $('home-error').textContent=m; $('home-error').classList.remove('hidden'); }
 function onJoined(res){
   if(!res.ok){ showHomeError(res.error); return; }
-  roomCode=res.code; myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
+  myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
   ALL_CATEGORIES=res.categories||[]; ALL_FORMATIONS=res.formations||[];
+  applyRoomCode(res.code);
   saveSession();
-  $('lobby-code').textContent=roomCode;
-  tvLink = location.origin+'/tv?c='+roomCode;
-  $('tv-hint').textContent='📺 Vista TV';
   show('s-lobby');
 }
 
@@ -108,6 +119,15 @@ $('tv-hint').addEventListener('click', async () => {
   if(!tvLink) return;
   try{ await navigator.clipboard.writeText(tvLink); $('tv-hint').textContent='✓ Link copiado'; setTimeout(()=>$('tv-hint').textContent='📺 Vista TV',2000); }
   catch(e){}
+});
+
+// Salir de la sala: por si el navegador reintegra solo a una sala vieja
+// (sesion guardada de otra partida) y la persona quiere volver al inicio
+// para crear/unirse a otra. Limpiamos la sesion guardada y recargamos.
+$('btn-leave-room').addEventListener('click', () => {
+  if(!confirm('¿Salir de esta sala?')) return;
+  clearSession();
+  location.reload();
 });
 
 /* ===== LOBBY ===== */
