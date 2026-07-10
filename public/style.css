@@ -148,12 +148,25 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .vote-btn.selected{border-color:var(--neon);background:var(--neon);color:#0a1400;box-shadow:0 0 18px rgba(182,255,46,0.35);animation:selectPop .28s ease-out;}
 @keyframes selectPop{0%{transform:scale(1);}45%{transform:scale(1.06);}100%{transform:scale(1);}}
 
-/* Piedra, papel o tijera con imagenes (los emoji fallaban en algunos telefonos) */
-.rps-choose-grid{display:flex;gap:12px;justify-content:center;}
-.rps-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 16px;flex:1;max-width:110px;}
-.rps-btn img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));}
-.rps-btn span{font-size:0.8rem;}
-.rps-choice-icon{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:4px;}
+/* Piedra, papel o tijera con imagenes (los emoji fallaban en algunos telefonos).
+   El boton no tiene fondo/borde propio: es la silueta del PNG (con su propio
+   marco tipo carta ya dibujado en la imagen) la que define la forma y el
+   tamano, asi los 3 quedan identicos entre si sin caja rectangular alrededor. */
+.rps-choose-grid{display:flex;gap:14px;justify-content:center;align-items:flex-start;}
+.rps-btn{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;padding:0;flex:0 0 auto;transition:transform .12s;}
+.rps-btn:hover{transform:translateY(-3px);}
+.rps-btn:disabled{opacity:0.45;}
+/* .vote-btn.selected trae fondo verde solido + box-shadow rectangular:
+   button.rps-btn.selected pesa mas en especificidad y lo anula, para que
+   el resaltado siga la silueta del escudo (via drop-shadow en la imagen)
+   en vez de una caja. */
+button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--ink-soft);animation:none;}
+.rps-btn img{width:104px;height:auto;aspect-ratio:320/500;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6));transition:filter .15s;}
+.rps-btn:hover:not(:disabled) img{filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 14px rgba(182,255,46,0.55));}
+.rps-btn.selected img{filter:drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(182,255,46,0.85));}
+.rps-btn span{font-family:var(--display);font-size:0.76rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
+.rps-btn.selected span{color:var(--neon);}
+.rps-choice-icon{width:20px;height:auto;aspect-ratio:320/500;object-fit:contain;vertical-align:middle;margin-right:6px;}
 
 .reveal-banner{border-radius:var(--radius-lg);padding:26px 20px;text-align:center;animation:bannerIn .35s ease-out;}
 @keyframes bannerIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}

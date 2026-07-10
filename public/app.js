@@ -498,6 +498,7 @@ socket.on('sub:rps_start',({playerIds,playerNames,positionLabel})=>{
   if(rpsAmIn){
     $('sub-rps-choose').classList.remove('hidden');
     $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=false;
+    ['rps-piedra','rps-papel','rps-tijera'].forEach(id=>$(id).classList.remove('selected'));
     $('sub-rps-status').textContent='Elige tu jugada';
   } else {
     $('sub-rps-choose').classList.add('hidden');
@@ -505,7 +506,13 @@ socket.on('sub:rps_start',({playerIds,playerNames,positionLabel})=>{
   }
   show('s-sub-rps');
 });
-function rpsChoose(c){ $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=true; $('sub-rps-status').textContent='Elegiste. Esperando al rival...'; socket.emit('player:rps_choice',{code:roomCode,choice:c}); }
+function rpsChoose(c){
+  $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=true;
+  ['rps-piedra','rps-papel','rps-tijera'].forEach(id=>$(id).classList.remove('selected'));
+  $('rps-'+c).classList.add('selected');
+  $('sub-rps-status').textContent='Elegiste. Esperando al rival...';
+  socket.emit('player:rps_choice',{code:roomCode,choice:c});
+}
 $('rps-piedra').addEventListener('click',()=>rpsChoose('piedra'));
 $('rps-papel').addEventListener('click',()=>rpsChoose('papel'));
 $('rps-tijera').addEventListener('click',()=>rpsChoose('tijera'));
