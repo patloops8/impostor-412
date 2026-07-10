@@ -175,7 +175,7 @@ socket.on('wave:reveal',({target,left,right,psychicName,psychicScore,guesses})=>
 });
 
 // ¿Quién Soy? (vista de solo lectura: nunca muestra una identidad no adivinada todavia)
-const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT'};
+const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT',equipo:'Equipo','selección':'Selección'};
 function renderTvWhoGrid(cards, activeName){
   let h='<div class="player-grid">';
   cards.forEach(c=>{

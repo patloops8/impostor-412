@@ -66,6 +66,7 @@
       <!-- Config Mentiroso -->
       <div id="cfg-mentiroso" class="hidden card" style="margin-top:14px;">
         <div class="config-row"><label>Rondas</label><select id="cfg-lie-rounds"><option>3</option><option selected>5</option><option>8</option><option>10</option></select></div>
+        <div class="config-row"><label>Tiempo para nombrar</label><select id="cfg-lie-seconds"><option value="10">10s</option><option value="15" selected>15s</option><option value="20">20s</option><option value="25">25s</option><option value="30">30s</option></select></div>
         <div class="config-row" style="flex-direction:column;align-items:flex-start;">
           <label>Modo de respuesta</label>
           <div class="category-checks" style="margin-top:8px;">
@@ -205,6 +206,8 @@
     </div>
     <div class="countdown-row"><div class="countdown-circle" id="lie-countdown">10</div>
       <p style="font-family:var(--mono);color:var(--lime);font-size:1.2rem;"><span id="lie-named-count">0</span> / <span id="lie-target">0</span></p></div>
+    <button class="btn-secondary hidden" id="btn-lie-pause" style="width:100%;margin-top:10px;">⏸ Pausar tiempo</button>
+    <p id="lie-pause-indicator" class="hidden" style="text-align:center;margin-top:8px;color:var(--gold);font-weight:700;">⏸ En pausa...</p>
     <button class="big-tap-btn hidden" id="btn-mark" style="margin-top:18px;">Marcar respuesta ✓</button>
     <div id="lie-am-accused" class="hidden card" style="margin-top:14px;">
       <input type="text" id="inp-name-item" placeholder="Escribe una respuesta..." />

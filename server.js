@@ -47,7 +47,7 @@ const rooms = new Map();
 const timers = new Map(); // code -> intervalId (reloj único por sala)
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2, who: 3 };
+const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2, who: 2 };
 
 function genCode() {
   let c;
@@ -69,7 +69,7 @@ function newRoom(code, hostId) {
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
     votes: new Map(), roundNumber: 0,
-    mentirosoConfig: { roundCount: 5, mode: 'texto' },
+    mentirosoConfig: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
     lie: { roundNumber:0, turnStartIndex:0, category:null, turnOrder:[], currentTurnIndex:0, currentClaim:0, lastClaimerId:null, challenge:null },
     subastaConfig: { budget: 1000, skipLimit: 5, winMode: 'ovr' }, // winMode: 'ovr' | 'votacion'
     subasta: {
@@ -83,7 +83,7 @@ function newRoom(code, hostId) {
       roundNumber:0, order:[], orderIndex:0, psychicId:null, pair:null, target:null,
       usedPairIndexes:new Set(), guesses:new Map(), secondsLeft:0, deadlineAt:null,
     },
-    whoConfig: { categories: ['futbolista','dt'] },
+    whoConfig: { categories: ['futbolista','dt','equipo','selección'] },
     who: {
       order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), pendingGuess:null,
     },
@@ -274,7 +274,24 @@ function advLie(r){
 function clearLieTimer(r){ if(r.lie.challenge?.timeoutHandle){clearTimeout(r.lie.challenge.timeoutHandle);r.lie.challenge.timeoutHandle=null;} }
 function restartLieTimer(r){
   clearLieTimer(r); const ch=r.lie.challenge; if(!ch)return null;
-  const dur=r.mentirosoConfig.mode==='voz'?10000:15000;
+  const dur=(r.mentirosoConfig.namingSeconds||15)*1000;
+  ch.deadlineAt=Date.now()+dur;
+  ch.timeoutHandle=setTimeout(()=>{ if(r.status==='lie_naming'&&r.lie.challenge===ch) resolveLie(r,false,'timeout'); },dur);
+  return ch.deadlineAt;
+}
+// Pausa/reanuda el reloj de "nombrar respuestas". Solo lo puede tocar quien
+// acuso, por si quiere frenar el tiempo para verificar en vivo si una
+// respuesta dicha en voz alta es correcta antes de que se acabe el tiempo.
+function pauseLieTimer(r){
+  const ch=r.lie.challenge; if(!ch||ch.paused)return;
+  clearLieTimer(r);
+  ch.remainingMs=Math.max(0,(ch.deadlineAt||Date.now())-Date.now());
+  ch.deadlineAt=null; ch.paused=true;
+}
+function resumeLieTimer(r){
+  const ch=r.lie.challenge; if(!ch||!ch.paused)return null;
+  ch.paused=false;
+  const dur=ch.remainingMs??((r.mentirosoConfig.namingSeconds||15)*1000);
   ch.deadlineAt=Date.now()+dur;
   ch.timeoutHandle=setTimeout(()=>{ if(r.status==='lie_naming'&&r.lie.challenge===ch) resolveLie(r,false,'timeout'); },dur);
   return ch.deadlineAt;
@@ -519,7 +536,10 @@ function buildTeams(r){
     const cards=teamCards.get(pid)||[];
     // Sin redondear: el promedio exacto define al ganador. Redondear aca
     // generaba empates artificiales que en realidad no existian.
-    const ovr=cards.length?cards.reduce((a,c)=>a+c.media,0)/cards.length:0;
+    // Se divide siempre entre 11 (una formacion completa), no entre la
+    // cantidad de cartas ganadas: un puesto vacio por mal manejo del
+    // presupuesto debe pesar como 0, no quedar afuera del promedio.
+    const ovr=cards.reduce((a,c)=>a+c.media,0)/11;
     teams.set(pid,{id:pid,name:pl.name,cards,ovr,budgetLeft:ps.budget});
   }
   return teams;
@@ -877,7 +897,7 @@ function sendResumeState(r, socket){
       } else if(r.status==='lie_naming'){
         const ch=r.lie.challenge;
         if(ch){
-          socket.emit('lie:accused',{ accuserId:ch.accuserId, accuserName:r.players.get(ch.accuserId)?.name, accusedId:ch.accusedId, accusedName:r.players.get(ch.accusedId)?.name, target:ch.target, category:r.lie.category, mode:r.mentirosoConfig.mode, deadlineAt:ch.deadlineAt });
+          socket.emit('lie:accused',{ accuserId:ch.accuserId, accuserName:r.players.get(ch.accuserId)?.name, accusedId:ch.accusedId, accusedName:r.players.get(ch.accusedId)?.name, target:ch.target, category:r.lie.category, mode:r.mentirosoConfig.mode, deadlineAt:ch.deadlineAt, paused:ch.paused, remainingMs:ch.remainingMs });
           // Reponer el progreso ya hecho (respuestas nombradas antes de la reconexión)
           if(r.mentirosoConfig.mode==='texto' && ch.namedSoFar.length){
             ch.namedSoFar.forEach((text,i)=> socket.emit('lie:item',{text, count:i+1, target:ch.target, deadlineAt:ch.deadlineAt}));
@@ -973,10 +993,11 @@ io.on('connection', socket => {
     if(Array.isArray(categories)){const v=categories.filter(c=>ALL_CATEGORIES.includes(c));r.impostorConfig.categories=v.length?v:ALL_CATEGORIES.slice();}
     emitRoom(r);
   });
-  socket.on('host:update_mentiroso_config', ({code,roundCount,mode}) => {
+  socket.on('host:update_mentiroso_config', ({code,roundCount,mode,namingSeconds}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
     if(Number.isInteger(roundCount))r.mentirosoConfig.roundCount=Math.min(Math.max(1,roundCount),20);
     if(mode==='voz'||mode==='texto')r.mentirosoConfig.mode=mode;
+    if(Number.isInteger(namingSeconds))r.mentirosoConfig.namingSeconds=Math.min(Math.max(10,namingSeconds),30);
     emitRoom(r);
   });
   socket.on('host:update_subasta_config', ({code,budget,skipLimit,winMode}) => {
@@ -993,7 +1014,7 @@ io.on('connection', socket => {
   });
   socket.on('host:update_who_config', ({code,categories}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
-    if(Array.isArray(categories)){const v=categories.filter(c=>c==='futbolista'||c==='dt');r.whoConfig.categories=v.length?v:['futbolista','dt'];}
+    if(Array.isArray(categories)){const v=categories.filter(c=>ALL_CATEGORIES.includes(c));r.whoConfig.categories=v.length?v:ALL_CATEGORIES.slice();}
     emitRoom(r);
   });
 
@@ -1037,7 +1058,7 @@ io.on('connection', socket => {
   socket.on('player:accuse_liar', ({code}) => {
     const r=rooms.get(code); if(!r||r.status!=='lie_claim'||lieTurnId(r)!==socket.id)return;
     if(r.lie.currentClaim<=0||!r.lie.lastClaimerId)return;
-    r.lie.challenge={accusedId:r.lie.lastClaimerId,accuserId:socket.id,target:r.lie.currentClaim,count:0,namedSoFar:[],deadlineAt:null,timeoutHandle:null,finalVotes:new Map()};
+    r.lie.challenge={accusedId:r.lie.lastClaimerId,accuserId:socket.id,target:r.lie.currentClaim,count:0,namedSoFar:[],deadlineAt:null,timeoutHandle:null,finalVotes:new Map(),paused:false,remainingMs:null};
     r.status='lie_naming'; const dl=restartLieTimer(r);
     io.to(r.code).emit('lie:accused',{accuserId:socket.id,accuserName:r.players.get(socket.id)?.name,accusedId:r.lie.challenge.accusedId,accusedName:r.players.get(r.lie.challenge.accusedId)?.name,target:r.lie.currentClaim,category:r.lie.category,mode:r.mentirosoConfig.mode,deadlineAt:dl});
   });
@@ -1047,6 +1068,12 @@ io.on('connection', socket => {
     ch.count++;
     if(ch.count>=ch.target){io.to(r.code).emit('lie:answer_marked',{count:ch.count,target:ch.target,deadlineAt:null});toFinalVote(r);return;}
     const dl=restartLieTimer(r); io.to(r.code).emit('lie:answer_marked',{count:ch.count,target:ch.target,deadlineAt:dl});
+  });
+  socket.on('player:lie_toggle_pause', ({code}) => {
+    const r=rooms.get(code); if(!r||r.status!=='lie_naming')return;
+    const ch=r.lie.challenge; if(!ch||socket.id!==ch.accuserId)return;
+    if(ch.paused){ const dl=resumeLieTimer(r); io.to(r.code).emit('lie:pause_state',{paused:false,deadlineAt:dl}); }
+    else { pauseLieTimer(r); io.to(r.code).emit('lie:pause_state',{paused:true,remainingMs:ch.remainingMs}); }
   });
   socket.on('player:name_item', ({code,text}) => {
     const r=rooms.get(code); if(!r||r.status!=='lie_naming'||r.mentirosoConfig.mode!=='texto')return;

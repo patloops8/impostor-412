@@ -220,8 +220,9 @@ function sendImpCfg(){
 $('cfg-imp-count').addEventListener('change',sendImpCfg);
 $('cfg-imp-mangas').addEventListener('change',sendImpCfg);
 
-function sendLieCfg(){ socket.emit('host:update_mentiroso_config',{code:roomCode,roundCount:Number($('cfg-lie-rounds').value),mode:document.querySelector('input[name=lm]:checked').value}); }
+function sendLieCfg(){ socket.emit('host:update_mentiroso_config',{code:roomCode,roundCount:Number($('cfg-lie-rounds').value),mode:document.querySelector('input[name=lm]:checked').value,namingSeconds:Number($('cfg-lie-seconds').value)}); }
 $('cfg-lie-rounds').addEventListener('change',sendLieCfg);
+$('cfg-lie-seconds').addEventListener('change',sendLieCfg);
 document.querySelectorAll('input[name=lm]').forEach(r=>r.addEventListener('change',()=>{
   $('lie-mode-texto').classList.toggle('checked',document.querySelector('input[name=lm][value=texto]').checked);
   $('lie-mode-voz').classList.toggle('checked',document.querySelector('input[name=lm][value=voz]').checked);
@@ -243,7 +244,7 @@ function sendWaveCfg(){ socket.emit('host:update_wave_config',{code:roomCode,rou
 $('cfg-wave-rounds').addEventListener('change',sendWaveCfg);
 
 let whoCfgRendered=false;
-const WHO_CATS=['futbolista','dt'];
+const WHO_CATS=['futbolista','dt','equipo','selección'];
 function renderWhoCfg(cfg){
   if(whoCfgRendered)return;
   const wrap=$('cfg-who-cats'); wrap.innerHTML='';
@@ -315,9 +316,23 @@ $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('ho
 function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
 
 /* ===================== MENTIROSO ===================== */
-let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false;
+let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false, liePaused=false;
 function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); function t(){const r=Math.max(0,Math.ceil((deadline-Date.now())/1000));el.textContent=r;el.classList.toggle('urgent',r<=3);if(r<=0)stopLieCd();} t(); lieCd=setInterval(t,250); }
 function stopLieCd(){ if(lieCd){clearInterval(lieCd);lieCd=null;} }
+// El que acuso puede frenar el reloj para verificar en vivo una respuesta
+// dudosa antes de que se acabe el tiempo. Solo el/la acusador ve el boton;
+// los demas ven un aviso de que esta en pausa.
+function setLiePauseUI(paused, remainingMs){
+  liePaused=paused;
+  $('btn-lie-pause').textContent = paused ? '▶ Reanudar tiempo' : '⏸ Pausar tiempo';
+  $('lie-pause-indicator').classList.toggle('hidden', !paused || amAccuser);
+  if(paused){ stopLieCd(); if(typeof remainingMs==='number') $('lie-countdown').textContent=Math.ceil(remainingMs/1000); }
+}
+$('btn-lie-pause').addEventListener('click',()=>socket.emit('player:lie_toggle_pause',{code:roomCode}));
+socket.on('lie:pause_state',({paused,deadlineAt,remainingMs})=>{
+  setLiePauseUI(paused, remainingMs);
+  if(!paused && deadlineAt) startLieCd(deadlineAt);
+});
 socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; renderLieClaim(); show('s-lie-claim'); });
 socket.on('lie:turn',({currentTurnPlayerId})=>{ lieTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-lie-claim')renderLieClaim(); });
 socket.on('lie:claim',({amount})=>{ lieClaim=amount; const el=$('lie-claim-amount'); el.textContent=amount; bump(el); });
@@ -325,14 +340,17 @@ function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList
 $('btn-claim').addEventListener('click',()=>{ const v=Number($('inp-claim').value); if(!Number.isInteger(v)||v<=lieClaim){$('claim-error').textContent=`Debe ser mayor a ${lieClaim}.`;$('claim-error').classList.remove('hidden');return;} socket.emit('player:make_claim',{code:roomCode,amount:v}); });
 $('btn-accuse').addEventListener('click',()=>socket.emit('player:accuse_liar',{code:roomCode}));
 socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason; $('claim-error').classList.remove('hidden'); });
-socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,category,mode,deadlineAt})=>{
+socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,category,mode,deadlineAt,paused,remainingMs})=>{
   amAccused=accusedId===myId; amAccuser=accuserId===myId; lieMode=mode;
   $('lie-target').textContent=target; $('lie-named-count').textContent='0'; $('lie-named-log').innerHTML='';
   $('lie-naming-heading').textContent=amAccused?`${accuserName} no te creyó. Nombra ${target} de: ${category}`:`${accuserName} acusó a ${accusedName}. Categoría: ${category}`;
   $('btn-mark').classList.add('hidden'); $('lie-am-accused').classList.add('hidden'); $('lie-naming-wait').classList.add('hidden');
   if(mode==='voz'){ if(amAccuser){$('btn-mark').classList.remove('hidden');}else if(amAccused){$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent='Di tus respuestas en voz alta.';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent='Escucha y juzga al final.';} }
   else { if(amAccused){$('lie-am-accused').classList.remove('hidden');$('inp-name-item').value='';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=`${accusedName} está escribiendo...`;} }
-  startLieCd(deadlineAt); show('s-lie-naming');
+  $('btn-lie-pause').classList.toggle('hidden', !amAccuser);
+  setLiePauseUI(!!paused, remainingMs);
+  if(!paused) startLieCd(deadlineAt);
+  show('s-lie-naming');
 });
 $('btn-mark').addEventListener('click',()=>socket.emit('player:mark_answer',{code:roomCode}));
 socket.on('lie:answer_marked',({count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>Respuesta ${count}</span><span class="who">✓</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
@@ -877,7 +895,7 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
 $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });
 
 /* ===================== ¿QUIÉN SOY? ===================== */
-const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT'};
+const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT',equipo:'Equipo','selección':'Selección'};
 let whoTurnToken=0, whoIsMyTurn=false;
 
 function renderWhoGrid(cards, activeId){
