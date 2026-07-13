@@ -187,6 +187,7 @@
     <div class="export-group">
       <button class="btn-export" id="copy-mentiroso">📋 Copiar lista</button>
       <button class="btn-export" id="dl-mentiroso">⬇ Descargar JSON</button>
+      <button class="btn-export" id="dl-mentiroso-excel">📊 Descargar Excel</button>
     </div>
     <button class="btn btn-primary" id="save-mentiroso" disabled>Guardar cambios</button>
   </div>
@@ -210,6 +211,7 @@
     <div class="export-group">
       <button class="btn-export" id="copy-wavelength">📋 Copiar lista</button>
       <button class="btn-export" id="dl-wavelength">⬇ Descargar JSON</button>
+      <button class="btn-export" id="dl-wavelength-excel">📊 Descargar Excel</button>
     </div>
     <button class="btn btn-primary" id="save-wavelength" disabled>Guardar cambios</button>
   </div>
@@ -707,9 +709,39 @@ document.getElementById('dl-concepts-excel').addEventListener('click', async fun
 
 document.getElementById('copy-mentiroso').addEventListener('click', function(){ copyToClipboard(mentirosoAsText(), this); });
 document.getElementById('dl-mentiroso').addEventListener('click', ()=>downloadJSON(DATA.mentiroso,'mentiroso-categories.json'));
+document.getElementById('dl-mentiroso-excel').addEventListener('click', async function(){
+  const btn=this; if(!DATA.mentiroso){toast('Cargá la pestaña primero','err');return;}
+  btn.textContent='⏳ Generando...';
+  try{
+    const XLSX=await loadXLSX();
+    const rows=DATA.mentiroso.map((s,i)=>({'#':i+1,'Categoría':s}));
+    const ws=XLSX.utils.json_to_sheet(rows);
+    ws['!cols']=[{wch:6},{wch:60}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Categorías');
+    XLSX.writeFile(wb,'mentiroso-412.xlsx');
+    btn.textContent='✓ Descargado'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='📊 Descargar Excel';btn.classList.remove('copied');},2500);
+  }catch(e){toast('Error: '+e.message,'err');btn.textContent='📊 Descargar Excel';}
+});
 
 document.getElementById('copy-wavelength').addEventListener('click', function(){ copyToClipboard(wavelengthAsText(), this); });
 document.getElementById('dl-wavelength').addEventListener('click', ()=>downloadJSON(DATA.wavelength,'wavelength-pairs.json'));
+document.getElementById('dl-wavelength-excel').addEventListener('click', async function(){
+  const btn=this; if(!DATA.wavelength){toast('Cargá la pestaña primero','err');return;}
+  btn.textContent='⏳ Generando...';
+  try{
+    const XLSX=await loadXLSX();
+    const rows=DATA.wavelength.map((p,i)=>({'#':i+1,'Extremo Izquierdo':p.left,'Extremo Derecho':p.right}));
+    const ws=XLSX.utils.json_to_sheet(rows);
+    ws['!cols']=[{wch:6},{wch:38},{wch:38}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Pares');
+    XLSX.writeFile(wb,'frecuencia-412.xlsx');
+    btn.textContent='✓ Descargado'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='📊 Descargar Excel';btn.classList.remove('copied');},2500);
+  }catch(e){toast('Error: '+e.message,'err');btn.textContent='📊 Descargar Excel';}
+});
 
 document.getElementById('copy-subasta').addEventListener('click', function(){ copyToClipboard(subastaAsText(), this); });
 document.getElementById('dl-subasta').addEventListener('click', ()=>downloadJSON(DATA.subasta,'subasta-cards.json'));
