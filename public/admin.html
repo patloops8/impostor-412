@@ -115,6 +115,12 @@
   /* ---- ADD ROW ---- */
   .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .add-row input,  .add-row select{flex:1;min-width:120px}
+
+  /* ---- EXPORT ---- */
+  .export-group{display:flex;gap:6px;align-items:center}
+  .btn-export{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--soft);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .btn-export:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-export.copied{border-color:var(--neon);color:var(--neon)}
 </style>
 </head>
 <body>
@@ -138,6 +144,10 @@
     <div>
       <h2>Conceptos — Impostor + ¿Quién Soy?</h2>
       <p>Cada entrada es una identidad (nombre + categoría). La categoría define en qué juego aparece y qué filtros tiene el host.</p>
+    </div>
+    <div class="export-group">
+      <button class="btn-export" id="copy-concepts">📋 Copiar lista</button>
+      <button class="btn-export" id="dl-concepts">⬇ Descargar JSON</button>
     </div>
     <button class="btn btn-primary" id="save-concepts" disabled>Guardar cambios</button>
   </div>
@@ -173,6 +183,10 @@
       <h2>Categorías — Mentiroso Futbolero</h2>
       <p>Cada línea es el tema de una ronda. El jugador tiene que nombrar N elementos de esa categoría.</p>
     </div>
+    <div class="export-group">
+      <button class="btn-export" id="copy-mentiroso">📋 Copiar lista</button>
+      <button class="btn-export" id="dl-mentiroso">⬇ Descargar JSON</button>
+    </div>
     <button class="btn btn-primary" id="save-mentiroso" disabled>Guardar cambios</button>
   </div>
   <div class="filter-row">
@@ -191,6 +205,10 @@
     <div>
       <h2>Pares — La Frecuencia</h2>
       <p>Cada par define los extremos de la escala. El psíquico da una pista que ubica el dial entre los dos conceptos.</p>
+    </div>
+    <div class="export-group">
+      <button class="btn-export" id="copy-wavelength">📋 Copiar lista</button>
+      <button class="btn-export" id="dl-wavelength">⬇ Descargar JSON</button>
     </div>
     <button class="btn btn-primary" id="save-wavelength" disabled>Guardar cambios</button>
   </div>
@@ -212,6 +230,10 @@
     <div>
       <h2>Cartas — Subasta Futbolera</h2>
       <p>Solo lectura. Para editar los jugadores de Subasta, actualiza el Excel y ejecuta el script de importación.</p>
+    </div>
+    <div class="export-group">
+      <button class="btn-export" id="copy-subasta">📋 Copiar lista</button>
+      <button class="btn-export" id="dl-subasta">⬇ Descargar JSON</button>
     </div>
   </div>
   <div class="filter-row">
@@ -582,6 +604,72 @@ document.getElementById('discard-btn').addEventListener('click', ()=>{
 ['concepts','mentiroso','wavelength'].forEach(tab=>{
   document.getElementById('save-' + tab)?.addEventListener('click', ()=>doSave(tab));
 });
+
+// ============================================================
+// EXPORT
+// ============================================================
+function copyToClipboard(text, btn){
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  }).catch(()=>toast('No se pudo copiar', 'err'));
+}
+
+function downloadJSON(data, filename){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function conceptsAsText(){
+  if(!DATA.concepts) return '';
+  const byCat = {};
+  DATA.concepts.forEach(c=>{
+    (byCat[c.category] = byCat[c.category]||[]).push(c.name);
+  });
+  const catOrder = ['futbolista','equipo','selección','dt'];
+  return catOrder.filter(k=>byCat[k]).map(cat=>{
+    const label = CAT_LABELS[cat]||cat;
+    return `=== ${label.toUpperCase()}S (${byCat[cat].length}) ===\n` +
+      byCat[cat].map((n,i)=>`${i+1}. ${n}`).join('\n');
+  }).join('\n\n');
+}
+
+function mentirosoAsText(){
+  if(!DATA.mentiroso) return '';
+  return DATA.mentiroso.map((s,i)=>`${i+1}. ${s}`).join('\n');
+}
+
+function wavelengthAsText(){
+  if(!DATA.wavelength) return '';
+  return DATA.wavelength.map((p,i)=>`${i+1}. ${p.left}  ↔  ${p.right}`).join('\n');
+}
+
+function subastaAsText(){
+  if(!DATA.subasta) return '';
+  const byPos = {};
+  DATA.subasta.forEach(c=>{ (byPos[c.position]=byPos[c.position]||[]).push(c); });
+  const posOrder = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
+  return posOrder.filter(p=>byPos[p]).map(pos=>{
+    return `--- ${pos} ---\n` + byPos[pos].map(c=>`  ${c.label||c.name} (${c.media} | ${c.rareza})`).join('\n');
+  }).join('\n\n');
+}
+
+document.getElementById('copy-concepts').addEventListener('click', function(){ copyToClipboard(conceptsAsText(), this); });
+document.getElementById('dl-concepts').addEventListener('click', ()=>downloadJSON(DATA.concepts,'concepts.json'));
+
+document.getElementById('copy-mentiroso').addEventListener('click', function(){ copyToClipboard(mentirosoAsText(), this); });
+document.getElementById('dl-mentiroso').addEventListener('click', ()=>downloadJSON(DATA.mentiroso,'mentiroso-categories.json'));
+
+document.getElementById('copy-wavelength').addEventListener('click', function(){ copyToClipboard(wavelengthAsText(), this); });
+document.getElementById('dl-wavelength').addEventListener('click', ()=>downloadJSON(DATA.wavelength,'wavelength-pairs.json'));
+
+document.getElementById('copy-subasta').addEventListener('click', function(){ copyToClipboard(subastaAsText(), this); });
+document.getElementById('dl-subasta').addEventListener('click', ()=>downloadJSON(DATA.subasta,'subasta-cards.json'));
 
 // ============================================================
 // INIT
