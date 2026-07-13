@@ -237,6 +237,8 @@
     <div class="export-group">
       <button class="btn-export" id="copy-subasta">📋 Copiar lista</button>
       <button class="btn-export" id="dl-subasta">⬇ Descargar JSON</button>
+      <button class="btn-export" id="dl-subasta-excel">📊 Descargar Excel</button>
+      <label class="btn-export" id="lbl-import-subasta" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-subasta-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
   </div>
   <div class="filter-row">
@@ -745,6 +747,67 @@ document.getElementById('dl-wavelength-excel').addEventListener('click', async f
 
 document.getElementById('copy-subasta').addEventListener('click', function(){ copyToClipboard(subastaAsText(), this); });
 document.getElementById('dl-subasta').addEventListener('click', ()=>downloadJSON(DATA.subasta,'subasta-cards.json'));
+
+document.getElementById('dl-subasta-excel').addEventListener('click', async function(){
+  const btn=this; if(!DATA.subasta){toast('Cargá la pestaña primero','err');return;}
+  btn.textContent='⏳ Generando...';
+  try{
+    const XLSX=await loadXLSX();
+    const rows=DATA.subasta.map(c=>({
+      id: c.id,
+      nombre: c.name,
+      etiqueta: c.label||c.name,
+      posicion: c.position,
+      rareza: c.rareza||'normal',
+      media: c.media,
+      troll: c.troll?'Si':'No',
+    }));
+    const ws=XLSX.utils.json_to_sheet(rows);
+    ws['!cols']=[{wch:8},{wch:28},{wch:28},{wch:8},{wch:8},{wch:6},{wch:6}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Jugadores');
+    XLSX.writeFile(wb,'subasta-412.xlsx');
+    btn.textContent='✓ Descargado'; btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='📊 Descargar Excel';btn.classList.remove('copied');},2500);
+  }catch(e){toast('Error: '+e.message,'err');btn.textContent='📊 Descargar Excel';}
+});
+
+document.getElementById('import-subasta-file').addEventListener('change', async function(){
+  const file=this.files[0]; if(!file) return;
+  const lbl=document.getElementById('lbl-import-subasta');
+  lbl.textContent='⏳ Procesando...';
+  try{
+    const XLSX=await loadXLSX();
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws);
+    // validar columnas mínimas
+    const required=['id','nombre','posicion','media'];
+    const keys=rows[0]?Object.keys(rows[0]).map(k=>k.toLowerCase()):[];
+    const missing=required.filter(r=>!keys.includes(r));
+    if(missing.length){ toast('Faltan columnas: '+missing.join(', '),'err'); lbl.textContent='⬆ Importar Excel'; this.value=''; return; }
+    const cards=rows.map(r=>({
+      id: String(r.id||r.ID||''),
+      name: String(r.nombre||r.Nombre||''),
+      label: String(r.etiqueta||r.Etiqueta||r.nombre||r.Nombre||''),
+      position: String(r.posicion||r.Posicion||r.posición||r.Posición||''),
+      rareza: String(r.rareza||r.Rareza||'normal').toLowerCase(),
+      media: Number(r.media||r.Media||0),
+      troll: String(r.troll||r.Troll||'no').toLowerCase()==='si'||String(r.troll||r.Troll||'no').toLowerCase()==='true',
+    })).filter(c=>c.id&&c.name&&c.media>0);
+    if(!cards.length){ toast('Sin filas válidas','err'); lbl.textContent='⬆ Importar Excel'; this.value=''; return; }
+    if(!confirm(`Importar ${cards.length} cartas y sobreescribir subasta-cards.json?`)){ lbl.textContent='⬆ Importar Excel'; this.value=''; return; }
+    const res=await saveData('subasta',cards);
+    if(res.ok){
+      DATA.subasta=cards;
+      renderSubasta();
+      toast(`✓ Importadas ${cards.length} cartas`,'ok');
+      document.getElementById('badge-subasta').textContent=cards.length;
+    } else { toast('Error al guardar','err'); }
+  }catch(e){ toast('Error: '+e.message,'err'); }
+  lbl.textContent='⬆ Importar Excel'; this.value='';
+});
 
 // ============================================================
 // INIT
