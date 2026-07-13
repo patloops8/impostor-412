@@ -149,6 +149,7 @@
       <button class="btn-export" id="copy-concepts">📋 Copiar lista</button>
       <button class="btn-export" id="dl-concepts">⬇ Descargar JSON</button>
       <button class="btn-export" id="dl-concepts-excel">📊 Descargar Excel</button>
+      <label class="btn-export" id="lbl-import-concepts" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-concepts-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
     <button class="btn btn-primary" id="save-concepts" disabled>Guardar cambios</button>
   </div>
@@ -188,6 +189,7 @@
       <button class="btn-export" id="copy-mentiroso">📋 Copiar lista</button>
       <button class="btn-export" id="dl-mentiroso">⬇ Descargar JSON</button>
       <button class="btn-export" id="dl-mentiroso-excel">📊 Descargar Excel</button>
+      <label class="btn-export" id="lbl-import-mentiroso" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-mentiroso-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
     <button class="btn btn-primary" id="save-mentiroso" disabled>Guardar cambios</button>
   </div>
@@ -212,6 +214,7 @@
       <button class="btn-export" id="copy-wavelength">📋 Copiar lista</button>
       <button class="btn-export" id="dl-wavelength">⬇ Descargar JSON</button>
       <button class="btn-export" id="dl-wavelength-excel">📊 Descargar Excel</button>
+      <label class="btn-export" id="lbl-import-wavelength" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-wavelength-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
     <button class="btn btn-primary" id="save-wavelength" disabled>Guardar cambios</button>
   </div>
@@ -807,6 +810,86 @@ document.getElementById('import-subasta-file').addEventListener('change', async 
     } else { toast('Error al guardar','err'); }
   }catch(e){ toast('Error: '+e.message,'err'); }
   lbl.textContent='⬆ Importar Excel'; this.value='';
+});
+
+// ============================================================
+// IMPORT HELPERS
+// ============================================================
+function importLabel(id){ return document.getElementById('lbl-import-'+id); }
+function resetImport(id, input){ importLabel(id).textContent='⬆ Importar Excel'; input.value=''; }
+
+async function readXLSX(file){
+  const XLSX = await loadXLSX();
+  const buf = await file.arrayBuffer();
+  return { XLSX, wb: XLSX.read(buf,{type:'array'}) };
+}
+
+async function confirmAndSave(tab, data, label, successMsg){
+  if(!data.length){ toast('Sin filas válidas','err'); return false; }
+  if(!confirm(`Importar ${data.length} entradas y sobreescribir el archivo?`)) return false;
+  const res = await saveData(tab, data);
+  if(res.ok){
+    DATA[tab] = data;
+    setDirty(tab, false);
+    toast(successMsg,'ok');
+    document.getElementById('badge-'+tab).textContent = data.length;
+    return true;
+  }
+  toast('Error al guardar','err');
+  return false;
+}
+
+// -- CONCEPTOS: Excel con 4 hojas (Futbolistas / Equipos / Selecciones / DTs)
+document.getElementById('import-concepts-file').addEventListener('change', async function(){
+  const lbl=importLabel('concepts'); lbl.textContent='⏳ Procesando...';
+  try{
+    const {XLSX,wb} = await readXLSX(this.files[0]);
+    const sheetCats = { Futbolistas:'futbolista', Equipos:'equipo', Selecciones:'selección', DTs:'dt' };
+    const data = [];
+    wb.SheetNames.forEach(sn=>{
+      const cat = sheetCats[sn];
+      if(!cat) return;
+      XLSX.utils.sheet_to_json(wb.Sheets[sn]).forEach(row=>{
+        const name = String(row.Nombre||row.nombre||'').trim();
+        if(name) data.push({name, category:cat});
+      });
+    });
+    if(!data.length){ toast('No se encontraron hojas válidas (Futbolistas/Equipos/Selecciones/DTs)','err'); resetImport('concepts',this); return; }
+    const ok = await confirmAndSave('concepts', data, lbl, `✓ Importados ${data.length} conceptos`);
+    if(ok){ buildCatFilter(); renderConcepts(); }
+  }catch(e){ toast('Error: '+e.message,'err'); }
+  resetImport('concepts',this);
+});
+
+// -- MENTIROSO: Excel con columna "Categoría"
+document.getElementById('import-mentiroso-file').addEventListener('change', async function(){
+  const lbl=importLabel('mentiroso'); lbl.textContent='⏳ Procesando...';
+  try{
+    const {XLSX,wb} = await readXLSX(this.files[0]);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const data = rows
+      .map(r=>String(r['Categoría']||r['Categoria']||r['categoria']||r['categoría']||Object.values(r)[1]||'').trim())
+      .filter(Boolean);
+    const ok = await confirmAndSave('mentiroso', data, lbl, `✓ Importadas ${data.length} categorías`);
+    if(ok) renderMentiroso();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+  resetImport('mentiroso',this);
+});
+
+// -- FRECUENCIA: Excel con columnas "Extremo Izquierdo" / "Extremo Derecho"
+document.getElementById('import-wavelength-file').addEventListener('change', async function(){
+  const lbl=importLabel('wavelength'); lbl.textContent='⏳ Procesando...';
+  try{
+    const {XLSX,wb} = await readXLSX(this.files[0]);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const data = rows.map(r=>({
+      left:  String(r['Extremo Izquierdo']||r['extremo_izquierdo']||r['left']||'').trim(),
+      right: String(r['Extremo Derecho']  ||r['extremo_derecho'] ||r['right']||'').trim(),
+    })).filter(p=>p.left&&p.right);
+    const ok = await confirmAndSave('wavelength', data, lbl, `✓ Importados ${data.length} pares`);
+    if(ok) renderWavelength();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+  resetImport('wavelength',this);
 });
 
 // ============================================================
