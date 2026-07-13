@@ -1271,8 +1271,36 @@ io.on('connection', socket => {
 
 /* ===================== EXPRESS ===================== */
 app.use(express.static(path.join(__dirname,'public')));
-app.get('/favicon.ico',(_q,res)=>res.status(204).end()); // evita el 404 en consola
-app.get('/health',(_q,res)=>res.status(200).send('ok')); // para ping de UptimeRobot (mantener despierto)
+app.use(express.json());
+app.get('/favicon.ico',(_q,res)=>res.status(204).end());
+app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
+
+/* ---- PANEL ADMIN (solo en desarrollo, invisible en produccion) ---- */
+if(process.env.NODE_ENV !== 'production'){
+  const DATA_FILES = {
+    concepts:    path.join(__dirname,'data','concepts.json'),
+    mentiroso:   path.join(__dirname,'data','mentiroso-categories.json'),
+    wavelength:  path.join(__dirname,'data','wavelength-pairs.json'),
+    subasta:     path.join(__dirname,'data','subasta-cards.json'),
+  };
+
+  app.get('/admin',(_q,res)=>res.sendFile(path.join(__dirname,'public','admin.html')));
+
+  app.get('/admin/data/:file',(req,res)=>{
+    const f=DATA_FILES[req.params.file];
+    if(!f)return res.status(404).json({error:'not found'});
+    res.json(JSON.parse(fs.readFileSync(f,'utf-8')));
+  });
+
+  app.post('/admin/save/:file',(req,res)=>{
+    const f=DATA_FILES[req.params.file];
+    if(!f)return res.status(404).json({error:'not found'});
+    if(!req.body||!Array.isArray(req.body))return res.status(400).json({error:'body must be array'});
+    fs.writeFileSync(f, JSON.stringify(req.body, null, 2), 'utf-8');
+    res.json({ok:true,count:req.body.length});
+  });
+}
+
 app.get('/',(_q,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
 server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));

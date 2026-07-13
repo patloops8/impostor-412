@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>412 — Panel de Contenido</title>
+<style>
+  :root{
+    --bg:#0d0d14;--bg2:#16161f;--bg3:#1e1e2a;
+    --border:#2a2a3a;--text:#e8e8f0;--soft:#888;
+    --neon:#00ff87;--gold:#ffd700;--red:#ff4757;
+    --blue:#4fc3f7;--purple:#9c88ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;min-height:100vh}
+
+  /* ---- HEADER ---- */
+  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px}
+  header h1{font-size:18px;font-weight:700;letter-spacing:1px;color:var(--neon)}
+  header span{color:var(--soft);font-size:12px}
+  .env-badge{background:#1a1a2e;border:1px solid var(--neon);color:var(--neon);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px}
+
+  /* ---- TABS ---- */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);padding:0 24px}
+  .tab{padding:12px 20px;cursor:pointer;color:var(--soft);border-bottom:2px solid transparent;font-weight:600;font-size:13px;letter-spacing:.5px;transition:all .2s;white-space:nowrap}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--neon);border-bottom-color:var(--neon)}
+  .tab .badge{display:inline-block;background:var(--bg3);color:var(--soft);font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px;font-weight:400}
+  .tab.active .badge{background:rgba(0,255,135,.12);color:var(--neon)}
+
+  /* ---- PANEL ---- */
+  .panel{display:none;padding:24px;max-width:1100px}
+  .panel.active{display:block}
+
+  /* ---- TOOLBAR ---- */
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar h2{font-size:15px;font-weight:700;flex:1}
+  .toolbar p{color:var(--soft);font-size:12px;margin-top:2px}
+  input[type=text],input[type=number],select{
+    background:var(--bg3);border:1px solid var(--border);color:var(--text);
+    padding:7px 10px;border-radius:6px;font-size:13px;outline:none;
+  }
+  input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--neon)}
+  input[type=text]::placeholder{color:var(--soft)}
+
+  .btn{padding:7px 14px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;letter-spacing:.3px}
+  .btn-primary{background:var(--neon);color:#000}
+  .btn-primary:hover{opacity:.85}
+  .btn-primary:disabled{opacity:.4;cursor:default}
+  .btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+  .btn-ghost:hover{border-color:var(--neon);color:var(--neon)}
+  .btn-danger{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.3)}
+  .btn-danger:hover{background:rgba(255,71,87,.25)}
+  .btn-sm{padding:4px 9px;font-size:12px}
+
+  /* ---- SEARCH / FILTER ---- */
+  .filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .filter-row input{flex:1;min-width:200px}
+  .cat-filter{display:flex;gap:6px;flex-wrap:wrap}
+  .cat-chip{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--soft);transition:all .15s}
+  .cat-chip.on-futbolista{border-color:#00c9ff;color:#00c9ff;background:rgba(0,201,255,.1)}
+  .cat-chip.on-equipo{border-color:#f7b731;color:#f7b731;background:rgba(247,183,49,.1)}
+  .cat-chip.on-seleccion{border-color:#a29bfe;color:#a29bfe;background:rgba(162,155,254,.1)}
+  .cat-chip.on-dt{border-color:#fd9644;color:#fd9644;background:rgba(253,150,68,.1)}
+
+  /* ---- TABLE ---- */
+  .tbl-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  th{background:var(--bg3);color:var(--soft);font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:9px 12px;text-align:left}
+  td{padding:8px 12px;border-top:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  td input[type=text]{width:100%;background:transparent;border:1px solid transparent;padding:4px 6px}
+  td input[type=text]:focus{background:var(--bg3);border-color:var(--neon)}
+  td select{background:var(--bg3)}
+
+  .cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .dot-futbolista{background:#00c9ff}
+  .dot-equipo{background:#f7b731}
+  .dot-seleccion{background:#a29bfe}
+  .dot-dt{background:#fd9644}
+
+  /* ---- LIST (Mentiroso) ---- */
+  .list-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
+  .list-item:first-child{border-top:none}
+  .list-item input{flex:1}
+  .list-num{color:var(--soft);font-size:11px;width:24px;text-align:right;flex-shrink:0}
+
+  /* ---- PAIRS (Frecuencia) ---- */
+  .pair-row{display:grid;grid-template-columns:1fr 32px 1fr 40px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}
+  .pair-row:first-child{border-top:none}
+  .pair-arrow{color:var(--soft);text-align:center;font-size:16px}
+
+  /* ---- SAVE BAR ---- */
+  .save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;transform:translateY(100%);transition:transform .25s}
+  .save-bar.visible{transform:translateY(0)}
+  .save-bar .msg{flex:1;color:var(--gold);font-weight:600;font-size:13px}
+  .save-bar .count{color:var(--soft);font-size:12px}
+
+  /* ---- TOAST ---- */
+  #toast{position:fixed;top:20px;right:20px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-weight:600;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+  #toast.ok{border-color:var(--neon);color:var(--neon)}
+  #toast.err{border-color:var(--red);color:var(--red)}
+  #toast.show{opacity:1}
+
+  /* ---- SUBASTA read-only ---- */
+  .sub-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:4px}
+  .sub-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+  .sub-card .sc-name{font-weight:700;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sub-card .sc-meta{color:var(--soft);font-size:11px;display:flex;gap:8px;flex-wrap:wrap}
+  .sc-media{color:var(--gold);font-weight:700}
+  .rareza-oro{color:#ffd700}.rareza-plata{color:#b0b0b0}.rareza-bronce{color:#cd7f32}.rareza-normal{color:var(--soft)}
+
+  .empty-state{padding:40px;text-align:center;color:var(--soft)}
+
+  /* ---- ADD ROW ---- */
+  .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .add-row input,  .add-row select{flex:1;min-width:120px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>412 · Panel de Contenido</h1>
+  <span class="env-badge">LOCAL</span>
+  <span style="margin-left:auto;color:var(--soft);font-size:12px">Solo visible en desarrollo · Los cambios requieren commit + push para verse en producción</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="concepts">Conceptos <span class="badge" id="badge-concepts">–</span></div>
+  <div class="tab" data-tab="mentiroso">Mentiroso <span class="badge" id="badge-mentiroso">–</span></div>
+  <div class="tab" data-tab="wavelength">La Frecuencia <span class="badge" id="badge-wavelength">–</span></div>
+  <div class="tab" data-tab="subasta">Subasta <span class="badge" id="badge-subasta">–</span></div>
+</div>
+
+<!-- ===== CONCEPTOS ===== -->
+<div class="panel active" id="panel-concepts">
+  <div class="toolbar">
+    <div>
+      <h2>Conceptos — Impostor + ¿Quién Soy?</h2>
+      <p>Cada entrada es una identidad (nombre + categoría). La categoría define en qué juego aparece y qué filtros tiene el host.</p>
+    </div>
+    <button class="btn btn-primary" id="save-concepts" disabled>Guardar cambios</button>
+  </div>
+
+  <div class="filter-row">
+    <input type="text" id="search-concepts" placeholder="Buscar por nombre…">
+    <div class="cat-filter" id="cat-filter"></div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-concepts">
+      <thead><tr><th>#</th><th>Nombre</th><th>Categoría</th><th style="width:44px"></th></tr></thead>
+      <tbody id="tbody-concepts"></tbody>
+    </table>
+  </div>
+
+  <div class="add-row" style="margin-top:14px">
+    <input type="text" id="new-concept-name" placeholder="Nombre (ej: Pedri)">
+    <select id="new-concept-cat">
+      <option value="futbolista">Futbolista</option>
+      <option value="equipo">Equipo</option>
+      <option value="selección">Selección</option>
+      <option value="dt">DT</option>
+    </select>
+    <button class="btn btn-ghost" id="add-concept">+ Agregar</button>
+  </div>
+</div>
+
+<!-- ===== MENTIROSO ===== -->
+<div class="panel" id="panel-mentiroso">
+  <div class="toolbar">
+    <div>
+      <h2>Categorías — Mentiroso Futbolero</h2>
+      <p>Cada línea es el tema de una ronda. El jugador tiene que nombrar N elementos de esa categoría.</p>
+    </div>
+    <button class="btn btn-primary" id="save-mentiroso" disabled>Guardar cambios</button>
+  </div>
+  <div class="filter-row">
+    <input type="text" id="search-mentiroso" placeholder="Buscar categoría…">
+  </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-mentiroso"></div>
+  <div class="add-row">
+    <input type="text" id="new-lie-cat" placeholder="Nueva categoría (ej: porteros que han metido goles de penalti)">
+    <button class="btn btn-ghost" id="add-lie">+ Agregar</button>
+  </div>
+</div>
+
+<!-- ===== FRECUENCIA ===== -->
+<div class="panel" id="panel-wavelength">
+  <div class="toolbar">
+    <div>
+      <h2>Pares — La Frecuencia</h2>
+      <p>Cada par define los extremos de la escala. El psíquico da una pista que ubica el dial entre los dos conceptos.</p>
+    </div>
+    <button class="btn btn-primary" id="save-wavelength" disabled>Guardar cambios</button>
+  </div>
+  <div class="filter-row">
+    <input type="text" id="search-wavelength" placeholder="Buscar par…">
+  </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-wavelength"></div>
+  <div class="add-row">
+    <input type="text" id="new-wave-left" placeholder="Extremo izquierdo (ej: Muy sucio)">
+    <span style="color:var(--soft);flex-shrink:0">↔</span>
+    <input type="text" id="new-wave-right" placeholder="Extremo derecho (ej: Muy limpio)">
+    <button class="btn btn-ghost" id="add-wave">+ Agregar</button>
+  </div>
+</div>
+
+<!-- ===== SUBASTA ===== -->
+<div class="panel" id="panel-subasta">
+  <div class="toolbar">
+    <div>
+      <h2>Cartas — Subasta Futbolera</h2>
+      <p>Solo lectura. Para editar los jugadores de Subasta, actualiza el Excel y ejecuta el script de importación.</p>
+    </div>
+  </div>
+  <div class="filter-row">
+    <input type="text" id="search-subasta" placeholder="Buscar jugador…">
+    <select id="filter-sub-pos">
+      <option value="">Todas las posiciones</option>
+      <option value="POR">Portero</option>
+      <option value="LD">Lateral D</option>
+      <option value="DFC">Defensa Central</option>
+      <option value="LI">Lateral I</option>
+      <option value="MCD">Mediocentro D</option>
+      <option value="MC">Mediocentro</option>
+      <option value="MCO">Mediocentro O</option>
+      <option value="ED">Extremo D</option>
+      <option value="EI">Extremo I</option>
+      <option value="DC">Delantero</option>
+    </select>
+    <select id="filter-sub-rar">
+      <option value="">Todas las rarezas</option>
+      <option value="oro">Oro</option>
+      <option value="plata">Plata</option>
+      <option value="bronce">Bronce</option>
+      <option value="normal">Normal</option>
+    </select>
+  </div>
+  <div id="sub-grid" class="sub-card-grid"></div>
+</div>
+
+<!-- Save bar -->
+<div class="save-bar" id="save-bar">
+  <span class="msg" id="save-bar-msg">Hay cambios sin guardar</span>
+  <span class="count" id="save-bar-count"></span>
+  <button class="btn btn-ghost btn-sm" id="discard-btn">Descartar</button>
+  <button class="btn btn-primary btn-sm" id="save-bar-btn">Guardar ahora</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const DATA = { concepts: null, mentiroso: null, wavelength: null, subasta: null };
+const DIRTY = { concepts: false, mentiroso: false, wavelength: false, subasta: false };
+let currentTab = 'concepts';
+
+const CAT_COLORS = { futbolista:'#00c9ff', equipo:'#f7b731', 'selección':'#a29bfe', dt:'#fd9644' };
+const CAT_LABELS = { futbolista:'Futbolista', equipo:'Equipo', 'selección':'Selección', dt:'DT' };
+
+// active category filters for concepts (null = all)
+let catFilters = new Set(['futbolista','equipo','selección','dt']);
+let conceptSearch = '';
+let mentirosoSearch = '';
+let wavelengthSearch = '';
+let subastaSearch = '';
+let subastaPos = '';
+let subastaRar = '';
+
+// ============================================================
+// UTILS
+// ============================================================
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type + ' show';
+  setTimeout(()=>t.className='', 2500);
+}
+function setDirty(tab, v){
+  DIRTY[tab] = v;
+  document.getElementById('save-' + tab)?.toggleAttribute('disabled', !v);
+  updateSaveBar();
+}
+function updateSaveBar(){
+  const anyDirty = Object.values(DIRTY).some(Boolean);
+  const bar = document.getElementById('save-bar');
+  bar.classList.toggle('visible', anyDirty && Object.keys(DIRTY).includes(currentTab) && DIRTY[currentTab]);
+  if(DIRTY[currentTab] && DATA[currentTab]){
+    document.getElementById('save-bar-count').textContent = DATA[currentTab].length + ' entradas';
+  }
+}
+async function fetchData(file){
+  const r = await fetch('/admin/data/' + file);
+  return r.json();
+}
+async function saveData(file, data){
+  const r = await fetch('/admin/save/' + file, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  return r.json();
+}
+
+// ============================================================
+// TABS
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    document.getElementById('panel-' + currentTab).classList.add('active');
+    if(!DATA[currentTab]) loadTab(currentTab);
+    updateSaveBar();
+  });
+});
+
+async function loadTab(tab){
+  const raw = await fetchData(tab);
+  DATA[tab] = raw;
+  document.getElementById('badge-' + tab).textContent = Array.isArray(raw) ? raw.length : '–';
+  if(tab === 'concepts') renderConcepts();
+  if(tab === 'mentiroso') renderMentiroso();
+  if(tab === 'wavelength') renderWavelength();
+  if(tab === 'subasta') renderSubasta();
+}
+
+// ============================================================
+// CONCEPTS
+// ============================================================
+function buildCatFilter(){
+  const cats = [...new Set(DATA.concepts.map(c=>c.category))].sort();
+  const el = document.getElementById('cat-filter');
+  el.innerHTML = '';
+  cats.forEach(cat=>{
+    const chip = document.createElement('div');
+    const key = cat.replace('ó','o').replace('é','e').replace('á','a');
+    chip.className = 'cat-chip on-' + key;
+    chip.textContent = CAT_LABELS[cat] || cat;
+    chip.title = 'Mostrar solo ' + (CAT_LABELS[cat]||cat);
+    if(!catFilters.has(cat)) chip.style.opacity = '.35';
+    chip.addEventListener('click', ()=>{
+      if(catFilters.has(cat)) catFilters.delete(cat); else catFilters.add(cat);
+      if(catFilters.size === 0) cats.forEach(c=>catFilters.add(c));
+      chip.style.opacity = catFilters.has(cat) ? '1' : '.35';
+      renderConcepts();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function filteredConcepts(){
+  const q = conceptSearch.toLowerCase();
+  return DATA.concepts.filter((c,i)=>{
+    c._idx = i;
+    return catFilters.has(c.category) && (!q || c.name.toLowerCase().includes(q));
+  });
+}
+
+function renderConcepts(){
+  if(!DATA.concepts) return;
+  if(!document.getElementById('cat-filter').children.length) buildCatFilter();
+  const list = filteredConcepts();
+  const tbody = document.getElementById('tbody-concepts');
+  tbody.innerHTML = '';
+  if(!list.length){ tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Sin resultados</td></tr>'; return; }
+  list.forEach(c=>{
+    const tr = document.createElement('tr');
+    const key = (c.category||'').replace(/[óéá]/g, m=>({ó:'o',é:'e',á:'a'}[m]));
+    tr.innerHTML = `
+      <td style="color:var(--soft);font-size:11px;width:36px">${c._idx+1}</td>
+      <td><input type="text" value="${esc(c.name)}" data-idx="${c._idx}" data-field="name"></td>
+      <td>
+        <select data-idx="${c._idx}" data-field="category" style="width:130px">
+          ${Object.keys(CAT_LABELS).map(k=>`<option value="${k}" ${k===c.category?'selected':''}>${CAT_LABELS[k]}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="btn btn-danger btn-sm" data-del="${c._idx}">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('badge-concepts').textContent = DATA.concepts.length;
+}
+
+document.getElementById('search-concepts').addEventListener('input', e=>{
+  conceptSearch = e.target.value; renderConcepts();
+});
+
+document.getElementById('tbody-concepts').addEventListener('input', e=>{
+  const el = e.target;
+  const idx = parseInt(el.dataset.idx), field = el.dataset.field;
+  if(isNaN(idx)||!field) return;
+  DATA.concepts[idx][field] = el.value;
+  setDirty('concepts', true);
+});
+
+document.getElementById('tbody-concepts').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-del]');
+  if(!btn) return;
+  const idx = parseInt(btn.dataset.del);
+  if(!confirm(`Eliminar "${DATA.concepts[idx].name}"?`)) return;
+  DATA.concepts.splice(idx, 1);
+  setDirty('concepts', true);
+  renderConcepts();
+});
+
+document.getElementById('add-concept').addEventListener('click', ()=>{
+  const name = document.getElementById('new-concept-name').value.trim();
+  const cat = document.getElementById('new-concept-cat').value;
+  if(!name) return;
+  DATA.concepts.push({ name, category: cat });
+  document.getElementById('new-concept-name').value = '';
+  setDirty('concepts', true);
+  renderConcepts();
+  document.getElementById('badge-concepts').textContent = DATA.concepts.length;
+});
+
+document.getElementById('save-concepts').addEventListener('click', ()=>doSave('concepts'));
+
+// ============================================================
+// MENTIROSO
+// ============================================================
+function filteredMentiroso(){
+  const q = mentirosoSearch.toLowerCase();
+  return DATA.mentiroso.map((s,i)=>({s,i})).filter(({s})=>!q||s.toLowerCase().includes(q));
+}
+
+function renderMentiroso(){
+  if(!DATA.mentiroso) return;
+  const el = document.getElementById('list-mentiroso');
+  const list = filteredMentiroso();
+  if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
+  el.innerHTML = list.map(({s,i})=>`
+    <div class="list-item">
+      <span class="list-num">${i+1}</span>
+      <input type="text" value="${esc(s)}" data-idx="${i}" class="lie-input">
+      <button class="btn btn-danger btn-sm lie-del" data-del="${i}">✕</button>
+    </div>`).join('');
+  document.getElementById('badge-mentiroso').textContent = DATA.mentiroso.length;
+}
+
+document.getElementById('search-mentiroso').addEventListener('input', e=>{
+  mentirosoSearch = e.target.value; renderMentiroso();
+});
+
+document.getElementById('list-mentiroso').addEventListener('input', e=>{
+  if(!e.target.classList.contains('lie-input')) return;
+  DATA.mentiroso[parseInt(e.target.dataset.idx)] = e.target.value;
+  setDirty('mentiroso', true);
+});
+
+document.getElementById('list-mentiroso').addEventListener('click', e=>{
+  const btn = e.target.closest('.lie-del');
+  if(!btn) return;
+  const idx = parseInt(btn.dataset.del);
+  if(!confirm(`Eliminar "${DATA.mentiroso[idx]}"?`)) return;
+  DATA.mentiroso.splice(idx, 1);
+  setDirty('mentiroso', true);
+  renderMentiroso();
+});
+
+document.getElementById('add-lie').addEventListener('click', ()=>{
+  const v = document.getElementById('new-lie-cat').value.trim();
+  if(!v) return;
+  DATA.mentiroso.push(v);
+  document.getElementById('new-lie-cat').value = '';
+  setDirty('mentiroso', true);
+  renderMentiroso();
+});
+
+document.getElementById('save-mentiroso').addEventListener('click', ()=>doSave('mentiroso'));
+
+// ============================================================
+// WAVELENGTH
+// ============================================================
+function filteredWavelength(){
+  const q = wavelengthSearch.toLowerCase();
+  return DATA.wavelength.map((p,i)=>({p,i})).filter(({p})=>!q||p.left.toLowerCase().includes(q)||p.right.toLowerCase().includes(q));
+}
+
+function renderWavelength(){
+  if(!DATA.wavelength) return;
+  const el = document.getElementById('list-wavelength');
+  const list = filteredWavelength();
+  if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
+  el.innerHTML = list.map(({p,i})=>`
+    <div class="pair-row">
+      <input type="text" value="${esc(p.left)}" data-idx="${i}" data-field="left" class="wave-input">
+      <span class="pair-arrow">↔</span>
+      <input type="text" value="${esc(p.right)}" data-idx="${i}" data-field="right" class="wave-input">
+      <button class="btn btn-danger btn-sm wave-del" data-del="${i}">✕</button>
+    </div>`).join('');
+  document.getElementById('badge-wavelength').textContent = DATA.wavelength.length;
+}
+
+document.getElementById('search-wavelength').addEventListener('input', e=>{
+  wavelengthSearch = e.target.value; renderWavelength();
+});
+
+document.getElementById('list-wavelength').addEventListener('input', e=>{
+  if(!e.target.classList.contains('wave-input')) return;
+  DATA.wavelength[parseInt(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
+  setDirty('wavelength', true);
+});
+
+document.getElementById('list-wavelength').addEventListener('click', e=>{
+  const btn = e.target.closest('.wave-del');
+  if(!btn) return;
+  const idx = parseInt(btn.dataset.del);
+  if(!confirm(`Eliminar par "${DATA.wavelength[idx].left} ↔ ${DATA.wavelength[idx].right}"?`)) return;
+  DATA.wavelength.splice(idx, 1);
+  setDirty('wavelength', true);
+  renderWavelength();
+});
+
+document.getElementById('add-wave').addEventListener('click', ()=>{
+  const l = document.getElementById('new-wave-left').value.trim();
+  const r = document.getElementById('new-wave-right').value.trim();
+  if(!l||!r) return;
+  DATA.wavelength.push({ left: l, right: r });
+  document.getElementById('new-wave-left').value = '';
+  document.getElementById('new-wave-right').value = '';
+  setDirty('wavelength', true);
+  renderWavelength();
+});
+
+document.getElementById('save-wavelength').addEventListener('click', ()=>doSave('wavelength'));
+
+// ============================================================
+// SUBASTA (read-only)
+// ============================================================
+function renderSubasta(){
+  const q = subastaSearch.toLowerCase();
+  const list = DATA.subasta.filter(c=>
+    (!q || c.name.toLowerCase().includes(q) || (c.label||'').toLowerCase().includes(q)) &&
+    (!subastaPos || c.position === subastaPos) &&
+    (!subastaRar || c.rareza === subastaRar)
+  );
+  const el = document.getElementById('sub-grid');
+  document.getElementById('badge-subasta').textContent = DATA.subasta.length;
+  if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
+  el.innerHTML = list.map(c=>`
+    <div class="sub-card">
+      <div class="sc-name">${esc(c.label||c.name)}</div>
+      <div class="sc-meta">
+        <span>${esc(c.position||'')}</span>
+        <span class="sc-media">${c.media}</span>
+        <span class="rareza-${esc(c.rareza||'normal')}">${esc(c.rareza||'normal')}</span>
+        ${c.troll?'<span style="color:var(--red)">troll</span>':''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('search-subasta').addEventListener('input', e=>{ subastaSearch=e.target.value; renderSubasta(); });
+document.getElementById('filter-sub-pos').addEventListener('change', e=>{ subastaPos=e.target.value; renderSubasta(); });
+document.getElementById('filter-sub-rar').addEventListener('change', e=>{ subastaRar=e.target.value; renderSubasta(); });
+
+// ============================================================
+// SAVE
+// ============================================================
+async function doSave(tab){
+  const res = await saveData(tab, DATA[tab]);
+  if(res.ok){
+    toast(`✓ Guardado — ${res.count} entradas`, 'ok');
+    setDirty(tab, false);
+  } else {
+    toast('Error al guardar', 'err');
+  }
+}
+
+document.getElementById('save-bar-btn').addEventListener('click', ()=>doSave(currentTab));
+document.getElementById('discard-btn').addEventListener('click', ()=>{
+  if(!confirm('Descartar todos los cambios sin guardar?')) return;
+  DATA[currentTab] = null;
+  setDirty(currentTab, false);
+  loadTab(currentTab);
+});
+
+// ============================================================
+// SAVE BAR sync with tab save buttons
+// ============================================================
+['concepts','mentiroso','wavelength'].forEach(tab=>{
+  document.getElementById('save-' + tab)?.addEventListener('click', ()=>doSave(tab));
+});
+
+// ============================================================
+// INIT
+// ============================================================
+loadTab('concepts');
+</script>
+</body>
+</html>
