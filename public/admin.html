@@ -166,14 +166,7 @@
     <div class="cat-filter" id="cat-filter"></div>
   </div>
 
-  <div class="tbl-wrap">
-    <table id="tbl-concepts">
-      <thead><tr><th>#</th><th>Nombre</th><th>Categoría</th><th style="width:44px"></th></tr></thead>
-      <tbody id="tbody-concepts"></tbody>
-    </table>
-  </div>
-
-  <div class="add-row" style="margin-top:14px">
+  <div class="add-row">
     <input type="text" id="new-concept-name" placeholder="Nombre (ej: Pedri)">
     <select id="new-concept-cat">
       <option value="futbolista">Futbolista</option>
@@ -182,6 +175,13 @@
       <option value="dt">DT</option>
     </select>
     <button class="btn btn-ghost" id="add-concept">+ Agregar</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-concepts">
+      <thead><tr><th>#</th><th>Nombre</th><th>Categoría</th><th style="width:44px"></th></tr></thead>
+      <tbody id="tbody-concepts"></tbody>
+    </table>
   </div>
 </div>
 
@@ -203,11 +203,11 @@
   <div class="filter-row">
     <input type="text" id="search-mentiroso" placeholder="Buscar categoría…">
   </div>
-  <div class="tbl-wrap" style="padding:12px 16px" id="list-mentiroso"></div>
   <div class="add-row">
     <input type="text" id="new-lie-cat" placeholder="Nueva categoría (ej: porteros que han metido goles de penalti)">
     <button class="btn btn-ghost" id="add-lie">+ Agregar</button>
   </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-mentiroso"></div>
 </div>
 
 <!-- ===== FRECUENCIA ===== -->
@@ -228,13 +228,13 @@
   <div class="filter-row">
     <input type="text" id="search-wavelength" placeholder="Buscar par…">
   </div>
-  <div class="tbl-wrap" style="padding:12px 16px" id="list-wavelength"></div>
   <div class="add-row">
     <input type="text" id="new-wave-left" placeholder="Extremo izquierdo (ej: Muy sucio)">
     <span style="color:var(--soft);flex-shrink:0">↔</span>
     <input type="text" id="new-wave-right" placeholder="Extremo derecho (ej: Muy limpio)">
     <button class="btn btn-ghost" id="add-wave">+ Agregar</button>
   </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-wavelength"></div>
 </div>
 
 <!-- ===== SUBASTA ===== -->
