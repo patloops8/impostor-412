@@ -200,9 +200,11 @@ function startManga(r){
     const isI = r.impostorIds.has(id);
     io.to(id).emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:isI?null:r.concept.category, concept:isI?null:r.concept.name });
   }
+  // startClue primero: cambia r.status a 'imp_clue' ANTES de emitRoom,
+  // así los clientes no reciben room:update con status='lobby' y no los manda al lobby
+  startClue(r);
   emitRoom(r);
   io.to(r.code).emit('imp:manga_started', { mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, impostorCount:r.impostorIds.size });
-  startClue(r);
 }
 function startClue(r){
   r.status='imp_clue'; r.roundNumber++; r.votes=new Map();
