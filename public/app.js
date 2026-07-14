@@ -424,10 +424,10 @@ let lieLastFinal=false;
 socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,roundCount,isLastRound,scores})=>{
   stopLieCd(); lieLastFinal=isLastRound;
   $('lie-over-banner').className='reveal-banner '+(success?'caught':'escaped');
-  $('lie-over-eyebrow').textContent=`Ronda ${roundNumber}/${roundCount}`;
+  $('lie-over-eyebrow').textContent=isLastRound?'¡Resultado Final!':'Ronda '+roundNumber+'/'+roundCount;
   $('lie-over-title').textContent=success?`✅ ${accusedName} sí pudo`:(reason==='timeout'?`⏱ ${accusedName} se quedó sin tiempo`:`❌ ${accusedName} no convenció`);
   $('lie-over-sub').textContent=success?`${accuserName} pierde 1 punto.`:`${accuserName} gana 1 punto.`;
-  const me=scores.find(s=>s.id===myId); $('lie-my-score').textContent=me?me.score:0;
+  renderScores('lie-scoreboard', scores);
   $('btn-lie-next').textContent=isLastRound?'Volver al inicio':'Siguiente ronda';
   $('btn-lie-next').classList.toggle('hidden',!isHost);
   $('lie-over-wait').classList.toggle('hidden',isHost);
