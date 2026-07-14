@@ -1277,7 +1277,8 @@ app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
 /* ---- PANEL ADMIN (solo en desarrollo, invisible en produccion) ---- */
-if(process.env.NODE_ENV !== 'production'){
+// Admin panel: local siempre; en producción requiere ADMIN_PASS como query param o header X-Admin-Pass
+{
   const DATA_FILES = {
     concepts:    path.join(__dirname,'data','concepts.json'),
     mentiroso:   path.join(__dirname,'data','mentiroso-categories.json'),
@@ -1285,15 +1286,28 @@ if(process.env.NODE_ENV !== 'production'){
     subasta:     path.join(__dirname,'data','subasta-cards.json'),
   };
 
-  app.get('/admin',(_q,res)=>res.sendFile(path.join(__dirname,'public','admin.html')));
+  function adminAuth(req,res,next){
+    const envPass = process.env.ADMIN_PASS;
+    // Sin env var: solo acceso local
+    if(!envPass){
+      if(process.env.NODE_ENV==='production') return res.status(404).end();
+      return next();
+    }
+    // Con env var: cualquier origen, pero necesita la contraseña
+    const provided = req.query.pass || req.headers['x-admin-pass'] || '';
+    if(provided !== envPass) return res.status(401).json({error:'Contraseña incorrecta'});
+    next();
+  }
 
-  app.get('/admin/data/:file',(req,res)=>{
+  app.get('/admin', adminAuth, (_q,res)=>res.sendFile(path.join(__dirname,'public','admin.html')));
+
+  app.get('/admin/data/:file', adminAuth, (req,res)=>{
     const f=DATA_FILES[req.params.file];
     if(!f)return res.status(404).json({error:'not found'});
     res.json(JSON.parse(fs.readFileSync(f,'utf-8')));
   });
 
-  app.post('/admin/save/:file',(req,res)=>{
+  app.post('/admin/save/:file', adminAuth, (req,res)=>{
     const f=DATA_FILES[req.params.file];
     if(!f)return res.status(404).json({error:'not found'});
     if(!req.body||!Array.isArray(req.body))return res.status(400).json({error:'body must be array'});

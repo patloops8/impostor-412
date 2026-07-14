@@ -322,12 +322,14 @@ function updateSaveBar(){
     document.getElementById('save-bar-count').textContent = DATA[currentTab].length + ' entradas';
   }
 }
+const _adminPass = new URLSearchParams(location.search).get('pass') || '';
+const _passQ = _adminPass ? '?pass=' + encodeURIComponent(_adminPass) : '';
 async function fetchData(file){
-  const r = await fetch('/admin/data/' + file);
+  const r = await fetch('/admin/data/' + file + _passQ);
   return r.json();
 }
 async function saveData(file, data){
-  const r = await fetch('/admin/save/' + file, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  const r = await fetch('/admin/save/' + file + _passQ, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
   return r.json();
 }
 
