@@ -751,6 +751,7 @@ function startWaveRound(r){
   r.wave.pair = pickWavePair(r);
   r.wave.target = 10 + Math.floor(Math.random()*81); // 10..90, deja margen para que las bandas no se corten
   r.wave.guesses = new Map();
+  r.wave.clue = null;
   r.status='wave_psychic';
   const psy=r.players.get(r.wave.psychicId);
   io.to(r.code).emit('wave:round', {
@@ -822,6 +823,16 @@ function startWhoSession(r){
 }
 const whoActiveId = r => r.who.order.length ? r.who.order[r.who.turnIndex % r.who.order.length] : null;
 const whoRemaining = r => playersArr(r).filter(p=>!r.who.revealed.has(p.id));
+function whoNextId(r){
+  const order=r.who.order; if(order.length<2) return null;
+  const activeIdx=r.who.turnIndex%order.length;
+  for(let i=1;i<=order.length;i++){
+    const cand=order[(activeIdx+i)%order.length];
+    const p=r.players.get(cand);
+    if(p&&p.connected&&!r.who.revealed.has(cand)) return cand;
+  }
+  return null;
+}
 // Le manda a cada jugador su propia vista del tablero: todas las cartas menos
 // la suya (oculta hasta que la adivine). Igual que el reparto de roles de Impostor.
 function whoStateFor(r, pid){
@@ -834,8 +845,9 @@ function whoStateFor(r, pid){
     if(mine && !revealed) return { id:p.id, name:p.name, hidden:true };
     return { id:p.id, name:p.name, hidden:false, identity:assign?.name, category:assign?.category };
   });
+  const nextId = whoNextId(r);
   return { cards, activePlayerId:activeId, activePlayerName:activeName,
-    isMyTurn: pid===activeId, canAnswer: pid!==activeId, turnToken:r.who.turnToken };
+    isMyTurn: pid===activeId, isNextTurn: pid===nextId, nextPlayerId:nextId, turnToken:r.who.turnToken };
 }
 function emitWhoState(r){
   for(const [pid] of r.players.entries()) io.to(pid).emit('who:state', whoStateFor(r,pid));
@@ -1159,6 +1171,12 @@ io.on('connection', socket => {
     const r=rooms.get(code); if(!r||r.status!=='wave_psychic'||socket.id!==r.wave.psychicId)return;
     socket.emit('wave:target', { target:r.wave.target });
   });
+  socket.on('player:wave_clue', ({code,text}) => {
+    const r=rooms.get(code); if(!r||r.status!=='wave_psychic'||socket.id!==r.wave.psychicId)return;
+    const clean=(text||'').trim().slice(0,200); if(!clean)return;
+    r.wave.clue=clean;
+    io.to(r.code).emit('wave:clue_shared',{ clue:clean, psychicName:r.players.get(socket.id)?.name });
+  });
   socket.on('player:wave_ready', ({code}) => {
     const r=rooms.get(code); if(!r||r.status!=='wave_psychic'||socket.id!==r.wave.psychicId)return;
     startWaveGuessing(r);
@@ -1177,9 +1195,17 @@ io.on('connection', socket => {
   });
 
   // ¿Quién Soy?
+  socket.on('player:who_question', ({code,text}) => {
+    const r=rooms.get(code); if(!r||r.status!=='who_turn')return;
+    if(socket.id!==whoActiveId(r))return;
+    const clean=(text||'').trim().slice(0,200); if(!clean)return;
+    io.to(r.code).emit('who:question',{ playerName:r.players.get(socket.id)?.name, text:clean });
+  });
+
   socket.on('player:who_answer', ({code,answer,turnToken}) => {
     const r=rooms.get(code); if(!r||r.status!=='who_turn')return;
     const activeId=whoActiveId(r); if(!activeId||socket.id===activeId)return;
+    const nextId=whoNextId(r); if(nextId&&socket.id!==nextId)return; // solo el siguiente responde
     if(turnToken!==r.who.turnToken)return; // pregunta vieja, ya se paso de turno
     if(!['si','no','talvez'].includes(answer))return;
     const answerer=r.players.get(socket.id);

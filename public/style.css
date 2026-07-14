@@ -346,8 +346,12 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .who-card .who-hidden-glyph{font-family:var(--display);font-size:2rem;color:var(--line2);}
 .who-answer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
 .who-answer-grid .vote-btn{padding:16px 6px;font-size:0.92rem;}
-.who-answer-si{border-color:var(--neon-dim);}
-.who-answer-no{border-color:var(--red);color:var(--red);}
-.who-answer-no:hover{background:rgba(255,77,77,0.12);}
-.who-answer-talvez{border-color:var(--gold);color:var(--gold);}
-.who-answer-talvez:hover{background:rgba(233,185,73,0.12);}
+.who-answer-si{border-color:var(--neon-dim);color:var(--neon);}
+.who-answer-si:hover{background:rgba(182,255,46,0.14);border-color:var(--neon);}
+.who-answer-si.selected{border-color:var(--neon);background:rgba(182,255,46,0.18);color:var(--neon);box-shadow:0 0 18px rgba(182,255,46,0.5);animation:selectPop .28s ease-out;}
+.who-answer-no{border-color:var(--red);color:var(--red);background:rgba(255,77,77,0.05);}
+.who-answer-no:hover{background:rgba(255,77,77,0.14);border-color:var(--red);}
+.who-answer-no.selected{border-color:var(--red);background:rgba(255,77,77,0.18);color:var(--red);box-shadow:0 0 18px rgba(255,77,77,0.5);animation:selectPop .28s ease-out;}
+.who-answer-talvez{border-color:var(--gold);color:var(--gold);background:rgba(233,185,73,0.05);}
+.who-answer-talvez:hover{background:rgba(233,185,73,0.14);border-color:var(--gold);}
+.who-answer-talvez.selected{border-color:var(--gold);background:rgba(233,185,73,0.18);color:var(--gold);box-shadow:0 0 18px rgba(233,185,73,0.5);animation:selectPop .28s ease-out;}

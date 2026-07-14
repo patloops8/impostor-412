@@ -396,8 +396,12 @@
     <div class="wave-dial-wrap"><div class="wave-dial" id="wave-dial-psychic"></div></div>
     <div id="wave-psychic-controls" class="hidden card" style="margin-top:14px;text-align:center;">
       <h2 style="font-size:1.1rem;">🔮 ¡Eres el Psíquico!</h2>
-      <p style="margin:6px 0 12px;">Mira dónde cayó la zona, da una pista hablada al grupo y arranca cuando estés listo.</p>
+      <p style="margin:6px 0 12px;">Mira dónde cayó la zona y da una pista al grupo (por voz o por texto).</p>
       <button class="btn-secondary" id="btn-wave-peek" style="width:100%;">👁 Ver la zona</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input type="text" id="inp-wave-clue" placeholder="Escribe tu pista (opcional)..." style="flex:1;" maxlength="200" />
+        <button class="btn-secondary" id="btn-wave-clue" style="white-space:nowrap;">Enviar</button>
+      </div>
       <button class="btn-primary" id="btn-wave-ready" style="width:100%;margin-top:10px;">Ya di mi pista, ¡que adivinen!</button>
     </div>
     <div id="wave-psychic-wait" class="hidden turn-banner">
@@ -410,6 +414,10 @@
     <div class="screen-head">
       <p class="eyebrow">Ronda <span id="wave-round-2">1</span>/<span id="wave-round-count-2">5</span> · La Frecuencia</p>
       <h2>¿Dónde cae la pista?</h2>
+    </div>
+    <div id="wave-clue-display" class="hidden category-card" style="margin-bottom:10px;">
+      <p class="cat-label">Pista del Psíquico</p>
+      <p class="cat-value" id="wave-clue-text">—</p>
     </div>
     <div class="wave-dial-wrap"><div class="wave-dial" id="wave-dial-guess"></div></div>
     <div class="countdown-row" style="justify-content:center;margin:12px 0;">
@@ -446,7 +454,11 @@
     <div class="who-grid" id="who-grid"></div>
     <div id="who-my-turn" class="hidden card" style="margin-top:14px;">
       <h2 style="font-size:1.1rem;">🎙️ ¡Tu turno!</h2>
-      <p style="margin:6px 0 12px;">Haz una pregunta de Sí/No en voz alta, o intenta adivinar quién eres.</p>
+      <p style="margin:6px 0 10px;">Haz una pregunta de Sí/No (por voz o texto), o intenta adivinar quién eres.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="inp-who-question" placeholder="Escribe tu pregunta..." style="flex:1;" maxlength="200" />
+        <button class="btn-secondary" id="btn-who-question" style="white-space:nowrap;">Enviar</button>
+      </div>
       <input type="text" id="inp-who-guess" placeholder="¿Quién crees que eres?" />
       <button class="btn-primary" id="btn-who-guess" style="width:100%;margin-top:10px;">¡Ya sé quién soy!</button>
     </div>
@@ -455,10 +467,16 @@
         <div class="turn-avatar" id="who-turn-avatar">—</div>
         <p class="eyebrow">Turno de</p><h2 id="who-turn-name">—</h2>
       </div>
-      <div class="who-answer-grid">
-        <button class="vote-btn who-answer-si" id="btn-who-si">Sí</button>
-        <button class="vote-btn who-answer-no" id="btn-who-no">No</button>
-        <button class="vote-btn who-answer-talvez" id="btn-who-talvez">Tal vez</button>
+      <div id="who-answer-section">
+        <div id="who-answer-mine" class="hidden" style="margin-top:4px;">
+          <p style="text-align:center;font-size:0.85rem;color:var(--lime);font-weight:700;margin-bottom:8px;">¡Te toca responder!</p>
+          <div class="who-answer-grid">
+            <button class="vote-btn who-answer-si" id="btn-who-si">Sí</button>
+            <button class="vote-btn who-answer-no" id="btn-who-no">No</button>
+            <button class="vote-btn who-answer-talvez" id="btn-who-talvez">Tal vez</button>
+          </div>
+        </div>
+        <p id="who-answer-wait" class="hidden" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:8px;">Esperando respuesta...</p>
       </div>
     </div>
     <div class="divider"></div>
