@@ -1314,6 +1314,83 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     fs.writeFileSync(f, JSON.stringify(req.body, null, 2), 'utf-8');
     res.json({ok:true,count:req.body.length});
   });
+
+  // Publica todos los archivos de datos en GitHub en un solo commit
+  app.post('/admin/publish', adminAuth, async (req,res)=>{
+    const token  = process.env.GITHUB_TOKEN;
+    const repo   = process.env.GITHUB_REPO;   // "patloops8/impostor-412"
+    const branch = process.env.GITHUB_BRANCH || 'main';
+    if(!token||!repo) return res.status(503).json({error:'Configura GITHUB_TOKEN y GITHUB_REPO en las variables de entorno de Render'});
+
+    const GH = 'https://api.github.com/repos/' + repo;
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+      'User-Agent': '412-admin',
+    };
+    const ghFetch = (url, opts={}) => fetch(url, {...opts, headers: {...headers, ...(opts.headers||{})}});
+
+    try {
+      // 1. SHA del último commit de la rama
+      const refData  = await (await ghFetch(`${GH}/git/refs/heads/${branch}`)).json();
+      const headSha  = refData.object?.sha;
+      if(!headSha) throw new Error('No se pudo leer la rama: ' + branch);
+
+      // 2. SHA del árbol base
+      const commitData = await (await ghFetch(`${GH}/git/commits/${headSha}`)).json();
+      const baseTree   = commitData.tree?.sha;
+
+      // 3. Crear un blob por cada archivo
+      const FILE_REPO_PATHS = {
+        concepts:  'data/concepts.json',
+        mentiroso: 'data/mentiroso-categories.json',
+        wavelength:'data/wavelength-pairs.json',
+        subasta:   'data/subasta-cards.json',
+      };
+      const tree = [];
+      for(const [key, repoPath] of Object.entries(FILE_REPO_PATHS)){
+        const content = fs.readFileSync(DATA_FILES[key], 'utf-8');
+        const blobRes = await ghFetch(`${GH}/git/blobs`, {
+          method: 'POST',
+          body: JSON.stringify({content, encoding:'utf-8'}),
+        });
+        const blob = await blobRes.json();
+        if(!blob.sha) throw new Error('Error creando blob para ' + key + ': ' + JSON.stringify(blob));
+        tree.push({path: repoPath, mode:'100644', type:'blob', sha: blob.sha});
+      }
+
+      // 4. Nuevo árbol
+      const newTree = await (await ghFetch(`${GH}/git/trees`, {
+        method: 'POST',
+        body: JSON.stringify({base_tree: baseTree, tree}),
+      })).json();
+
+      // 5. Nuevo commit
+      const now = new Date().toLocaleString('es',{timeZone:'America/Bogota',dateStyle:'short',timeStyle:'short'});
+      const newCommit = await (await ghFetch(`${GH}/git/commits`, {
+        method: 'POST',
+        body: JSON.stringify({
+          message: `admin: actualizar contenido (${now})`,
+          tree: newTree.sha,
+          parents: [headSha],
+        }),
+      })).json();
+      if(!newCommit.sha) throw new Error('Error creando commit: ' + JSON.stringify(newCommit));
+
+      // 6. Avanzar la rama
+      await ghFetch(`${GH}/git/refs/heads/${branch}`, {
+        method: 'PATCH',
+        body: JSON.stringify({sha: newCommit.sha}),
+      });
+
+      res.json({ok:true, sha: newCommit.sha.slice(0,7)});
+    } catch(e){
+      console.error('[admin:publish]', e);
+      res.status(500).json({error: e.message});
+    }
+  });
 }
 
 app.get('/',(_q,res)=>res.sendFile(path.join(__dirname,'public','index.html')));

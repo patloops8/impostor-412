@@ -121,6 +121,13 @@
   .btn-export{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--soft);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
   .btn-export:hover{border-color:var(--blue);color:var(--blue)}
   .btn-export.copied{border-color:var(--neon);color:var(--neon)}
+
+  /* ---- PUBLISH BAR ---- */
+  .publish-bar{display:none;position:fixed;bottom:64px;left:0;right:0;background:#1a1a2e;border-top:1px solid #2d2d4e;padding:10px 24px;align-items:center;gap:12px;z-index:89}
+  .publish-bar.visible{display:flex}
+  .btn-publish{margin-left:auto;padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#6c63ff,#48bb78);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:opacity .15s}
+  .btn-publish:hover{opacity:.88}
+  .btn-publish:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -276,6 +283,12 @@
   <span class="count" id="save-bar-count"></span>
   <button class="btn btn-ghost btn-sm" id="discard-btn">Descartar</button>
   <button class="btn btn-primary btn-sm" id="save-bar-btn">Guardar ahora</button>
+</div>
+
+<!-- Publish bar -->
+<div class="publish-bar" id="publish-bar">
+  <span style="color:var(--soft);font-size:12px">Cambios guardados en el servidor.</span>
+  <button class="btn-publish" id="btn-publish">🚀 Publicar en GitHub</button>
 </div>
 
 <div id="toast"></div>
@@ -892,6 +905,43 @@ document.getElementById('import-wavelength-file').addEventListener('change', asy
     if(ok) renderWavelength();
   }catch(e){ toast('Error: '+e.message,'err'); }
   resetImport('wavelength',this);
+});
+
+// ============================================================
+// PUBLISH TO GITHUB
+// ============================================================
+let _anySaved = false; // se activa cuando se guarda cualquier archivo
+const _pubBar  = document.getElementById('publish-bar');
+const _pubBtn  = document.getElementById('btn-publish');
+
+function showPublishBar(){ _pubBar.classList.add('visible'); }
+
+// Interceptar saveData para saber cuándo hay algo pendiente de publicar
+const _origSaveData = saveData;
+saveData = async function(file, data){
+  const res = await _origSaveData(file, data);
+  if(res.ok){ _anySaved = true; showPublishBar(); }
+  return res;
+};
+
+_pubBtn.addEventListener('click', async ()=>{
+  _pubBtn.disabled = true;
+  _pubBtn.textContent = '⏳ Publicando...';
+  try{
+    const r = await fetch('/admin/publish' + _passQ, { method:'POST' });
+    const res = await r.json();
+    if(res.ok){
+      toast(`✓ Publicado en GitHub (${res.sha})`, 'ok');
+      _pubBar.classList.remove('visible');
+      _anySaved = false;
+    } else {
+      toast('Error: ' + (res.error||'desconocido'), 'err');
+    }
+  } catch(e){
+    toast('Error de red: ' + e.message, 'err');
+  }
+  _pubBtn.disabled = false;
+  _pubBtn.textContent = '🚀 Publicar en GitHub';
 });
 
 // ============================================================
