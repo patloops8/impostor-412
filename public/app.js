@@ -1,3 +1,49 @@
+/* ===== Wake Lock: evita que la pantalla se apague durante el juego ===== */
+let _wakeLock = null;
+async function acquireWakeLock(){
+  if(!('wakeLock' in navigator)) return;
+  try{ _wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+async function releaseWakeLock(){
+  if(!_wakeLock) return;
+  try{ await _wakeLock.release(); _wakeLock=null; }catch(e){}
+}
+// Re-adquirir si el usuario vuelve a la pestaña (visibilitychange la libera automáticamente)
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&_wakeLock===null&&currentGame) acquireWakeLock(); });
+
+/* ===== Vibración ===== */
+function vib(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* ===== Sonidos (Web Audio API, sin librería) ===== */
+let _ac = null;
+function ac(){ if(!_ac) _ac = new (window.AudioContext||window.webkitAudioContext)(); return _ac; }
+function beep(freq,dur,vol=0.25,type='sine'){
+  try{
+    const ctx=ac(), o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    o.start(); o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+const sfx = {
+  turn:    ()=>{ beep(660,0.12,0.2); setTimeout(()=>beep(880,0.15,0.22),120); },
+  urgent:  ()=>beep(440,0.08,0.18,'square'),
+  win:     ()=>{ beep(523,0.1,0.2); setTimeout(()=>beep(659,0.1,0.22),110); setTimeout(()=>beep(784,0.18,0.25),220); },
+  bid:     ()=>beep(600,0.07,0.15),
+  correct: ()=>{ beep(523,0.08,0.2); setTimeout(()=>beep(784,0.14,0.25),90); },
+  wrong:   ()=>beep(220,0.18,0.2,'sawtooth'),
+  reveal:  ()=>beep(440,0.1,0.15),
+};
+
+/* ===== Auto-rellenar código desde URL (?code=XXXX) ===== */
+(function checkURLCode(){
+  const params = new URLSearchParams(location.search);
+  const code = (params.get('code')||'').toUpperCase().slice(0,4);
+  if(code) document.getElementById('inp-code').value = code;
+})();
+
 const socket = io({
   // Intentar WebSocket primero; si la red lo bloquea, cae a polling automáticamente.
   transports: ['websocket', 'polling'],
@@ -108,11 +154,12 @@ function onJoined(res){
   show('s-lobby');
 }
 
-/* ===== Compartir código ===== */
+/* ===== Compartir código (link directo con ?code=) ===== */
 $('btn-share').addEventListener('click', async () => {
-  const text = `¡Únete a mi partida de 412! Código: ${roomCode} — entra en ${location.origin}`;
-  if(navigator.share){ try{ await navigator.share({text}); }catch(e){} }
-  else { try{ await navigator.clipboard.writeText(text); $('btn-share').textContent='✓ Copiado'; setTimeout(()=>$('btn-share').textContent='📋 Copiar / compartir código',2000);}catch(e){} }
+  const url  = `${location.origin}/?code=${roomCode}`;
+  const text = `¡Únete a mi partida de 412! Entra en: ${url}`;
+  if(navigator.share){ try{ await navigator.share({title:'412',text,url}); }catch(e){} }
+  else { try{ await navigator.clipboard.writeText(url); $('btn-share').textContent='✓ Copiado'; setTimeout(()=>$('btn-share').textContent='📋 Copiar / compartir código',2000);}catch(e){} }
 });
 
 $('tv-hint').addEventListener('click', async () => {
@@ -264,9 +311,11 @@ $('btn-start').addEventListener('click',()=>socket.emit('host:start_match',{code
 let impManga={n:1,c:3}, impTurn=null;
 socket.on('imp:manga_started',({mangaNumber,mangaCount})=>{ impManga={n:mangaNumber,c:mangaCount}; });
 socket.on('imp:role',({isImpostor,impostorCount,category,concept})=>{
+  acquireWakeLock();
   const card=$('imp-role-card');
   if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'No sabes el concepto. Disimula.'; }
   else { card.className='role-card innocent'; $('imp-role-icon').textContent='⚽'; $('imp-role-label').textContent='Concepto ('+category+')'; $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Da una pista relacionada.`:'Da una pista relacionada, sin decirlo directo.'; }
+  sfx.turn(); vib(100);
   show('s-imp-role');
 });
 $('btn-imp-role-ok').addEventListener('click',()=>{ renderClue(); show('s-imp-clue'); });
@@ -317,7 +366,7 @@ function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forE
 
 /* ===================== MENTIROSO ===================== */
 let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false, liePaused=false;
-function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); function t(){const r=Math.max(0,Math.ceil((deadline-Date.now())/1000));el.textContent=r;el.classList.toggle('urgent',r<=3);if(r<=0)stopLieCd();} t(); lieCd=setInterval(t,250); }
+function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); let wasUrgent=false; function t(){const r=Math.max(0,Math.ceil((deadline-Date.now())/1000));el.textContent=r;const urgent=r<=3&&r>0;el.classList.toggle('urgent',urgent);if(urgent&&!wasUrgent){sfx.urgent();vib(30);}wasUrgent=urgent;if(r<=0)stopLieCd();} t(); lieCd=setInterval(t,250); }
 function stopLieCd(){ if(lieCd){clearInterval(lieCd);lieCd=null;} }
 // El que acuso puede frenar el reloj para verificar en vivo una respuesta
 // dudosa antes de que se acabe el tiempo. Solo el/la acusador ve el boton;
@@ -333,10 +382,10 @@ socket.on('lie:pause_state',({paused,deadlineAt,remainingMs})=>{
   setLiePauseUI(paused, remainingMs);
   if(!paused && deadlineAt) startLieCd(deadlineAt);
 });
-socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; renderLieClaim(); show('s-lie-claim'); });
+socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; acquireWakeLock(); renderLieClaim(); show('s-lie-claim'); });
 socket.on('lie:turn',({currentTurnPlayerId})=>{ lieTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-lie-claim')renderLieClaim(); });
 socket.on('lie:claim',({amount})=>{ lieClaim=amount; const el=$('lie-claim-amount'); el.textContent=amount; bump(el); });
-function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0;}else{const t=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=t?t.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(t?t.name:'?').trim().charAt(0).toUpperCase()||'?';} }
+function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0; sfx.turn(); vib(80);}else{const t=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=t?t.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(t?t.name:'?').trim().charAt(0).toUpperCase()||'?';} }
 $('btn-claim').addEventListener('click',()=>{ const v=Number($('inp-claim').value); if(!Number.isInteger(v)||v<=lieClaim){$('claim-error').textContent=`Debe ser mayor a ${lieClaim}.`;$('claim-error').classList.remove('hidden');return;} socket.emit('player:make_claim',{code:roomCode,amount:v}); });
 $('btn-accuse').addEventListener('click',()=>socket.emit('player:accuse_liar',{code:roomCode}));
 socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason; $('claim-error').classList.remove('hidden'); });
@@ -403,7 +452,7 @@ function loadSil(imgEl,phEl,phPosEl,cardId,posName,revealed){
 }
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
-let subState={budget:1000,skipsLeft:5}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
+let subState={budget:1000,skipsLeft:5,teamCount:0}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
@@ -444,7 +493,7 @@ function tickSubClockLocal(){
   }
 }
 function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subClockIv);subClockIv=null;} subClockLastShown=-1; }
-function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; bump($('sub-budget')); bump($('sub-skips')); }
+function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; $('sub-team-count').textContent=`${subState.teamCount}/11`; bump($('sub-budget')); bump($('sub-skips')); }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
 socket.on('sub:formation_vote',({formations,secondsLeft})=>{
@@ -455,7 +504,7 @@ socket.on('sub:formation_vote',({formations,secondsLeft})=>{
 });
 socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
 socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
-socket.on('sub:formation_decided',({formation})=>{ currentFormation=formation; $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:formation_decided',({formation})=>{ currentFormation=formation; subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,secondsLeft})=>{
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
@@ -491,7 +540,7 @@ socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
     $('sub-ineligible').classList.remove('hidden');
   }
 });
-socket.on('sub:bid_public',({name,amount,highestBid})=>{
+socket.on('sub:bid_public',({name,amount,highestBid})=>{ sfx.bid();
   subHighest=highestBid.amount;
   const iAmHighest = highestBid.playerId === myId;
   $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;
@@ -567,7 +616,8 @@ socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionL
   stopSubClock();
   subLast=isLastCard;
   const isW=result.winnerId===myId;
-  if(isW){ subState.budget-=result.amount; updSubStats(); }
+  if(isW){ subState.budget-=result.amount; subState.teamCount++; updSubStats(); sfx.win(); vib([50,30,80]); }
+  else { sfx.reveal(); }
   loadSil($('sub-result-img'),$('sub-result-placeholder'),null,cardId,positionLabel,true);
   $('sub-result-name').textContent=cardName; $('sub-result-label').textContent=cardLabel;
   $('sub-result-troll').classList.toggle('hidden',!cardTroll);
@@ -863,7 +913,8 @@ socket.on('wave:guessing_start', ({secondsLeft,left,right})=>{
   setWaveCount(secondsLeft);
   show('s-wave-guess');
 });
-function setWaveCount(s){ const el=$('wave-countdown'); if(el){el.textContent=s; el.classList.toggle('urgent',s<=8);} }
+let _waveWasUrgent=false;
+function setWaveCount(s){ const el=$('wave-countdown'); if(!el)return; el.textContent=s; const urgent=s<=8&&s>0; el.classList.toggle('urgent',urgent); if(urgent&&!_waveWasUrgent){sfx.urgent();vib(30);} _waveWasUrgent=urgent; }
 socket.on('wave:tick', ({secondsLeft})=>setWaveCount(secondsLeft));
 $('btn-wave-lock').addEventListener('click', ()=>{
   if(waveLocked||waveIsPsychic)return; waveLocked=true;
@@ -913,11 +964,12 @@ function renderWhoGrid(cards, activeId){
   });
 }
 socket.on('who:state', ({cards,activePlayerId,activePlayerName,isMyTurn,turnToken})=>{
+  acquireWakeLock();
   whoTurnToken=turnToken; whoIsMyTurn=isMyTurn;
   renderWhoGrid(cards, activePlayerId);
   $('who-my-turn').classList.toggle('hidden', !isMyTurn);
   $('who-others-turn').classList.toggle('hidden', isMyTurn);
-  if(isMyTurn){ $('inp-who-guess').value=''; }
+  if(isMyTurn){ $('inp-who-guess').value=''; sfx.turn(); vib(80); }
   else {
     $('who-turn-name').textContent=activePlayerName||'—';
     const av=$('who-turn-avatar'); const c=avatarFor(activePlayerId||'?');
@@ -953,6 +1005,7 @@ socket.on('who:guess_submitted', ({playerId,playerName,text})=>{
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
 $('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:false}));
 socket.on('who:guess_result', ({playerName,correct,identity,points})=>{
+  if(correct){ sfx.correct(); vib([50,30,80]); } else { sfx.wrong(); vib(120); }
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
   it.innerHTML=correct?`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`:`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
   log.prepend(it);
@@ -964,3 +1017,30 @@ socket.on('who:game_over', ({scores})=>{
   show('s-who-over');
 });
 $('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
+
+/* ===== Score overlay flotante ===== */
+// Secciones en las que tiene sentido ver puntajes mid-game (excluyendo pantallas finales donde ya son visibles)
+const SCORE_SECTIONS = new Set(['s-imp-clue','s-imp-vote','s-imp-reveal','s-lie-claim','s-lie-naming','s-lie-final','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending']);
+let _lastScores = null, _currentSection = null;
+function _refreshScoreBtn(){ const ok=_lastScores&&_currentSection&&SCORE_SECTIONS.has(_currentSection); $('btn-scores-float').classList.toggle('hidden',!ok); }
+function _storeScores(scores){ if(scores&&scores.length){ _lastScores=scores; _refreshScoreBtn(); } }
+// Interceptar show() para rastrear sección actual
+const _origShow = show;
+show = function(id){ _origShow(id); _currentSection=id; _refreshScoreBtn(); };
+
+function openScoreOverlay(){
+  if(!_lastScores) return;
+  const body=$('scores-overlay-body'); body.innerHTML='';
+  _lastScores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; body.appendChild(r); });
+  $('scores-overlay').classList.remove('hidden');
+}
+$('btn-scores-float').addEventListener('click', openScoreOverlay);
+$('btn-scores-close').addEventListener('click', ()=>$('scores-overlay').classList.add('hidden'));
+$('scores-overlay').addEventListener('click', e=>{ if(e.target===$('scores-overlay')) $('scores-overlay').classList.add('hidden'); });
+
+// Capturar puntajes de todos los juegos que los emiten
+socket.on('imp:manga_over',({scores})=>_storeScores(scores));
+socket.on('lie:resolved',({scores})=>_storeScores(scores));
+socket.on('wave:reveal',({scores})=>_storeScores(scores));
+// Limpiar al volver al lobby — el servidor responde a host:new_session con room:update (status='lobby')
+socket.on('room:update',({status})=>{ if(status==='lobby'){ _lastScores=null; _currentSection=null; _refreshScoreBtn(); } });

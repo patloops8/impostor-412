@@ -2,10 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#070b10" />
-<title>412</title>
+<title>412 — Juegos de fútbol</title>
 <link rel="icon" href="data:,"/>
+<link rel="manifest" href="/manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="412" />
+<meta property="og:title" content="412 — Juegos de fútbol para jugar con amigos" />
+<meta property="og:description" content="El Impostor, Subasta Futbolera, Mentiroso, La Frecuencia y ¿Quién Soy? — 5 minijuegos para la próxima reunión." />
+<meta property="og:image" content="https://impostor-412.onrender.com/images/ui/fondo-estadio.jpg" />
+<meta property="og:url" content="https://impostor-412.onrender.com" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -55,6 +65,7 @@
         <button class="game-pick-card g-mentiroso" id="pick-mentiroso"><span class="game-pick-title">Mentiroso Futbolero</span><span class="game-pick-desc">Convence a todos de que tu respuesta es real.</span></button>
         <button class="game-pick-card g-wavelength" id="pick-wavelength"><span class="game-pick-title">La Frecuencia</span><span class="game-pick-desc">Sintoniza con el grupo en el debate futbolero.</span></button>
         <button class="game-pick-card g-who" id="pick-who"><span class="game-pick-title">¿Quién Soy?</span><span class="game-pick-desc">Todos ven tu identidad menos tú.</span></button>
+        <div class="game-pick-spacer"></div>
       </div>
 
       <!-- Config Impostor -->
@@ -261,6 +272,7 @@
     <div class="budget-bar">
       <div class="sub-stat"><div class="val" id="sub-budget">$500M</div><div class="lbl">presupuesto</div></div>
       <div class="sub-stat"><div class="val" id="sub-skips">5</div><div class="lbl">skips</div></div>
+      <div class="sub-stat"><div class="val" id="sub-team-count">0/11</div><div class="lbl">equipo</div></div>
       <div class="sub-stat"><div class="val" id="sub-counter">1/30</div><div class="lbl">carta</div></div>
     </div>
     <div class="silhouette-container">
@@ -472,6 +484,19 @@
   </section>
 
 </div>
+
+<!-- Score overlay: botón flotante + panel -->
+<button id="btn-scores-float" class="scores-float-btn hidden" aria-label="Ver puntajes">📊</button>
+<div id="scores-overlay" class="scores-overlay hidden" role="dialog" aria-label="Puntajes">
+  <div class="scores-overlay-panel">
+    <div class="scores-overlay-head">
+      <h3>Puntajes</h3>
+      <button id="btn-scores-close" class="scores-close-btn">✕</button>
+    </div>
+    <div id="scores-overlay-body"></div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="/app.js"></script>
 </body>
