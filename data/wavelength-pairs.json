@@ -176,27 +176,27 @@
     "right": "Jugador joven promesa sin rodaje"
   },
   {
-    "left": "Club con historia de títulos",
-    "right": "Club \"grande\" sin nada ganado"
+    "left": "Equipo Grande ",
+    "right": "Equipo chico "
   },
   {
-    "left": "Festejo de gol discreto, con respeto",
-    "right": "Festejo explosivo y provocador"
+    "left": "Festejo respestuoso ",
+    "right": "Festejo provocador"
   },
   {
     "left": "DT que confía en la cantera",
     "right": "DT que solo ficha caro de afuera"
   },
   {
-    "left": "Jugador que rinde en la altura",
-    "right": "Jugador que se ahoga en la altura"
+    "left": "Jugador que rinde en varias posisiones ",
+    "right": "Jugador que rinde en una pocisión"
   },
   {
-    "left": "Cancha de pasto impecable",
-    "right": "Cancha en muy mal estado"
+    "left": "Cancha que pesa ",
+    "right": "Cancha que no pesa "
   },
   {
-    "left": "Fútbol de selecciones (Mundial)",
-    "right": "Fútbol de clubes (Champions)"
+    "left": "Liga de gran nivel ",
+    "right": "Liga de mal nivel "
   }
 ]
