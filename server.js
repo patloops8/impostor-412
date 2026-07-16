@@ -879,7 +879,11 @@ function whoAdvanceTurn(r){
 }
 function finishWho(r){
   r.status='who_over';
-  io.to(r.code).emit('who:game_over',{ scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
+  const assigns=playersArr(r).map(p=>{
+    const a=r.who.assignments.get(p.id);
+    return { id:p.id, name:p.name, identity:a?.name||'?', category:a?.category||'?' };
+  });
+  io.to(r.code).emit('who:game_over',{ scores:publicPlayers(r).sort((a,b)=>b.score-a.score), assigns });
 }
 
 // Al reconectarse en medio de una partida, el jugador necesita que le reenvíen

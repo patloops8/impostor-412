@@ -124,7 +124,7 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-over','s-force-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-reveal','s-who-over','s-force-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -965,7 +965,7 @@ $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit
 
 /* ===================== ¿QUIÉN SOY? ===================== */
 const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT',equipo:'Equipo','selección':'Selección'};
-let whoTurnToken=0, whoIsMyTurn=false;
+let whoTurnToken=0, whoIsMyTurn=false, _whoRevealUntil=0;
 
 function renderWhoGrid(cards, activeId){
   const grid=$('who-grid'); grid.innerHTML='';
@@ -1004,6 +1004,7 @@ socket.on('who:state', ({cards,activePlayerId,activePlayerName,isMyTurn,isNextTu
       ['btn-who-si','btn-who-no','btn-who-talvez'].forEach(id=>$(id).disabled=false);
     }
   }
+  if(_whoRevealUntil && Date.now()<_whoRevealUntil) return; // mostrando identidad al jugador eliminado
   show('s-who-board');
 });
 socket.on('who:question', ({playerName, text})=>{
@@ -1052,19 +1053,38 @@ socket.on('who:guess_submitted', ({playerId,playerName,text,guesserIsHost})=>{
 });
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
 $('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:false}));
-socket.on('who:guess_result', ({playerName,correct,identity,points,eliminated})=>{
+socket.on('who:guess_result', ({playerId,playerName,correct,identity,points,eliminated})=>{
   if(correct){ sfx.correct(); vib([50,30,80]); } else { sfx.wrong(); vib(120); }
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
   if(correct) it.innerHTML=`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`;
   else if(eliminated) it.innerHTML=`<span>💀 ${esc(playerName)} fue eliminado</span><span class="who">✗</span>`;
   else it.innerHTML=`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
   log.prepend(it);
+  // Si YO fui eliminado, mostrar mi identidad durante 3.5 s antes de volver al tablero
+  if(eliminated && playerId===myId){
+    $('who-guess-heading').textContent='💀 ¡Fallaste!';
+    $('who-guess-text').textContent=`Eras: ${identity||'?'}`;
+    $('who-host-validate').classList.add('hidden');
+    $('who-validate-wait').classList.add('hidden');
+    show('s-who-guess-pending');
+    _whoRevealUntil=Date.now()+3500;
+    setTimeout(()=>{ _whoRevealUntil=0; show('s-who-board'); },3500);
+  }
 });
-socket.on('who:game_over', ({scores})=>{
+socket.on('who:game_over', ({scores,assigns})=>{
   renderScores('who-scoreboard', scores);
   $('btn-who-new').classList.toggle('hidden', !isHost);
   $('who-over-wait').classList.toggle('hidden', isHost);
-  showWinnerThen(scores,()=>show('s-who-over'),2.5);
+  // Mostrar tablero de identidades reveladas 4 s, luego overlay ganador, luego marcador
+  const grid=$('who-reveal-grid'); grid.innerHTML='';
+  (assigns||[]).forEach(a=>{
+    const div=document.createElement('div');
+    div.className='who-card'+(a.id===myId?' mine':'');
+    div.innerHTML=`<div class="who-owner">${esc(a.name)}${a.id===myId?' (tú)':''}</div><div class="who-identity">${esc(a.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[a.category]||a.category)}</div>`;
+    grid.appendChild(div);
+  });
+  show('s-who-reveal');
+  setTimeout(()=>showWinnerThen(scores,()=>show('s-who-over')), 4000);
 });
 $('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
 
