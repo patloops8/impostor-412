@@ -503,10 +503,19 @@
     <p id="who-over-wait" class="hidden">Esperando al anfitrión...</p>
   </section>
 
+  <section id="s-force-over" class="hidden center-flex">
+    <p class="eyebrow">Partida terminada</p>
+    <h1 style="font-size:1.8rem;">Resultado Final</h1>
+    <div class="card" style="width:100%;" id="force-over-scoreboard"></div>
+    <button class="btn-primary hidden" id="btn-force-over-new" style="width:100%;">Nueva partida</button>
+    <p id="force-over-wait" class="hidden">Esperando al anfitrión...</p>
+  </section>
+
 </div>
 
 <!-- Score overlay: botón flotante + panel -->
 <button id="btn-scores-float" class="scores-float-btn hidden" aria-label="Ver puntajes">📊</button>
+<button id="btn-force-end" class="force-end-btn hidden" aria-label="Terminar partida">⏹</button>
 <div id="scores-overlay" class="scores-overlay hidden" role="dialog" aria-label="Puntajes">
   <div class="scores-overlay-panel">
     <div class="scores-overlay-head">

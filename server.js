@@ -85,7 +85,7 @@ function newRoom(code, hostId) {
     },
     whoConfig: { categories: ['futbolista','dt','equipo','selección'] },
     who: {
-      order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), pendingGuess:null,
+      order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), failed:new Set(), pendingGuess:null,
     },
   };
 }
@@ -183,6 +183,7 @@ function remapPlayerId(r, oldId, newId){
   r.who.order = swapArr(r.who.order);
   swapKey(r.who.assignments);
   if (r.who.revealed.has(oldId)){ r.who.revealed.delete(oldId); r.who.revealed.add(newId); }
+  if (r.who.failed.has(oldId))  { r.who.failed.delete(oldId);   r.who.failed.add(newId);   }
   if (r.who.pendingGuess?.playerId===oldId) r.who.pendingGuess.playerId=newId;
 }
 
@@ -198,7 +199,7 @@ function startManga(r){
   for (const p of r.players.values()) p.alive = true;
   for (const [id] of r.players.entries()){
     const isI = r.impostorIds.has(id);
-    io.to(id).emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:isI?null:r.concept.category, concept:isI?null:r.concept.name });
+    io.to(id).emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:r.concept.category, concept:isI?null:r.concept.name });
   }
   // startClue primero: cambia r.status a 'imp_clue' ANTES de emitRoom,
   // así los clientes no reciben room:update con status='lobby' y no los manda al lobby
@@ -817,19 +818,19 @@ function startWhoSession(r){
   ids.forEach((id,i)=> r.who.assignments.set(id, usable[i % usable.length]));
   r.who.order = shuffle(ids);
   r.who.turnIndex = 0; r.who.turnToken = 0;
-  r.who.revealed = new Set(); r.who.pendingGuess = null;
+  r.who.revealed = new Set(); r.who.failed = new Set(); r.who.pendingGuess = null;
   r.status = 'who_turn';
   emitWhoState(r);
 }
 const whoActiveId = r => r.who.order.length ? r.who.order[r.who.turnIndex % r.who.order.length] : null;
-const whoRemaining = r => playersArr(r).filter(p=>!r.who.revealed.has(p.id));
+const whoRemaining = r => playersArr(r).filter(p=>!r.who.revealed.has(p.id)&&!r.who.failed.has(p.id));
 function whoNextId(r){
   const order=r.who.order; if(order.length<2) return null;
   const activeIdx=r.who.turnIndex%order.length;
   for(let i=1;i<=order.length;i++){
     const cand=order[(activeIdx+i)%order.length];
     const p=r.players.get(cand);
-    if(p&&p.connected&&!r.who.revealed.has(cand)) return cand;
+    if(p&&p.connected&&!r.who.revealed.has(cand)&&!r.who.failed.has(cand)) return cand;
   }
   return null;
 }
@@ -841,9 +842,10 @@ function whoStateFor(r, pid){
   const cards = playersArr(r).map(p=>{
     const mine = p.id===pid;
     const revealed = r.who.revealed.has(p.id);
+    const failed  = r.who.failed.has(p.id);
     const assign = r.who.assignments.get(p.id);
-    if(mine && !revealed) return { id:p.id, name:p.name, hidden:true };
-    return { id:p.id, name:p.name, hidden:false, identity:assign?.name, category:assign?.category };
+    if(mine && !revealed && !failed) return { id:p.id, name:p.name, hidden:true };
+    return { id:p.id, name:p.name, hidden:false, failed, identity:assign?.name, category:assign?.category };
   });
   const nextId = whoNextId(r);
   return { cards, activePlayerId:activeId, activePlayerName:activeName,
@@ -872,7 +874,7 @@ function whoAdvanceTurn(r){
   let attempts=0;
   do{
     r.who.turnIndex=(r.who.turnIndex+1)%order.length; attempts++;
-  } while((r.who.revealed.has(order[r.who.turnIndex])||!r.players.get(order[r.who.turnIndex])?.connected) && attempts<=order.length);
+  } while((r.who.revealed.has(order[r.who.turnIndex])||r.who.failed.has(order[r.who.turnIndex])||!r.players.get(order[r.who.turnIndex])?.connected) && attempts<=order.length);
   emitWhoState(r);
 }
 function finishWho(r){
@@ -891,7 +893,7 @@ function sendResumeState(r, socket){
     case 'imp_reveal':
     case 'imp_manga_over': {
       const isI=r.impostorIds.has(pid);
-      socket.emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:isI?null:r.concept?.category, concept:isI?null:r.concept?.name });
+      socket.emit('imp:role', { isImpostor:isI, impostorCount:r.impostorIds.size, category:r.concept?.category, concept:isI?null:r.concept?.name });
       socket.emit('imp:manga_started', { mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, impostorCount:r.impostorIds.size });
       if(r.status==='imp_clue'){
         socket.emit('imp:round', { roundNumber:r.roundNumber, currentTurnPlayerId:r.clueOrder[0]||null });
@@ -1227,15 +1229,23 @@ io.on('connection', socket => {
     let points=0;
     if(correct){
       r.who.revealed.add(guesserId);
-      // Puntaje por orden de llegada: el primero en adivinar se lleva tantos
-      // puntos como jugadores haya, el segundo uno menos, y asi hasta 1.
-      const position=r.who.revealed.size; // 1er, 2do, 3er... en adivinar
+      const position=r.who.revealed.size;
       points=Math.max(1, r.players.size - position + 1);
       const p=r.players.get(guesserId); if(p)p.score+=points;
+    } else {
+      // Fallo = eliminado: no podrá intentar de nuevo ni le toca turno
+      r.who.failed.add(guesserId);
     }
     r.who.pendingGuess=null; r.status='who_turn';
-    io.to(r.code).emit('who:guess_result',{ playerId:guesserId, playerName:r.players.get(guesserId)?.name, correct, identity: r.who.assignments.get(guesserId)?.name, points });
+    io.to(r.code).emit('who:guess_result',{ playerId:guesserId, playerName:r.players.get(guesserId)?.name, correct, identity: r.who.assignments.get(guesserId)?.name, points, eliminated: !correct });
     whoAdvanceTurn(r);
+  });
+
+  socket.on('host:force_end', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    clearLieTimer(r); clearSubTimer(r);
+    const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
+    io.to(r.code).emit('game:force_over',{ scores });
   });
 
   socket.on('host:new_session', ({code}) => {
@@ -1245,7 +1255,7 @@ io.on('connection', socket => {
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
     r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
-    r.who={order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),pendingGuess:null};
+    r.who={order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),failed:new Set(),pendingGuess:null};
     // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
     // y nunca volvieron. Si no, se quedan ocupando su nombre para siempre.
     for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);

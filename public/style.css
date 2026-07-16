@@ -290,6 +290,10 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .team-slot .player-name{font-weight:700;color:var(--ink);}
 .team-slot .player-price{font-family:var(--mono);font-size:0.72rem;color:var(--neon);font-variant-numeric:tabular-nums;}
 
+/* ===== Force-end flotante (solo host) ===== */
+.force-end-btn{position:fixed;bottom:24px;left:18px;z-index:90;width:48px;height:48px;border-radius:50%;background:var(--red);border:none;font-size:1.2rem;box-shadow:0 4px 16px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:0;transition:transform .15s,opacity .15s;}
+.force-end-btn:hover{transform:scale(1.1);opacity:0.85;}
+
 /* ===== Score overlay flotante ===== */
 .scores-float-btn{position:fixed;bottom:24px;right:18px;z-index:90;width:48px;height:48px;border-radius:50%;background:var(--card);border:1px solid var(--line2);font-size:1.3rem;box-shadow:0 4px 16px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:0;transition:transform .15s,box-shadow .15s;}
 .scores-float-btn:hover{transform:scale(1.1);box-shadow:0 6px 22px rgba(0,0,0,0.6);}
@@ -340,6 +344,8 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .who-card.active{border-color:var(--deepblue);box-shadow:0 0 0 1px var(--deepblue), 0 0 14px rgba(37,99,235,0.25);}
 .who-card.mine{border-style:dashed;}
 .who-card.revealed{border-color:var(--neon-dim);}
+.who-card.failed{opacity:0.45;border-color:var(--red);border-style:dashed;}
+.who-card.failed .who-hidden-glyph{color:var(--red);}
 .who-card .who-owner{font-size:0.68rem;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
 .who-card .who-identity{font-family:var(--display);font-weight:700;font-size:0.92rem;color:var(--ink);line-height:1.15;}
 .who-card .who-category{font-size:0.66rem;color:var(--deepblue);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;}

@@ -124,7 +124,7 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-over','s-force-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -313,7 +313,7 @@ socket.on('imp:manga_started',({mangaNumber,mangaCount})=>{ impManga={n:mangaNum
 socket.on('imp:role',({isImpostor,impostorCount,category,concept})=>{
   acquireWakeLock();
   const card=$('imp-role-card');
-  if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'No sabes el concepto. Disimula.'; }
+  if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=`Categoría: ${category||'?'}. ${impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'Disimula.'}`; }
   else { card.className='role-card innocent'; $('imp-role-icon').textContent='⚽'; $('imp-role-label').textContent='Concepto ('+category+')'; $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Da una pista relacionada.`:'Da una pista relacionada, sin decirlo directo.'; }
   sfx.turn(); vib(100);
   show('s-imp-role');
@@ -969,7 +969,7 @@ function renderWhoGrid(cards, activeId){
   cards.forEach(c=>{
     const mine=c.id===myId;
     const div=document.createElement('div');
-    div.className='who-card'+(c.id===activeId?' active':'')+(mine?' mine':'')+(!c.hidden&&mine?' revealed':'');
+    div.className='who-card'+(c.id===activeId?' active':'')+(mine?' mine':'')+(!c.hidden&&mine?' revealed':'')+(c.failed?' failed':'');
     if(c.hidden){
       div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (tú)':''}</div><div class="who-hidden-glyph">?</div>`;
     } else {
@@ -1047,10 +1047,12 @@ socket.on('who:guess_submitted', ({playerId,playerName,text})=>{
 });
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
 $('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:false}));
-socket.on('who:guess_result', ({playerName,correct,identity,points})=>{
+socket.on('who:guess_result', ({playerName,correct,identity,points,eliminated})=>{
   if(correct){ sfx.correct(); vib([50,30,80]); } else { sfx.wrong(); vib(120); }
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
-  it.innerHTML=correct?`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`:`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
+  if(correct) it.innerHTML=`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`;
+  else if(eliminated) it.innerHTML=`<span>💀 ${esc(playerName)} fue eliminado</span><span class="who">✗</span>`;
+  else it.innerHTML=`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
   log.prepend(it);
 });
 socket.on('who:game_over', ({scores})=>{
@@ -1061,6 +1063,17 @@ socket.on('who:game_over', ({scores})=>{
 });
 $('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
 
+/* ===== Force-end button (host only) ===== */
+function _refreshForceBtn(){ const show=isHost&&_currentSection&&SCORE_SECTIONS.has(_currentSection); $('btn-force-end').classList.toggle('hidden',!show); }
+$('btn-force-end').addEventListener('click',()=>{ if(confirm('¿Terminar la partida ahora?')) socket.emit('host:force_end',{code:roomCode}); });
+socket.on('game:force_over',({scores})=>{
+  renderScores('force-over-scoreboard', scores);
+  $('btn-force-over-new').classList.toggle('hidden',!isHost);
+  $('force-over-wait').classList.toggle('hidden',isHost);
+  show('s-force-over');
+});
+$('btn-force-over-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
+
 /* ===== Score overlay flotante ===== */
 // Secciones en las que tiene sentido ver puntajes mid-game (excluyendo pantallas finales donde ya son visibles)
 const SCORE_SECTIONS = new Set(['s-imp-clue','s-imp-vote','s-imp-reveal','s-lie-claim','s-lie-naming','s-lie-final','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending']);
@@ -1069,7 +1082,7 @@ function _refreshScoreBtn(){ const ok=_lastScores&&_currentSection&&SCORE_SECTIO
 function _storeScores(scores){ if(scores&&scores.length){ _lastScores=scores; _refreshScoreBtn(); } }
 // Interceptar show() para rastrear sección actual
 const _origShow = show;
-show = function(id){ _origShow(id); _currentSection=id; _refreshScoreBtn(); };
+show = function(id){ _origShow(id); _currentSection=id; _refreshScoreBtn(); _refreshForceBtn(); };
 
 function openScoreOverlay(){
   if(!_lastScores) return;
@@ -1086,4 +1099,4 @@ socket.on('imp:manga_over',({scores})=>_storeScores(scores));
 socket.on('lie:resolved',({scores})=>_storeScores(scores));
 socket.on('wave:reveal',({scores})=>_storeScores(scores));
 // Limpiar al volver al lobby — el servidor responde a host:new_session con room:update (status='lobby')
-socket.on('room:update',({status})=>{ if(status==='lobby'){ _lastScores=null; _currentSection=null; _refreshScoreBtn(); } });
+socket.on('room:update',({status})=>{ if(status==='lobby'){ _lastScores=null; _currentSection=null; _refreshScoreBtn(); _refreshForceBtn(); } });
