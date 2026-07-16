@@ -516,6 +516,16 @@
 <!-- Score overlay: botón flotante + panel -->
 <button id="btn-scores-float" class="scores-float-btn hidden" aria-label="Ver puntajes">📊</button>
 <button id="btn-force-end" class="force-end-btn hidden" aria-label="Terminar partida">⏹</button>
+
+<!-- Winner overlay -->
+<div id="winner-overlay" class="hidden">
+  <div id="winner-confetti-container"></div>
+  <div class="winner-content">
+    <p class="winner-eyebrow-text">🏆 ¡Ganador!</p>
+    <h1 id="winner-name"></h1>
+    <p id="winner-score-label"></p>
+  </div>
+</div>
 <div id="scores-overlay" class="scores-overlay hidden" role="dialog" aria-label="Puntajes">
   <div class="scores-overlay-panel">
     <div class="scores-overlay-head">

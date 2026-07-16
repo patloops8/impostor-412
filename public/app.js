@@ -359,7 +359,8 @@ socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount
   $('btn-imp-next').textContent=isLastManga?'Volver al inicio':'Siguiente ronda';
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
-  show('s-imp-over');
+  if(isLastManga) showWinnerThen(scores,()=>show('s-imp-over'));
+  else show('s-imp-over');
 });
 $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_manga',{code:roomCode}); });
 function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
@@ -431,7 +432,8 @@ socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,ro
   $('btn-lie-next').textContent=isLastRound?'Volver al inicio':'Siguiente ronda';
   $('btn-lie-next').classList.toggle('hidden',!isHost);
   $('lie-over-wait').classList.toggle('hidden',isHost);
-  show('s-lie-over');
+  if(isLastRound) showWinnerThen(scores,()=>show('s-lie-over'));
+  else show('s-lie-over');
 });
 $('btn-lie-next').addEventListener('click',()=>{ if(lieLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_lie_round',{code:roomCode}); });
 
@@ -712,7 +714,7 @@ socket.on('sub:game_over',({mode,scores,formation,championName})=>{
   });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
-  show('s-sub-over');
+  showWinnerThen(scores,()=>show('s-sub-over'));
 });
 // Dibuja la alineación en una cancha. Las filas van de arriba (delanteros) a abajo (portero).
 const FORMATION_SLOTS={
@@ -956,7 +958,8 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   $('btn-wave-next').textContent = isLastRound ? 'Volver al inicio' : 'Siguiente ronda';
   $('btn-wave-next').classList.toggle('hidden', !isHost);
   $('wave-over-wait').classList.toggle('hidden', isHost);
-  show('s-wave-reveal');
+  if(isLastRound) showWinnerThen(scores,()=>show('s-wave-reveal'));
+  else show('s-wave-reveal');
 });
 $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });
 
@@ -1059,9 +1062,46 @@ socket.on('who:game_over', ({scores})=>{
   renderScores('who-scoreboard', scores);
   $('btn-who-new').classList.toggle('hidden', !isHost);
   $('who-over-wait').classList.toggle('hidden', isHost);
-  show('s-who-over');
+  showWinnerThen(scores,()=>show('s-who-over'));
 });
 $('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
+
+/* ===== Winner overlay ===== */
+function showWinnerThen(scores, cb) {
+  if (!scores || !scores.length) { cb(); return; }
+  const w = scores[0];
+  $('winner-name').textContent = w.name;
+  $('winner-score-label').textContent = w.score != null ? w.score + ' pts' : '';
+
+  const container = $('winner-confetti-container');
+  container.innerHTML = '';
+  const COLORS = ['#e9b949','#b6ff2e','#ff4d4d','#2563eb','#ffffff','#ff6b35','#c084fc'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    const isBall = i < 12;
+    el.className = 'confetti-piece';
+    const delay = (Math.random() * 2.2).toFixed(2);
+    const dur   = (2.8 + Math.random() * 2.2).toFixed(2);
+    const left  = (Math.random() * 100).toFixed(1);
+    if (isBall) {
+      el.style.cssText = `left:${left}%;font-size:${1.2 + Math.random() * 0.9}rem;animation-delay:${delay}s;animation-duration:${dur}s;`;
+      el.textContent = '⚽';
+    } else {
+      const size  = (5 + Math.random() * 9).toFixed(0);
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const br    = Math.random() < 0.5 ? '50%' : '2px';
+      el.style.cssText = `left:${left}%;width:${size}px;height:${size}px;background:${color};border-radius:${br};animation-delay:${delay}s;animation-duration:${dur}s;`;
+    }
+    container.appendChild(el);
+  }
+
+  $('winner-overlay').classList.remove('hidden');
+  setTimeout(() => {
+    $('winner-overlay').classList.add('hidden');
+    container.innerHTML = '';
+    cb();
+  }, 5000);
+}
 
 /* ===== Force-end button (host only) ===== */
 function _refreshForceBtn(){ const show=isHost&&_currentSection&&SCORE_SECTIONS.has(_currentSection); $('btn-force-end').classList.toggle('hidden',!show); }
@@ -1070,7 +1110,7 @@ socket.on('game:force_over',({scores})=>{
   renderScores('force-over-scoreboard', scores);
   $('btn-force-over-new').classList.toggle('hidden',!isHost);
   $('force-over-wait').classList.toggle('hidden',isHost);
-  show('s-force-over');
+  showWinnerThen(scores,()=>show('s-force-over'));
 });
 $('btn-force-over-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
 
