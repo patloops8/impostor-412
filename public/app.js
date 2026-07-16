@@ -1039,13 +1039,15 @@ $('btn-who-guess').addEventListener('click',()=>{
 });
 $('inp-who-guess').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-who-guess').click(); });
 
-socket.on('who:guess_submitted', ({playerId,playerName,text})=>{
+socket.on('who:guess_submitted', ({playerId,playerName,text,guesserIsHost})=>{
   $('who-guess-heading').textContent=`${playerName} dice que es...`;
   $('who-guess-text').textContent=text;
-  const amHost=isHost, amGuesser=playerId===myId;
-  $('who-host-validate').classList.toggle('hidden', !amHost);
-  $('who-validate-wait').classList.toggle('hidden', amHost);
-  $('who-validate-wait').textContent = amGuesser ? 'Esperando que el anfitrión confirme...' : 'Esperando al anfitrión...';
+  const amGuesser=playerId===myId;
+  // Puede validar: el host (si no es el que adivina), o cualquier no-adivinador si el host adivinó (1v1)
+  const canValidate = !amGuesser && (isHost || guesserIsHost);
+  $('who-host-validate').classList.toggle('hidden', !canValidate);
+  $('who-validate-wait').classList.toggle('hidden', canValidate);
+  $('who-validate-wait').textContent = amGuesser ? 'Esperando confirmación...' : 'Esperando al anfitrión...';
   show('s-who-guess-pending');
 });
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));

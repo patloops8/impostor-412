@@ -725,9 +725,9 @@ const WAVE_GUESS_S = 45;
 // Bandas de puntaje segun que tan cerca cayo la aguja (escala 0-100) del centro de la zona objetivo.
 function waveScore(target, guess){
   const d = Math.abs(target - guess);
-  if (d <= 4) return 4;
-  if (d <= 9) return 3;
-  if (d <= 16) return 2;
+  if (d <= 4) return 3;
+  if (d <= 9) return 2;
+  if (d <= 16) return 1;
   return 0;
 }
 function startWaveSession(r){
@@ -795,7 +795,7 @@ function resolveWaveRound(r){
     sum+=score; p.score+=score;
     results.push({id:p.id,name:p.name,value,score});
   }
-  const psychicScore = guessersAll.length ? Math.round(sum/guessersAll.length) : 0;
+  const psychicScore = guessersAll.length ? 2 * Math.round(sum/guessersAll.length) : 0;
   const psy=r.players.get(r.wave.psychicId);
   if(psy) psy.score+=psychicScore;
   r.status='wave_reveal';
@@ -1220,11 +1220,12 @@ io.on('connection', socket => {
     const clean=(text||'').trim(); if(!clean)return;
     r.who.pendingGuess={ playerId:socket.id, text:clean };
     r.status='who_guess_pending';
-    io.to(r.code).emit('who:guess_submitted',{ playerId:socket.id, playerName:r.players.get(socket.id)?.name, text:clean });
+    io.to(r.code).emit('who:guess_submitted',{ playerId:socket.id, playerName:r.players.get(socket.id)?.name, text:clean, guesserIsHost:socket.id===r.hostId });
   });
   socket.on('host:who_validate', ({code,correct}) => {
-    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='who_guess_pending')return;
+    const r=rooms.get(code); if(!r||r.status!=='who_guess_pending')return;
     const pg=r.who.pendingGuess; if(!pg)return;
+    if(socket.id===pg.playerId)return; // el que adivina no puede validarse a sí mismo
     const guesserId=pg.playerId;
     let points=0;
     if(correct){
