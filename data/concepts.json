@@ -1,2750 +1,3367 @@
 [
   {
     "name": "Aaron Ramsey",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 0
   },
   {
     "name": "Abedi Pelé",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 1
   },
   {
     "name": "Achraf Hakimi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 2
   },
   {
     "name": "Adriano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 3
   },
   {
     "name": "Adrien Rabiot",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 4
   },
   {
     "name": "Alan Shearer",
-    "category": "futbolista"
-  },
-  {
-    "name": "Alberto Gilardino",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 5
   },
   {
     "name": "Alejandro Balde",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 6
   },
   {
     "name": "Alessandro Bastoni",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 7
   },
   {
     "name": "Alessandro Del Piero",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 8
   },
   {
     "name": "Alessandro Nesta",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 9
   },
   {
     "name": "Alexis Mac Allister",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 10
   },
   {
     "name": "Alexis Sánchez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 11
   },
   {
     "name": "Alfredo Di Stéfano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 12
   },
   {
     "name": "Alisson Becker",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 13
   },
   {
     "name": "Alphonso Davies",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 14
   },
   {
     "name": "Alvaro Carreras",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 15
   },
   {
     "name": "Álvaro Morata",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 16
   },
   {
     "name": "André Schürrle",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 17
   },
   {
     "name": "Andrea Pirlo",
-    "category": "futbolista"
-  },
-  {
-    "name": "Andreas Brehme",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 18
   },
   {
     "name": "Andrés Guardado",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 19
   },
   {
     "name": "Andrés Iniesta",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 20
   },
   {
     "name": "Andriy Shevchenko",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 21
   },
   {
     "name": "Andy Robertson",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 22
   },
   {
     "name": "Ángel Di María",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 23
   },
   {
     "name": "Ansu Fati",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 24
   },
   {
     "name": "Anthony Gordon",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 25
   },
   {
     "name": "Antoine Griezmann",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 26
   },
   {
     "name": "Antonio Cassano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 27
   },
   {
     "name": "Antonio Rüdiger",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 28
   },
   {
     "name": "Antony",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 29
   },
   {
     "name": "Arda Güler",
-    "category": "futbolista"
-  },
-  {
-    "name": "Ariel Ortega",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 30
   },
   {
     "name": "Aritz Aduriz",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 31
   },
   {
     "name": "Arjen Robben",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 32
   },
   {
     "name": "Arturo Vidal",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 33
   },
   {
     "name": "Ashley Cole",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 34
   },
   {
     "name": "Aurélien Tchouaméni",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 35
   },
   {
     "name": "Axel Witsel",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 36
   },
   {
     "name": "Bastian Schweinsteiger",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 37
   },
   {
     "name": "Bebeto",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 38
   },
   {
     "name": "Benjamin Pavard",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 39
   },
   {
     "name": "Bernardo Silva",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 40
   },
   {
     "name": "Bixente Lizarazu",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 41
   },
   {
     "name": "Bobby Charlton",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 42
   },
   {
     "name": "Bobby Moore",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 43
   },
   {
     "name": "Bradley Barcola",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 44
   },
   {
     "name": "Breel Embolo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 45
   },
   {
     "name": "Bruno Fernandes",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 46
   },
   {
     "name": "Bruno Guimarães",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 47
   },
   {
     "name": "Bukayo Saka",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 48
   },
   {
     "name": "Cafu",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 49
   },
   {
     "name": "Careca",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 50
   },
   {
     "name": "Carles Puyol",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 51
   },
   {
     "name": "Carlos Tevez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 52
   },
   {
     "name": "Carlos Valderrama",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 53
   },
   {
     "name": "Carlos Vela",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 54
   },
   {
     "name": "Casemiro",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 55
   },
   {
     "name": "Cesc Fàbregas",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 56
   },
   {
     "name": "Christensen",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 57
   },
   {
     "name": "Christian Pulisic",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 58
   },
   {
     "name": "Christian Vieri",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 59
   },
   {
     "name": "Christopher Nkunku",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 60
   },
   {
     "name": "Ciro Immobile",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 61
   },
   {
     "name": "Clarence Seedorf",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 62
   },
   {
     "name": "Claudio Bravo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 63
   },
   {
     "name": "Claudio Caniggia",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 64
   },
   {
     "name": "Claudio Suárez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 65
   },
   {
     "name": "Clint Dempsey",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 66
   },
   {
     "name": "Cody Gakpo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 67
   },
   {
     "name": "Cole Palmer",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 68
   },
   {
     "name": "Cristian Romero",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 69
   },
   {
     "name": "Cristiano Ronaldo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 70
   },
   {
     "name": "Cuauhtémoc Blanco",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 71
   },
   {
     "name": "Cucurella",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 72
   },
   {
     "name": "Dani Alves",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 73
   },
   {
     "name": "Dani Carvajal",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 74
   },
   {
     "name": "Dani Olmo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 75
   },
   {
     "name": "Daniel Passarella",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 76
   },
   {
     "name": "Daniele De Rossi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 77
   },
   {
     "name": "Darwin Núñez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 78
   },
   {
     "name": "David Alaba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 79
   },
   {
     "name": "David Beckham",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 80
   },
   {
     "name": "David Ospina",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 81
   },
   {
     "name": "David Silva",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 82
   },
   {
     "name": "David Trezeguet",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 83
   },
   {
     "name": "David Villa",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 84
   },
   {
     "name": "Davor Šuker",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 85
   },
   {
     "name": "Dayot Upamecano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 86
   },
   {
     "name": "Declan Rice",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 87
   },
   {
     "name": "Deco",
-    "category": "futbolista"
-  },
-  {
-    "name": "Demetrio Albertini",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 88
   },
   {
     "name": "Dennis Bergkamp",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 89
   },
   {
     "name": "Denzel Dumfries",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 90
   },
   {
     "name": "Didier Deschamps",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 91
   },
   {
     "name": "Didier Drogba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 92
   },
   {
     "name": "Diego Forlán",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 93
   },
   {
     "name": "Diego Lugano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 94
   },
   {
     "name": "Diego Maradona",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 95
   },
   {
     "name": "Dino Zoff",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 96
   },
   {
     "name": "Diogo Jota",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 97
   },
   {
     "name": "Dries Mertens",
-    "category": "futbolista"
-  },
-  {
-    "name": "Dunga",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 98
   },
   {
     "name": "Eden Hazard",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 99
   },
   {
     "name": "Éder Militão",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 100
   },
   {
     "name": "Ederson",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 101
   },
   {
     "name": "Edgar Davids",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 102
   },
   {
     "name": "Edinson Cavani",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 103
   },
   {
     "name": "Edson Álvarez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 104
   },
   {
     "name": "Eduardo Camavinga",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 105
   },
   {
     "name": "Edwin van der Sar",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 106
   },
   {
     "name": "Elías Figueroa",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 107
   },
   {
     "name": "Emiliano Martínez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 108
   },
   {
     "name": "Emilio Butragueño",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 109
   },
   {
     "name": "Endrick",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 110
   },
   {
     "name": "Enzo Fernández",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 111
   },
   {
     "name": "Enzo Francescoli",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 112
   },
   {
     "name": "Eric Cantona",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 113
   },
   {
     "name": "Erick Lira",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 114
   },
   {
     "name": "Erling Haaland",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 115
   },
   {
     "name": "Esteban Cambiasso",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 116
   },
   {
     "name": "Eusébio",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 117
   },
   {
     "name": "Fabián Ruiz",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 118
   },
   {
     "name": "Fabio Cannavaro",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 119
   },
   {
     "name": "Fabio Grosso",
-    "category": "futbolista"
-  },
-  {
-    "name": "Faustino Asprilla",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 120
   },
   {
     "name": "Federico Chiesa",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 121
   },
   {
     "name": "Federico Valverde",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 122
   },
   {
     "name": "Ferenc Puskás",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 123
   },
   {
     "name": "Ferland Mendy",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 124
   },
   {
     "name": "Fermín Lopez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 125
   },
   {
     "name": "Fernando Hierro",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 126
   },
   {
     "name": "Fernando Muslera",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 127
   },
   {
     "name": "Fernando Redondo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 128
   },
   {
     "name": "Fernando Torres",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 129
   },
   {
     "name": "Ferran Torres",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 130
   },
   {
     "name": "Filippo Inzaghi",
-    "category": "futbolista"
-  },
-  {
-    "name": "Florent Malouda",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 131
   },
   {
     "name": "Florian Wirtz",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 132
   },
   {
     "name": "Francesco Totti",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 133
   },
   {
     "name": "Franck Ribéry",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 134
   },
   {
     "name": "Franco Baresi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 135
   },
   {
     "name": "Franco Mastantuono",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 136
   },
   {
     "name": "Frank Lampard",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 137
   },
   {
     "name": "Franz Beckenbauer",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 138
   },
   {
     "name": "Frenkie de Jong",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 139
   },
   {
     "name": "Gabriel Batistuta",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 140
   },
   {
     "name": "Gabriel Jesus",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 141
   },
   {
     "name": "Gareth Bale",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 142
   },
   {
     "name": "Garrincha",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 143
   },
   {
     "name": "Gary Lineker",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 144
   },
   {
     "name": "Gary Medel",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 145
   },
   {
     "name": "Gavi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 146
   },
   {
     "name": "Gennaro Gattuso",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 147
   },
   {
     "name": "George Best",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 148
   },
   {
     "name": "George Weah",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 149
   },
   {
     "name": "Gerard Martin",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 150
   },
   {
     "name": "Gerard Piqué",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 151
   },
   {
     "name": "Gerd Müller",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 152
   },
   {
     "name": "Gheorghe Hagi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 153
   },
   {
     "name": "Gianluca Zambrotta",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 154
   },
   {
     "name": "Gianluigi Buffon",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 155
   },
   {
     "name": "Gianluigi Donnarumma",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 156
   },
   {
     "name": "Gilberto Mora",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 157
   },
   {
     "name": "Giovani dos Santos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 158
   },
   {
     "name": "Giovanni Di Lorenzo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 159
   },
   {
     "name": "Gonzalo Higuaín",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 160
   },
   {
     "name": "Granit Xhaka",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 161
   },
   {
     "name": "Guillermo Ochoa",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 162
   },
   {
     "name": "Harry Kane",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 163
   },
   {
     "name": "Héctor Herrera",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 164
   },
   {
     "name": "Henrik Larsson",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 165
   },
   {
     "name": "Hernán Crespo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 166
   },
   {
     "name": "Hidetoshi Nakata",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 167
   },
   {
     "name": "Hirving Lozano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 168
   },
   {
     "name": "Hristo Stoichkov",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 169
   },
   {
     "name": "Hugo Lloris",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 170
   },
   {
     "name": "Hugo Sánchez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 171
   },
   {
     "name": "Hulk",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 172
   },
   {
     "name": "Ian Rush",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 173
   },
   {
     "name": "Ibrahim Konate",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 174
   },
   {
     "name": "Iker Casillas",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 175
   },
   {
     "name": "Ilkay Gündoğan",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 176
   },
   {
     "name": "Iñaki Williams",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 177
   },
   {
     "name": "Iñigo Martinez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 178
   },
   {
     "name": "Isco",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 179
   },
   {
     "name": "Iván Córdoba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 180
   },
   {
     "name": "Ivan Perišić",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 181
   },
   {
     "name": "Ivan Rakitić",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 182
   },
   {
     "name": "Ivan Toney",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 183
   },
   {
     "name": "Iván Zamorano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 184
   },
   {
     "name": "Jadon Sancho",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 185
   },
   {
     "name": "Jamal Musiala",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 186
   },
   {
     "name": "James Maddison",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 187
   },
   {
     "name": "James Rodríguez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 188
   },
   {
     "name": "Jamie Vardy",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 189
   },
   {
     "name": "Jan Oblak",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 190
   },
   {
     "name": "Jared Borgetti",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 191
   },
   {
     "name": "Javier Hernández (Chicharito)",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 192
   },
   {
     "name": "Javier Mascherano",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 193
   },
   {
     "name": "Javier Zanetti",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 194
   },
   {
     "name": "Jay-Jay Okocha",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 195
   },
   {
     "name": "Jean-Pierre Papin",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 196
   },
   {
     "name": "Jens Lehmann",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 197
   },
   {
     "name": "Jérôme Boateng",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 198
   },
   {
     "name": "Jesús \"Tecatito\" Corona",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 199
   },
   {
     "name": "Joan Garcia",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 200
   },
   {
     "name": "João Cancelo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 201
   },
   {
     "name": "João Félix",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 202
   },
   {
     "name": "Joaquín",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 203
   },
   {
     "name": "Joe Cole",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 204
   },
   {
     "name": "Johan Cruyff",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 205
   },
   {
     "name": "John Terry",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 206
   },
   {
     "name": "Jordi Alba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 207
   },
   {
     "name": "Jorge Campos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 208
   },
   {
     "name": "José María \"Guti\"",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 209
   },
   {
     "name": "Joshua Kimmich",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 210
   },
   {
     "name": "Joško Gvardiol",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 211
   },
   {
     "name": "Juan Cuadrado",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 212
   },
   {
     "name": "Juan Román Riquelme",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 213
   },
   {
     "name": "Jude Bellingham",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 214
   },
   {
     "name": "Jules Kounde",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 215
   },
   {
     "name": "Julián Álvarez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 216
   },
   {
     "name": "Julian Brandt",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 217
   },
   {
     "name": "Julian Quiñones",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 218
   },
   {
     "name": "Júlio César",
-    "category": "futbolista"
-  },
-  {
-    "name": "Jürgen Klinsmann",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 219
   },
   {
     "name": "Just Fontaine",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 220
   },
   {
     "name": "Kai Havertz",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 221
   },
   {
     "name": "Kaká",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 222
   },
   {
     "name": "Karim Adeyemi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 223
   },
   {
     "name": "Karim Benzema",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 224
   },
   {
     "name": "Karl-Heinz Rummenigge",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 225
   },
   {
     "name": "Keisuke Honda",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 226
   },
   {
     "name": "Kenny Dalglish",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 227
   },
   {
     "name": "Kevin De Bruyne",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 228
   },
   {
     "name": "Khvicha Kvaratskhelia",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 229
   },
   {
     "name": "Kingsley Coman",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 230
   },
   {
     "name": "Kobbie Mainoo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 231
   },
   {
     "name": "Koke",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 232
   },
   {
     "name": "Kylian Mbappé",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 233
   },
   {
     "name": "Lamine Yamal",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 234
   },
   {
     "name": "Landon Donovan",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 235
   },
   {
     "name": "Laurent Blanc",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 236
   },
   {
     "name": "Lautaro Martínez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 237
   },
   {
     "name": "Leon Goretzka",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 238
   },
   {
     "name": "Leroy Sané",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 239
   },
   {
     "name": "Lev Yashin",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 240
   },
   {
     "name": "Lilian Thuram",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 241
   },
   {
     "name": "Lionel Messi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 242
   },
   {
     "name": "Lorenzo Insigne",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 243
   },
   {
     "name": "Lorenzo Pellegrini",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 244
   },
   {
     "name": "Lothar Matthäus",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 245
   },
   {
     "name": "Lucas Hernández",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 246
   },
   {
     "name": "Lucas Paquetá",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 247
   },
   {
     "name": "Lúcio",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 248
   },
   {
     "name": "Luis Díaz",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 249
   },
   {
     "name": "Luis Enrique",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 250
   },
   {
     "name": "Luis Figo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 251
   },
   {
     "name": "Luis García",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 252
   },
   {
     "name": "Luis Suárez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 253
   },
   {
     "name": "Luka Modrić",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 254
   },
   {
     "name": "Manuel Akanji",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 255
   },
   {
     "name": "Manuel Neuer",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 256
   },
   {
     "name": "Marc Bernal",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 257
   },
   {
     "name": "Marc-André ter Stegen",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 258
   },
   {
     "name": "Marcel Desailly",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 259
   },
   {
     "name": "Marcelo",
-    "category": "futbolista"
-  },
-  {
-    "name": "Marcelo Salas",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 260
   },
   {
     "name": "Marco Asensio",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 261
   },
   {
     "name": "Marco Materazzi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 262
   },
   {
     "name": "Marco Reus",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 263
   },
   {
     "name": "Marco van Basten",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 264
   },
   {
     "name": "Marco Verratti",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 265
   },
   {
     "name": "Marcus Rashford",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 266
   },
   {
     "name": "Marcus Thuram",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 267
   },
   {
     "name": "Mario Balotelli",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 268
   },
   {
     "name": "Mario Götze",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 269
   },
   {
     "name": "Mario Kempes",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 270
   },
   {
     "name": "Mario Mandžukić",
-    "category": "futbolista"
-  },
-  {
-    "name": "Mario Yepes",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 271
   },
   {
     "name": "Marquinhos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 272
   },
   {
     "name": "Martin Ødegaard",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 273
   },
   {
     "name": "Mason Mount",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 274
   },
   {
     "name": "Mateo Kovačić",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 275
   },
   {
     "name": "Mats Hummels",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 276
   },
   {
     "name": "Matthijs de Ligt",
-    "category": "futbolista"
-  },
-  {
-    "name": "Mauricio Isla",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 277
   },
   {
     "name": "Memphis Depay",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 278
   },
   {
     "name": "Mesut Özil",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 279
   },
   {
     "name": "Michael Ballack",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 280
   },
   {
     "name": "Michael Carrick",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 281
   },
   {
     "name": "Michael Owen",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 282
   },
   {
     "name": "Michel Platini",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 283
   },
   {
     "name": "Mikel Oyarzabal",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 284
   },
   {
     "name": "Miroslav Klose",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 285
   },
   {
     "name": "Mohamed Salah",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 286
   },
   {
     "name": "N'Golo Kanté",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 287
   },
   {
     "name": "Neymar Jr.",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 288
   },
   {
     "name": "Niclas Füllkrug",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 289
   },
   {
     "name": "Nico Williams",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 290
   },
   {
     "name": "Nicolas Anelka",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 291
   },
   {
     "name": "Nicolás Otamendi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 292
   },
   {
     "name": "Nicolò Barella",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 293
   },
   {
     "name": "Oliver Kahn",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 294
   },
   {
     "name": "Olivier Giroud",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 295
   },
   {
     "name": "Ollie Watkins",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 296
   },
   {
     "name": "Oscar",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 297
   },
   {
     "name": "Oswaldo Sánchez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 298
   },
   {
     "name": "Ousmane Dembélé",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 299
   },
   {
     "name": "Pablo Aimar",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 300
   },
   {
     "name": "Paolo Maldini",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 301
   },
   {
     "name": "Paolo Rossi",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 302
   },
   {
     "name": "Park Ji-sung",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 303
   },
   {
     "name": "Patrice Evra",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 304
   },
   {
     "name": "Patrick Kluivert",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 305
   },
   {
     "name": "Patrick Vieira",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 306
   },
   {
     "name": "Pau Cubarsi",
-    "category": "futbolista"
-  },
-  {
-    "name": "Paul Gascoigne",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 307
   },
   {
     "name": "Paul Pogba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 308
   },
   {
     "name": "Paul Scholes",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 309
   },
   {
     "name": "Paulo Dybala",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 310
   },
   {
     "name": "Pavel Nedvěd",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 311
   },
   {
     "name": "Pavel Pardo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 312
   },
   {
     "name": "Pedri",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 313
   },
   {
     "name": "Pelé",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 314
   },
   {
     "name": "Pep Guardiola",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 315
   },
   {
     "name": "Pepe",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 316
   },
   {
     "name": "Pepe Reina",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 317
   },
   {
     "name": "Peter Crouch",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 318
   },
   {
     "name": "Peter Schmeichel",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 319
   },
   {
     "name": "Phil Foden",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 320
   },
   {
     "name": "Philipp Lahm",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 321
   },
   {
     "name": "Philippe Coutinho",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 322
   },
   {
     "name": "Pierre-Emerick Aubameyang",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 323
   },
   {
     "name": "Piotr Zieliński",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 324
   },
   {
     "name": "Presnel Kimpembe",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 325
   },
   {
     "name": "Radamel Falcao",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 326
   },
   {
     "name": "Rafael Leão",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 327
   },
   {
     "name": "Rafael Márquez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 328
   },
   {
     "name": "Raheem Sterling",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 329
   },
   {
     "name": "Randal Kolo Muani",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 330
   },
   {
     "name": "Raphaël Varane",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 331
   },
   {
     "name": "Raphinha",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 332
   },
   {
     "name": "Raúl González",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 333
   },
   {
     "name": "Raúl Jiménez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 334
   },
   {
     "name": "Reece James",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 335
   },
   {
     "name": "Renato Sanches",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 336
   },
   {
     "name": "René Higuita",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 337
   },
   {
     "name": "Richarlison",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 338
   },
   {
     "name": "Rio Ferdinand",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 339
   },
   {
     "name": "Rivaldo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 340
   },
   {
     "name": "Rivelino",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 341
   },
   {
     "name": "Riyad Mahrez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 342
   },
   {
     "name": "Robert Lewandowski",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 343
   },
   {
     "name": "Robert Pirès",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 344
   },
   {
     "name": "Roberto Baggio",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 345
   },
   {
     "name": "Roberto Carlos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 346
   },
   {
     "name": "Robin van Persie",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 347
   },
   {
     "name": "Rodri",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 348
   },
   {
     "name": "Rodrigo De Paul",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 349
   },
   {
     "name": "Rodrygo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 350
   },
   {
     "name": "Romário",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 351
   },
   {
     "name": "Romelu Lukaku",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 352
   },
   {
     "name": "Ronald Araujo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 353
   },
   {
     "name": "Ronald Araújo",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 354
   },
   {
     "name": "Ronaldinho",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 355
   },
   {
     "name": "Ronaldo Nazário",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 356
   },
   {
     "name": "Rúben Dias",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 357
   },
   {
     "name": "Rúben Neves",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 358
   },
   {
     "name": "Rudi Völler",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 359
   },
   {
     "name": "Rui Costa",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 360
   },
   {
     "name": "Ruud Gullit",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 361
   },
   {
     "name": "Ryan Giggs",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 362
   },
   {
     "name": "Sadio Mané",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 363
   },
   {
     "name": "Sami Khedira",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 364
   },
   {
     "name": "Samuel Eto'o",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 365
   },
   {
     "name": "Sandro Tonali",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 366
   },
   {
     "name": "Santi Cazorla",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 367
   },
   {
     "name": "Santiago Giménez",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 368
   },
   {
     "name": "Serge Gnabry",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 369
   },
   {
     "name": "Sergio Agüero",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 370
   },
   {
     "name": "Sergio Busquets",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 371
   },
   {
     "name": "Sergio Ramos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 372
   },
   {
     "name": "Sócrates",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 373
   },
   {
     "name": "Sol Campbell",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 374
   },
   {
     "name": "Son Heung-min",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 375
   },
   {
     "name": "Steven Gerrard",
-    "category": "futbolista"
-  },
-  {
-    "name": "Taffarel",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 376
   },
   {
     "name": "Ter Stegen",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 377
   },
   {
     "name": "Theo Hernández",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 378
   },
   {
     "name": "Theo Walcott",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 379
   },
   {
     "name": "Thiago Silva",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 380
   },
   {
     "name": "Thibaut Courtois",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 381
   },
   {
     "name": "Thierry Henry",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 382
   },
   {
     "name": "Thomas Müller",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 383
   },
   {
     "name": "Thomas Partey",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 384
   },
   {
     "name": "Timo Werner",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 385
   },
   {
     "name": "Toby Alderweireld",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 386
   },
   {
     "name": "Toni Kroos",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 387
   },
   {
     "name": "Trent Alexander-Arnold",
-    "category": "futbolista"
-  },
-  {
-    "name": "Ubaldo Fillol",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 388
   },
   {
     "name": "Victor Osimhen",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 389
   },
   {
     "name": "Víctor Valdés",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 390
   },
   {
     "name": "Vincent Kompany",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 391
   },
   {
     "name": "Vinícius Júnior",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 392
   },
   {
     "name": "Virgil van Dijk",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 393
   },
   {
     "name": "Vitinha",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 394
   },
   {
     "name": "Warren Zaïre-Emery",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 395
   },
   {
     "name": "Wayne Rooney",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 396
   },
   {
     "name": "Wesley Sneijder",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 397
   },
   {
     "name": "Weston McKennie",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 398
   },
   {
     "name": "William Carvalho",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 399
   },
   {
     "name": "William Saliba",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 400
   },
   {
     "name": "Willian",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 401
   },
   {
     "name": "Wojciech Szczęsny",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 402
   },
   {
     "name": "Xabi Alonso",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 403
   },
   {
     "name": "Xavi Hernández",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 404
   },
   {
     "name": "Xavi Simons",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 405
   },
   {
     "name": "Xherdan Shaqiri",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 406
   },
   {
     "name": "Yaya Touré",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 407
   },
   {
     "name": "Youri Tielemans",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 408
   },
   {
     "name": "Zico",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 409
   },
   {
     "name": "Zinedine Zidane",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 410
   },
   {
     "name": "Zlatan Ibrahimović",
-    "category": "futbolista"
+    "category": "futbolista",
+    "_idx": 411
   },
   {
     "name": "AC Milan",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 412
   },
   {
     "name": "Ajax",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 413
   },
   {
     "name": "Al-Ahly",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 414
   },
   {
     "name": "Al-Hilal",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 415
   },
   {
     "name": "Al-Ittihad",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 416
   },
   {
     "name": "Al-Nassr",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 417
   },
   {
     "name": "América de Cali",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 418
   },
   {
     "name": "Anderlecht",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 419
   },
   {
     "name": "Arsenal",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 420
   },
   {
     "name": "AS Mónaco",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 421
   },
   {
     "name": "AS Roma",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 422
   },
   {
     "name": "Aston Villa",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 423
   },
   {
     "name": "Atalanta",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 424
   },
   {
     "name": "Athletic Club",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 425
   },
   {
     "name": "Atlas",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 426
   },
   {
     "name": "Atlético de Madrid",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 427
   },
   {
     "name": "Atlético Mineiro",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 428
   },
   {
     "name": "Atlético Nacional",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 429
   },
   {
     "name": "Atlético San Luis",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 430
   },
   {
     "name": "AZ Alkmaar",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 431
   },
   {
     "name": "Barcelona SC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 432
   },
   {
     "name": "Bayer Leverkusen",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 433
   },
   {
     "name": "Bayern Múnich",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 434
   },
   {
     "name": "Benfica",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 435
   },
   {
     "name": "Beşiktaş",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 436
   },
   {
     "name": "Boca Juniors",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 437
   },
   {
     "name": "Borussia Dortmund",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 438
   },
   {
     "name": "Borussia Mönchengladbach",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 439
   },
   {
     "name": "Botafogo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 440
   },
   {
     "name": "Celta de Vigo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 441
   },
   {
     "name": "Celtic",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 442
   },
   {
     "name": "Cerro Porteño",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 443
   },
   {
     "name": "Chelsea FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 444
   },
   {
     "name": "Chivas de Guadalajara",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 445
   },
   {
     "name": "Club América",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 446
   },
   {
     "name": "Club Brugge",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 447
   },
   {
     "name": "Club León",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 448
   },
   {
     "name": "Club Olimpia",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 449
   },
   {
     "name": "Club Tijuana",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 450
   },
   {
     "name": "Colo-Colo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 451
   },
   {
     "name": "Corinthians",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 452
   },
   {
     "name": "Cruz Azul",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 453
   },
   {
     "name": "Cruzeiro",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 454
   },
   {
     "name": "CSKA Moscú",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 455
   },
   {
     "name": "Defensor Sporting",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 456
   },
   {
     "name": "Deportivo La Coruña",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 457
   },
   {
     "name": "Dynamo Kyiv",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 458
   },
   {
     "name": "Espanyol",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 459
   },
   {
     "name": "Estrella Roja de Belgrado",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 460
   },
   {
     "name": "Estudiantes de La Plata",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 461
   },
   {
     "name": "Everton",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 462
   },
   {
     "name": "FC Barcelona",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 463
   },
   {
     "name": "Fenerbahçe",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 464
   },
   {
     "name": "Feyenoord",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 465
   },
   {
     "name": "Fiorentina",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 466
   },
   {
     "name": "Flamengo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 467
   },
   {
     "name": "Fluminense",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 468
   },
   {
     "name": "Galatasaray",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 469
   },
   {
     "name": "Grêmio",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 470
   },
   {
     "name": "Hamburger SV",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 471
   },
   {
     "name": "Huracán",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 472
   },
   {
     "name": "Independiente",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 473
   },
   {
     "name": "Inter de Milán",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 474
   },
   {
     "name": "Inter Miami",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 475
   },
   {
     "name": "Internacional",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 476
   },
   {
     "name": "Juventus",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 477
   },
   {
     "name": "LA Galaxy",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 478
   },
   {
     "name": "LAFC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 479
   },
   {
     "name": "Lazio",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 480
   },
   {
     "name": "LDU Quito",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 481
   },
   {
     "name": "Leeds United",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 482
   },
   {
     "name": "Leicester City",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 483
   },
   {
     "name": "Liverpool FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 484
   },
   {
     "name": "LOSC Lille",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 485
   },
   {
     "name": "Manchester City",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 486
   },
   {
     "name": "Manchester United",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 487
   },
   {
     "name": "Millonarios",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 488
   },
   {
     "name": "Monterrey",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 489
   },
   {
     "name": "Nacional (Uruguay)",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 490
   },
   {
     "name": "Napoli",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 491
   },
   {
     "name": "New York City FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 492
   },
   {
     "name": "Newcastle United",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 493
   },
   {
     "name": "Newell's Old Boys",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 494
   },
   {
     "name": "Nottingham Forest",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 495
   },
   {
     "name": "OGC Nice",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 496
   },
   {
     "name": "Olympiacos",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 497
   },
   {
     "name": "Olympique de Marsella",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 498
   },
   {
     "name": "Olympique Lyonnais",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 499
   },
   {
     "name": "Pachuca",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 500
   },
   {
     "name": "Palmeiras",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 501
   },
   {
     "name": "Paris Saint-Germain",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 502
   },
   {
     "name": "Peñarol",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 503
   },
   {
     "name": "Porto",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 504
   },
   {
     "name": "PSV Eindhoven",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 505
   },
   {
     "name": "Puebla",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 506
   },
   {
     "name": "Pumas UNAM",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 507
   },
   {
     "name": "Querétaro",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 508
   },
   {
     "name": "Racing Club",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 509
   },
   {
     "name": "Rangers",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 510
   },
   {
     "name": "RB Leipzig",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 511
   },
   {
     "name": "RC Lens",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 512
   },
   {
     "name": "Real Betis",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 513
   },
   {
     "name": "Real Madrid",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 514
   },
   {
     "name": "Real Sociedad",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 515
   },
   {
     "name": "River Plate",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 516
   },
   {
     "name": "Rosario Central",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 517
   },
   {
     "name": "Sampdoria",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 518
   },
   {
     "name": "San Lorenzo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 519
   },
   {
     "name": "Santos FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 520
   },
   {
     "name": "Santos Laguna",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 521
   },
   {
     "name": "São Paulo FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 522
   },
   {
     "name": "Schalke 04",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 523
   },
   {
     "name": "Seattle Sounders",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 524
   },
   {
     "name": "Sevilla FC",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 525
   },
   {
     "name": "Shakhtar Donetsk",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 526
   },
   {
     "name": "Sporting Braga",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 527
   },
   {
     "name": "Sporting CP",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 528
   },
   {
     "name": "Stade Rennais",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 529
   },
   {
     "name": "Tigres UANL",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 530
   },
   {
     "name": "Toluca",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 531
   },
   {
     "name": "Torino",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 532
   },
   {
     "name": "Tottenham Hotspur",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 533
   },
   {
     "name": "Trabzonspor",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 534
   },
   {
     "name": "Udinese",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 535
   },
   {
     "name": "Universidad Católica",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 536
   },
   {
     "name": "Universidad de Chile",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 537
   },
   {
     "name": "Valencia CF",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 538
   },
   {
     "name": "Vasco da Gama",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 539
   },
   {
     "name": "Vélez Sarsfield",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 540
   },
   {
     "name": "VfB Stuttgart",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 541
   },
   {
     "name": "Villarreal CF",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 542
   },
   {
     "name": "Vitória de Guimarães",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 543
   },
   {
     "name": "Werder Bremen",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 544
   },
   {
     "name": "West Ham United",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 545
   },
   {
     "name": "Wolverhampton Wanderers",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 546
   },
   {
     "name": "Zenit San Petersburgo",
-    "category": "equipo"
+    "category": "equipo",
+    "_idx": 547
   },
   {
     "name": "Alemania",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 548
   },
   {
     "name": "Arabia Saudita",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 549
   },
   {
     "name": "Argelia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 550
   },
   {
     "name": "Argentina",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 551
   },
   {
     "name": "Australia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 552
   },
   {
     "name": "Austria",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 553
   },
   {
     "name": "Bélgica",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 554
   },
   {
     "name": "Bolivia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 555
   },
   {
     "name": "Bosnia y Herzegovina",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 556
   },
   {
     "name": "Brasil",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 557
   },
   {
     "name": "Cabo Verde",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 558
   },
   {
     "name": "Camerún",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 559
   },
   {
     "name": "Canadá",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 560
   },
   {
     "name": "Catar",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 561
   },
   {
     "name": "Chile",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 562
   },
   {
     "name": "China",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 563
   },
   {
     "name": "Colombia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 564
   },
   {
     "name": "Corea del Sur",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 565
   },
   {
     "name": "Costa de Marfil",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 566
   },
   {
     "name": "Costa Rica",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 567
   },
   {
     "name": "Croacia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 568
   },
   {
     "name": "Dinamarca",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 569
   },
   {
     "name": "Ecuador",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 570
   },
   {
     "name": "Egipto",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 571
   },
   {
     "name": "El Salvador",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 572
   },
   {
     "name": "Escocia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 573
   },
   {
     "name": "Eslovaquia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 574
   },
   {
     "name": "Eslovenia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 575
   },
   {
     "name": "España",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 576
   },
   {
     "name": "Estados Unidos",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 577
   },
   {
     "name": "Finlandia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 578
   },
   {
     "name": "Francia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 579
   },
   {
     "name": "Gales",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 580
   },
   {
     "name": "Ghana",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 581
   },
   {
     "name": "Grecia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 582
   },
   {
     "name": "Guatemala",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 583
   },
   {
     "name": "Honduras",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 584
   },
   {
     "name": "Hungría",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 585
   },
   {
     "name": "Inglaterra",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 586
   },
   {
     "name": "Irán",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 587
   },
   {
     "name": "Irlanda",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 588
   },
   {
     "name": "Islandia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 589
   },
   {
     "name": "Israel",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 590
   },
   {
     "name": "Italia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 591
   },
   {
     "name": "Jamaica",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 592
   },
   {
     "name": "Japón",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 593
   },
   {
     "name": "Marruecos",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 594
   },
   {
     "name": "México",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 595
   },
   {
     "name": "Nigeria",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 596
   },
   {
     "name": "Noruega",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 597
   },
   {
     "name": "Nueva Zelanda",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 598
   },
   {
     "name": "Países Bajos",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 599
   },
   {
     "name": "Panamá",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 600
   },
   {
     "name": "Paraguay",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 601
   },
   {
     "name": "Perú",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 602
   },
   {
     "name": "Polonia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 603
   },
   {
     "name": "Portugal",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 604
   },
   {
     "name": "RD Congo",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 605
   },
   {
     "name": "República Checa",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 606
   },
   {
     "name": "Rumania",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 607
   },
   {
     "name": "Rusia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 608
   },
   {
     "name": "Senegal",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 609
   },
   {
     "name": "Serbia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 610
   },
   {
     "name": "Sudáfrica",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 611
   },
   {
     "name": "Suecia",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 612
   },
   {
     "name": "Suiza",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 613
   },
   {
     "name": "Túnez",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 614
   },
   {
     "name": "Turquía",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 615
   },
   {
     "name": "Ucrania",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 616
   },
   {
     "name": "Uruguay",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 617
   },
   {
     "name": "Venezuela",
-    "category": "selección"
+    "category": "selección",
+    "_idx": 618
   },
   {
     "name": "Antonio Conte",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 619
   },
   {
     "name": "Arsène Wenger",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 620
   },
   {
     "name": "Carlo Ancelotti",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 621
   },
   {
     "name": "Carlos Bilardo",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 622
   },
   {
     "name": "Cesare Maldini",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 623
   },
   {
     "name": "Didier Deschamps",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 624
   },
   {
     "name": "Diego Maradona",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 625
   },
   {
     "name": "Diego Simeone",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 626
   },
   {
     "name": "Erik ten Hag",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 627
   },
   {
     "name": "Fernando Santos",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 628
   },
   {
     "name": "Frank Lampard",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 629
   },
   {
     "name": "Frank Rijkaard",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 630
   },
   {
     "name": "Gareth Southgate",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 631
   },
   {
     "name": "Gerardo Martino (Tata Martino)",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 632
   },
   {
     "name": "Graham Potter",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 633
   },
   {
     "name": "Hansi Flick",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 634
   },
   {
     "name": "Hugo Sánchez",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 635
   },
   {
     "name": "Javier Aguirre",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 636
   },
   {
     "name": "Joachim Löw",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 637
   },
   {
     "name": "Johan Cruyff",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 638
   },
   {
     "name": "Jorge Sampaoli",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 639
   },
   {
     "name": "José Mourinho",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 640
   },
   {
     "name": "Julian Nagelsmann",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 641
   },
   {
     "name": "Jürgen Klopp",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 642
   },
   {
     "name": "Laurent Blanc",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 643
   },
   {
     "name": "Lionel Scaloni",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 644
   },
   {
     "name": "Louis van Gaal",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 645
   },
   {
     "name": "Luciano Spalletti",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 646
   },
   {
     "name": "Luis Aragonés",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 647
   },
   {
     "name": "Luis Enrique",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 648
   },
   {
     "name": "Marcelo Bielsa",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 649
   },
   {
     "name": "Marcelo Gallardo",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 650
   },
   {
     "name": "Massimiliano Allegri",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 651
   },
   {
     "name": "Mauricio Pochettino",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 652
   },
   {
     "name": "Miguel Herrera",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 653
   },
   {
     "name": "Mikel Arteta",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 654
   },
   {
     "name": "Néstor Lorenzo",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 655
   },
   {
     "name": "Patrick Vieira",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 656
   },
   {
     "name": "Pep Guardiola",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 657
   },
   {
     "name": "Rafael Benítez",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 658
   },
   {
     "name": "Ricardo Gareca",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 659
   },
   {
     "name": "Roberto Mancini",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 660
   },
   {
     "name": "Roberto Martínez",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 661
   },
   {
     "name": "Ronald Koeman",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 662
   },
   {
     "name": "Sir Alex Ferguson",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 663
   },
   {
     "name": "Steven Gerrard",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 664
   },
   {
     "name": "Thiago Motta",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 665
   },
   {
     "name": "Thomas Tuchel",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 666
   },
   {
     "name": "Tite",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 667
   },
   {
     "name": "Unai Emery",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 668
   },
   {
     "name": "Vicente del Bosque",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 669
   },
   {
     "name": "Xabi Alonso",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 670
   },
   {
     "name": "Xavi Hernández",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 671
   },
   {
     "name": "Zinedine Zidane",
-    "category": "dt"
+    "category": "dt",
+    "_idx": 672
   }
 ]
