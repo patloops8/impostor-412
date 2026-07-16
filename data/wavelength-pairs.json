@@ -1,52 +1,202 @@
 [
-  { "left": "Club grande", "right": "Club chico" },
-  { "left": "Jugador que juega limpio", "right": "Jugador tramposo" },
-  { "left": "Gol de mucha suerte", "right": "Golazo de crack" },
-  { "left": "DT tranquilo en la banca", "right": "DT que explota en cada jugada" },
-  { "left": "Hincha fanático de toda la vida", "right": "Hincha de \"cuando gana no más\"" },
-  { "left": "Fichaje que valió la pena", "right": "Fichaje que fue un fracaso total" },
-  { "left": "Jugador que rinde en la selección", "right": "Jugador que solo rinde en su club" },
-  { "left": "Árbitro que deja jugar", "right": "Árbitro que para todo" },
-  { "left": "Equipo que juega bonito", "right": "Equipo que juega feo pero gana" },
-  { "left": "Jugador humilde", "right": "Jugador con el ego gigante" },
-  { "left": "Estadio con un ambiente increíble", "right": "Estadio sin nada de gente" },
-  { "left": "Camiseta hermosa", "right": "Camiseta espantosa" },
-  { "left": "Festejo de gol elegante", "right": "Festejo de gol ridículo" },
-  { "left": "Jugador que se cuida en la cancha", "right": "Jugador que entra a matar" },
-  { "left": "Relato apasionado", "right": "Relato aburrido" },
-  { "left": "Táctica ofensiva a muerte", "right": "Táctica ultra defensiva" },
-  { "left": "Comentarista objetivo", "right": "Comentarista fanático de un equipo" },
-  { "left": "Penal clarísimo", "right": "Penal inventado" },
-  { "left": "Jugador que rinde a los 38 años", "right": "Jugador que se retira joven" },
-  { "left": "Transferencia limpia y rápida", "right": "Transferencia con culebrón de meses" },
-  { "left": "DT que arriesga", "right": "DT que juega a no perder" },
-  { "left": "Rival histórico de toda la vida", "right": "Rival de ocasión sin historia" },
-  { "left": "Jugador de barrio, hecho a pulso", "right": "Jugador de cantera de club grande" },
-  { "left": "Gol en el descuento", "right": "Gol en el primer minuto" },
-  { "left": "Capitán que lidera con el ejemplo", "right": "Capitán solo por el brazalete" },
-  { "left": "Fútbol femenino de gran nivel", "right": "Fútbol femenino que recién arranca" },
-  { "left": "Selección con identidad de juego", "right": "Selección sin ninguna idea de juego" },
-  { "left": "Torneo con historia y prestigio", "right": "Torneo inventado sin arraigo" },
-  { "left": "Jugador que rinde en cualquier puesto", "right": "Jugador que solo sirve en un puesto" },
-  { "left": "Portero seguro", "right": "Portero que regala goles" },
-  { "left": "Lateral que ataca todo el partido", "right": "Lateral que solo defiende" },
-  { "left": "Delantero goleador nato", "right": "Delantero que la trabaja mucho y no la mete" },
-  { "left": "Prensa deportiva seria", "right": "Prensa deportiva puro circo" },
-  { "left": "Hinchada organizada y ruidosa", "right": "Hinchada tranquila y familiar" },
-  { "left": "Fútbol de potrero, callejero", "right": "Fútbol de academia, de formación" },
-  { "left": "Jugador mediático, todo redes", "right": "Jugador reservado, bajo perfil" },
-  { "left": "Clásico con historia centenaria", "right": "Clásico \"inventado\" por el marketing" },
-  { "left": "Liga competitiva y pareja", "right": "Liga con un equipo que gana siempre" },
-  { "left": "DT con gran carrera como jugador", "right": "DT que nunca jugó profesional" },
-  { "left": "Jugador criado y fiel al club", "right": "Jugador mercenario que solo busca el cheque" },
-  { "left": "Estilo de juego vistoso, de área a área", "right": "Estilo de juego especulativo, de resultado" },
-  { "left": "Hinchada que apoya en las malas", "right": "Hinchada que abandona cuando pierde" },
-  { "left": "VAR bien usado", "right": "VAR que arruina el espectáculo" },
-  { "left": "Jugador veterano con experiencia", "right": "Jugador joven promesa sin rodaje" },
-  { "left": "Club con historia de títulos", "right": "Club \"grande\" sin nada ganado" },
-  { "left": "Festejo de gol discreto, con respeto", "right": "Festejo explosivo y provocador" },
-  { "left": "DT que confía en la cantera", "right": "DT que solo ficha caro de afuera" },
-  { "left": "Jugador que rinde en la altura", "right": "Jugador que se ahoga en la altura" },
-  { "left": "Cancha de pasto impecable", "right": "Cancha en muy mal estado" },
-  { "left": "Fútbol de selecciones (Mundial)", "right": "Fútbol de clubes (Champions)" }
+  {
+    "left": "Club grande",
+    "right": "Club chico"
+  },
+  {
+    "left": "Jugador que juega limpio",
+    "right": "Jugador tramposo"
+  },
+  {
+    "left": "Gol de mucha suerte",
+    "right": "Golazo de crack"
+  },
+  {
+    "left": "DT tranquilo en la banca",
+    "right": "DT que explota en cada jugada"
+  },
+  {
+    "left": "Hincha fanático de toda la vida",
+    "right": "Hincha de \"cuando gana no más\""
+  },
+  {
+    "left": "Fichaje que valió la pena",
+    "right": "Fichaje que fue un fracaso total"
+  },
+  {
+    "left": "Jugador que rinde en la selección",
+    "right": "Jugador que solo rinde en su club"
+  },
+  {
+    "left": "Equipos que les perjudica el arbrito ",
+    "right": "Equipos favorecidos por el arbrito "
+  },
+  {
+    "left": "Equipo que juega bonito",
+    "right": "Equipo que juega feo pero gana"
+  },
+  {
+    "left": "Jugador humilde",
+    "right": "Jugador con el ego "
+  },
+  {
+    "left": "Estadio con Mistica ",
+    "right": "Estadio sin Mistica "
+  },
+  {
+    "left": "Camiseta hermosa",
+    "right": "Camiseta espantosa"
+  },
+  {
+    "left": "Gol elegante",
+    "right": "Gol feo"
+  },
+  {
+    "left": "Jugador limpio ",
+    "right": "Jugador que entra a matar"
+  },
+  {
+    "left": "Narracion historica ",
+    "right": "Narracion olvidable"
+  },
+  {
+    "left": "Equipo que propone ",
+    "right": "Equipo que se encierra "
+  },
+  {
+    "left": "Comentarista que cae bien",
+    "right": "Comentarista que cae mal "
+  },
+  {
+    "left": "Penal clarísimo",
+    "right": "Penal inventado"
+  },
+  {
+    "left": "Jugador que rinde a los 38",
+    "right": "Jugador que se retira joven"
+  },
+  {
+    "left": "Transferencia limpia y rápida",
+    "right": "Transferencia con culebrón de meses"
+  },
+  {
+    "left": "DT que arriesga",
+    "right": "DT que juega a no perder"
+  },
+  {
+    "left": "Rival histórico de toda la vida",
+    "right": "Rival de ocasión sin historia"
+  },
+  {
+    "left": "Jugador de barrio, hecho a pulso",
+    "right": "Jugador de cantera de club grande"
+  },
+  {
+    "left": "Gol en el descuento",
+    "right": "Gol en el primer minuto"
+  },
+  {
+    "left": "Capitán que lidera con el ejemplo",
+    "right": "Capitán solo por el brazalete"
+  },
+  {
+    "left": "Fútbol femenino de gran nivel",
+    "right": "Fútbol femenino que recién arranca"
+  },
+  {
+    "left": "Selección con identidad de juego",
+    "right": "Selección sin ninguna idea de juego"
+  },
+  {
+    "left": "Torneo con historia y prestigio",
+    "right": "Torneo inventado sin arraigo"
+  },
+  {
+    "left": "Jugador que rinde en cualquier puesto",
+    "right": "Jugador que solo sirve en un puesto"
+  },
+  {
+    "left": "Portero seguro",
+    "right": "Portero que regala goles"
+  },
+  {
+    "left": "Lateral que ataca todo el partido",
+    "right": "Lateral que solo defiende"
+  },
+  {
+    "left": "Delantero goleador nato",
+    "right": "Delantero que la trabaja mucho y no la mete"
+  },
+  {
+    "left": "Prensa deportiva seria",
+    "right": "Prensa deportiva puro circo"
+  },
+  {
+    "left": "Hinchada organizada y ruidosa",
+    "right": "Hinchada tranquila y familiar"
+  },
+  {
+    "left": "Fútbol de potrero, callejero",
+    "right": "Fútbol de academia, de formación"
+  },
+  {
+    "left": "Jugador mediático, todo redes",
+    "right": "Jugador reservado, bajo perfil"
+  },
+  {
+    "left": "Clásico con historia centenaria",
+    "right": "Clásico \"inventado\" por el marketing"
+  },
+  {
+    "left": "Liga competitiva y pareja",
+    "right": "Liga con un equipo que gana siempre"
+  },
+  {
+    "left": "DT con gran carrera como jugador",
+    "right": "DT que nunca jugó profesional"
+  },
+  {
+    "left": "Jugador criado y fiel al club",
+    "right": "Jugador mercenario que solo busca el cheque"
+  },
+  {
+    "left": "Estilo de juego vistoso, de área a área",
+    "right": "Estilo de juego especulativo, de resultado"
+  },
+  {
+    "left": "Hinchada que apoya en las malas",
+    "right": "Hinchada que abandona cuando pierde"
+  },
+  {
+    "left": "VAR bien usado",
+    "right": "VAR que arruina el espectáculo"
+  },
+  {
+    "left": "Jugador veterano con experiencia",
+    "right": "Jugador joven promesa sin rodaje"
+  },
+  {
+    "left": "Club con historia de títulos",
+    "right": "Club \"grande\" sin nada ganado"
+  },
+  {
+    "left": "Festejo de gol discreto, con respeto",
+    "right": "Festejo explosivo y provocador"
+  },
+  {
+    "left": "DT que confía en la cantera",
+    "right": "DT que solo ficha caro de afuera"
+  },
+  {
+    "left": "Jugador que rinde en la altura",
+    "right": "Jugador que se ahoga en la altura"
+  },
+  {
+    "left": "Cancha de pasto impecable",
+    "right": "Cancha en muy mal estado"
+  },
+  {
+    "left": "Fútbol de selecciones (Mundial)",
+    "right": "Fútbol de clubes (Champions)"
+  }
 ]
