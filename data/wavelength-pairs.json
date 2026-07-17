@@ -238,5 +238,49 @@
   {
     "left": "Gran Mundial",
     "right": "Mundial Normalito "
+  },
+  {
+    "left": "Buena final de Champions",
+    "right": "Mala final de Champions"
+  },
+  {
+    "left": "Jugador en gran momento",
+    "right": "Jugador en mal momento"
+  },
+  {
+    "left": "Buen equipo en la actulidad",
+    "right": "Mal equipo en la actualidad"
+  },
+  {
+    "left": "Buena seleccion en la actulidad",
+    "right": "Mala seleccion en la actulidad"
+  },
+  {
+    "left": "Jugador Calvo",
+    "right": "Jugador con mucho pelo"
+  },
+  {
+    "left": "Jugador Rapido",
+    "right": "Jugador Lento"
+  },
+  {
+    "left": "Jugador Sobrevalorado",
+    "right": "Jugador Infravalorado"
+  },
+  {
+    "left": "Buen DT en la actualidad",
+    "right": "Mal DT en la actualidad"
+  },
+  {
+    "left": "Buen clima para jugar futbol",
+    "right": "Mal clima para jugar futbol"
+  },
+  {
+    "left": "Opinion que todo el mundo cree, pero es mentira",
+    "right": "Opinion que casi nadie cree, pero es verdad"
+  },
+  {
+    "left": "Festejo con Aura",
+    "right": "Festejo Ridiculo"
   }
 ]
