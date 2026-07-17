@@ -226,5 +226,17 @@
   {
     "left": "Record imposible de superar",
     "right": "Record superable"
+  },
+  {
+    "left": "Equipo que merecia ganar alguna competicion",
+    "right": "Equipo que no se merecia ganar alguna copetición"
+  },
+  {
+    "left": "Joven promesa que prometia y cumplio",
+    "right": "Joven promesa que prometia y no cumplio"
+  },
+  {
+    "left": "Gran Mundial",
+    "right": "Mundial Normalito "
   }
 ]
