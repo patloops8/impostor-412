@@ -322,5 +322,13 @@
   {
     "left": "Jugador fiel a un equipo",
     "right": "Jugador con muchas transferencias"
+  },
+  {
+    "left": "Portero determinante",
+    "right": "Portero pecho frio"
+  },
+  {
+    "left": "Jugador con buena actuación en mundail",
+    "right": "Jugador con mala actuaacion en mundial"
   }
 ]
