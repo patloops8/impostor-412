@@ -659,8 +659,8 @@ socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,tota
   $('sub-duel-b-player').textContent=bCard?bCard.name:'(sin jugador)';
   $('sub-duel-a-media').style.display='none'; $('sub-duel-b-media').style.display='none';
   $('sub-duel-a-side').classList.remove('winner'); $('sub-duel-b-side').classList.remove('winner');
-  loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,positionLabel,false);
-  loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.cardId:null,positionLabel,false);
+  loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,positionLabel,true);
+  loadSil($('sub-duel-b-img'),$('sub-duel-b-ph'),null,bCard?bCard.cardId:null,positionLabel,true);
   const canVote=voterIds.includes(myId);
   duelAmInvolved=!canVote;
   $('sub-duel-can-vote').classList.toggle('hidden',!canVote);

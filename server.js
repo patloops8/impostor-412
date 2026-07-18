@@ -581,7 +581,7 @@ function nextDuelOrAdvance(r){
   if(b.alive.length===1){ finishTournament(r,b.alive[0]); return; }
   // Emparejar: ordenar vivos por OVR; si impares, el mejor OVR recibe bye
   const aliveSorted=b.alive.slice().sort((x,y)=>s.teams.get(y).ovr-s.teams.get(x).ovr);
-  if(!b.queue || b.queue.length===0){
+  if(b.queue == null){
     // Construir la cola de duelos para esta ronda
     let contenders=aliveSorted.slice();
     b.byes=[];
