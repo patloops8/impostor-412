@@ -750,7 +750,7 @@ function startWaveRound(r){
   r.wave.psychicId = r.wave.order[r.wave.orderIndex % r.wave.order.length];
   r.wave.orderIndex++;
   r.wave.pair = pickWavePair(r);
-  r.wave.target = 10 + Math.floor(Math.random()*81); // 10..90, deja margen para que las bandas no se corten
+  r.wave.target = Math.floor(Math.random()*101); // 0..100, puede quedar en los bordes
   r.wave.guesses = new Map();
   r.wave.clue = null;
   r.status='wave_psychic';
