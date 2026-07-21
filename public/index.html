@@ -107,6 +107,7 @@
       </div>
       <!-- Config ¿Quién Soy? -->
       <div id="cfg-who" class="hidden card" style="margin-top:14px;">
+        <div class="config-row"><label>Rondas</label><select id="cfg-who-rounds"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></div>
         <div class="config-row" style="flex-direction:column;align-items:flex-start;">
           <label>Categorías</label>
           <div class="category-checks" id="cfg-who-cats" style="margin-top:10px;"></div>
@@ -493,6 +494,14 @@
       <button class="vote-btn" id="btn-who-incorrect">Incorrecto ✗</button>
     </div>
     <p id="who-validate-wait" class="hidden" style="margin-top:14px;">Esperando al anfitrión...</p>
+  </section>
+
+  <section id="s-who-round-over" class="hidden center-flex">
+    <p class="eyebrow" id="who-round-label">Ronda 1 de 3</p>
+    <h1 style="font-size:1.6rem;">Marcador</h1>
+    <div class="card" style="width:100%;" id="who-round-scoreboard"></div>
+    <button class="btn-primary hidden" id="btn-who-next-round" style="width:100%;margin-top:16px;">Siguiente ronda ▶</button>
+    <p id="who-round-wait" class="hidden" style="margin-top:14px;">Esperando al anfitrión...</p>
   </section>
 
   <section id="s-who-reveal" class="hidden center-flex">

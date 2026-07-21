@@ -83,9 +83,9 @@ function newRoom(code, hostId) {
       roundNumber:0, order:[], orderIndex:0, psychicId:null, pair:null, target:null,
       usedPairIndexes:new Set(), guesses:new Map(), secondsLeft:0, deadlineAt:null,
     },
-    whoConfig: { categories: ['futbolista','dt','equipo','selección'] },
+    whoConfig: { categories: ['futbolista','dt','equipo','selección'], roundCount: 1 },
     who: {
-      order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), failed:new Set(), pendingGuess:null,
+      roundNumber:0, order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), failed:new Set(), pendingGuess:null,
     },
   };
 }
@@ -811,6 +811,7 @@ function resolveWaveRound(r){
 /* ===================== ¿QUIÉN SOY? ===================== */
 // Sin timers: el juego avanza turno a turno, una accion por vez.
 function startWhoSession(r){
+  r.who.roundNumber++;
   const pool = shuffle(CONCEPTS.filter(c=>r.whoConfig.categories.includes(c.category)));
   const usable = pool.length ? pool : shuffle(CONCEPTS.filter(c=>c.category==='futbolista'||c.category==='dt'));
   const ids = [...r.players.keys()];
@@ -878,12 +879,19 @@ function whoAdvanceTurn(r){
   emitWhoState(r);
 }
 function finishWho(r){
-  r.status='who_over';
   const assigns=playersArr(r).map(p=>{
     const a=r.who.assignments.get(p.id);
     return { id:p.id, name:p.name, identity:a?.name||'?', category:a?.category||'?' };
   });
-  io.to(r.code).emit('who:game_over',{ scores:publicPlayers(r).sort((a,b)=>b.score-a.score), assigns });
+  const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
+  const isLast = r.who.roundNumber >= r.whoConfig.roundCount;
+  if(isLast){
+    r.status='who_over';
+    io.to(r.code).emit('who:game_over',{ scores, assigns });
+  } else {
+    r.status='who_round_over';
+    io.to(r.code).emit('who:round_over',{ roundNumber:r.who.roundNumber, roundCount:r.whoConfig.roundCount, scores, assigns });
+  }
 }
 
 // Al reconectarse en medio de una partida, el jugador necesita que le reenvíen
@@ -1032,9 +1040,10 @@ io.on('connection', socket => {
     if(Number.isInteger(roundCount))r.waveConfig.roundCount=Math.min(Math.max(1,roundCount),20);
     emitRoom(r);
   });
-  socket.on('host:update_who_config', ({code,categories}) => {
+  socket.on('host:update_who_config', ({code,categories,roundCount}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
     if(Array.isArray(categories)){const v=categories.filter(c=>ALL_CATEGORIES.includes(c));r.whoConfig.categories=v.length?v:ALL_CATEGORIES.slice();}
+    if(Number.isInteger(roundCount))r.whoConfig.roundCount=Math.min(Math.max(1,roundCount),10);
     emitRoom(r);
   });
 
@@ -1199,6 +1208,10 @@ io.on('connection', socket => {
     if(r.wave.roundNumber>=r.waveConfig.roundCount)return;
     startWaveRound(r);
   });
+  socket.on('host:who_next_round', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.gameType!=='who'||r.status!=='who_round_over')return;
+    startWhoSession(r);
+  });
 
   // ¿Quién Soy?
   socket.on('player:who_question', ({code,text}) => {
@@ -1260,7 +1273,7 @@ io.on('connection', socket => {
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
     r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
-    r.who={order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),failed:new Set(),pendingGuess:null};
+    r.who={roundNumber:0,order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),failed:new Set(),pendingGuess:null};
     // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
     // y nunca volvieron. Si no, se quedan ocupando su nombre para siempre.
     for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);

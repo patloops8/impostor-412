@@ -124,7 +124,7 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-reveal','s-who-over','s-force-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-round-over','s-who-reveal','s-who-over','s-force-over'];
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -293,6 +293,7 @@ $('cfg-wave-rounds').addEventListener('change',sendWaveCfg);
 let whoCfgRendered=false;
 const WHO_CATS=['futbolista','dt','equipo','selección'];
 function renderWhoCfg(cfg){
+  $('cfg-who-rounds').value=String(cfg.roundCount||1);
   if(whoCfgRendered)return;
   const wrap=$('cfg-who-cats'); wrap.innerHTML='';
   WHO_CATS.forEach(cat=>{
@@ -303,7 +304,8 @@ function renderWhoCfg(cfg){
   });
   whoCfgRendered=true;
 }
-function sendWhoCfg(){ socket.emit('host:update_who_config',{code:roomCode,categories:[...document.querySelectorAll('#cfg-who-cats input:checked')].map(i=>i.value)}); }
+function sendWhoCfg(){ socket.emit('host:update_who_config',{code:roomCode,categories:[...document.querySelectorAll('#cfg-who-cats input:checked')].map(i=>i.value),roundCount:Number($('cfg-who-rounds').value)}); }
+$('cfg-who-rounds').addEventListener('change',sendWhoCfg);
 
 $('btn-start').addEventListener('click',()=>socket.emit('host:start_match',{code:roomCode}));
 
@@ -1071,6 +1073,23 @@ socket.on('who:guess_result', ({playerId,playerName,correct,identity,points,elim
     setTimeout(()=>{ _whoRevealUntil=0; show('s-who-board'); },3500);
   }
 });
+socket.on('who:round_over', ({roundNumber,roundCount,scores,assigns})=>{
+  _storeScores(scores);
+  renderScores('who-round-scoreboard', scores);
+  $('who-round-label').textContent=`Ronda ${roundNumber} de ${roundCount}`;
+  $('btn-who-next-round').classList.toggle('hidden', !isHost);
+  $('who-round-wait').classList.toggle('hidden', isHost);
+  const grid=$('who-reveal-grid'); grid.innerHTML='';
+  (assigns||[]).forEach(a=>{
+    const d=document.createElement('div'); d.className='who-card revealed';
+    d.innerHTML=`<span class="who-identity">${esc(a.identity)}</span><span class="who-cat">${esc(a.category)}</span><span class="who-player-name">${esc(a.name)}</span>`;
+    grid.appendChild(d);
+  });
+  show('s-who-reveal');
+  setTimeout(()=>show('s-who-round-over'), 4000);
+});
+$('btn-who-next-round').addEventListener('click',()=>socket.emit('host:who_next_round',{code:roomCode}));
+
 socket.on('who:game_over', ({scores,assigns})=>{
   renderScores('who-scoreboard', scores);
   $('btn-who-new').classList.toggle('hidden', !isHost);
