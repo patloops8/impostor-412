@@ -1371,6 +1371,18 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json({ok:true,count:req.body.length});
   });
 
+  // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
+  app.post('/admin/upload-image', adminAuth, (req,res)=>{
+    const { id, type, data } = req.body||{};
+    if(!id||!data||(type!=='real'&&type!=='silueta')) return res.status(400).json({error:'Faltan campos id/type/data'});
+    if(!/^[a-z0-9_]+$/.test(id)) return res.status(400).json({error:'id inválido'});
+    const folder = type==='real' ? 'reales' : 'siluetas';
+    const imgPath = path.join(__dirname,'public','images',folder,`${id}.png`);
+    const base64 = data.replace(/^data:image\/\w+;base64,/,'');
+    fs.writeFileSync(imgPath, Buffer.from(base64,'base64'));
+    res.json({ok:true, path:`/images/${folder}/${id}.png`});
+  });
+
   // Publica todos los archivos de datos en GitHub en un solo commit
   app.post('/admin/publish', adminAuth, async (req,res)=>{
     const token  = process.env.GITHUB_TOKEN;

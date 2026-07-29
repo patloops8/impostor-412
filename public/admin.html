@@ -116,19 +116,39 @@
   .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .add-row input,  .add-row select{flex:1;min-width:120px}
 
-  /* ---- CARD PREVIEW MODAL ---- */
-  #card-modal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:20px}
+  /* ---- CARD EDIT MODAL ---- */
+  #card-modal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
   #card-modal.open{display:flex}
-  .card-modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:620px;width:100%;position:relative}
-  .card-modal-box h3{font-size:16px;font-weight:700;margin-bottom:4px}
-  .card-modal-box .cm-meta{color:var(--soft);font-size:12px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap}
-  .cm-images{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .cm-img-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;align-items:center}
-  .cm-img-wrap span{font-size:11px;color:var(--soft);padding:8px 0 6px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
-  .cm-img-wrap img{width:100%;max-height:240px;object-fit:contain;background:var(--bg);display:block}
-  .cm-img-wrap .cm-missing{width:100%;height:180px;display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:12px;flex-direction:column;gap:6px}
+  .card-modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:700px;width:100%;position:relative;margin:auto}
   .cm-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--soft);font-size:18px;line-height:1;padding:4px 8px;cursor:pointer}
   .cm-close:hover{color:var(--text);border-color:var(--text)}
+  .cm-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-right:36px}
+  .cm-header h3{font-size:16px;font-weight:700;flex:1}
+  /* form */
+  .cm-form{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .cm-field-row{display:flex;flex-direction:column;gap:4px}
+  .cm-field-row>label,.cm-field-group>label{font-size:11px;color:var(--soft);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .cm-field-row input[type=text],.cm-field-row input[type=number],.cm-field-row select{width:100%}
+  .cm-row-multi{flex-direction:row;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .cm-field-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:70px}
+  .cm-troll-group{flex-direction:row !important;align-items:center;gap:8px;padding-bottom:7px;flex:0 0 auto}
+  .cm-troll-group input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--red)}
+  .cm-troll-group label{font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;margin:0}
+  .cm-id-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);margin-top:4px}
+  .cm-id-label{font-size:11px;color:var(--soft);white-space:nowrap}
+  .cm-id-val{font-size:11px;color:var(--soft);font-family:monospace;flex:1}
+  #cm-id-input{font-family:monospace;font-size:12px;flex:1}
+  /* images */
+  .cm-images{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .cm-img-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;align-items:center}
+  .cm-img-wrap>span{font-size:11px;color:var(--soft);padding:7px 0 5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .cm-img-wrap img{width:100%;max-height:200px;object-fit:contain;background:var(--bg);display:block}
+  .cm-missing{width:100%;height:140px;display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:12px;flex-direction:column;gap:4px}
+  .cm-upload-btn{display:block;width:100%;text-align:center;padding:7px;font-size:11px;font-weight:600;color:var(--soft);cursor:pointer;border-top:1px solid var(--border);transition:color .15s,background .15s}
+  .cm-upload-btn:hover{color:var(--blue);background:rgba(79,195,247,.06)}
+  /* footer */
+  .cm-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:4px}
+  /* grid cards */
   .sub-card{cursor:pointer;transition:border-color .15s,transform .1s}
   .sub-card:hover{border-color:var(--blue);transform:translateY(-1px)}
 
@@ -258,7 +278,7 @@
   <div class="toolbar">
     <div>
       <h2>Cartas — Subasta Futbolera</h2>
-      <p>Solo lectura. Para editar los jugadores de Subasta, actualiza el Excel y ejecuta el script de importación.</p>
+      <p>Haz clic en una carta para editarla. Toca "+ Nueva carta" para agregar una.</p>
     </div>
     <div class="export-group">
       <button class="btn-export" id="copy-subasta">📋 Copiar lista</button>
@@ -266,6 +286,8 @@
       <button class="btn-export" id="dl-subasta-excel">📊 Descargar Excel</button>
       <label class="btn-export" id="lbl-import-subasta" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-subasta-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
+    <button class="btn btn-ghost" id="btn-new-card">+ Nueva carta</button>
+    <button class="btn btn-primary" id="save-subasta" disabled>Guardar cambios</button>
   </div>
   <div class="filter-row">
     <input type="text" id="search-subasta" placeholder="Buscar jugador…">
@@ -293,21 +315,80 @@
   <div id="sub-grid" class="sub-card-grid"></div>
 </div>
 
-<!-- Card preview modal -->
+<!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
     <button class="cm-close" id="cm-close">✕</button>
-    <h3 id="cm-title"></h3>
-    <div class="cm-meta" id="cm-meta"></div>
+    <div class="cm-header">
+      <h3 id="cm-title-display"></h3>
+      <button class="btn btn-danger btn-sm" id="cm-delete">🗑 Eliminar</button>
+    </div>
+
+    <div class="cm-form">
+      <div class="cm-field-row">
+        <label>Nombre</label>
+        <input type="text" id="cm-name" placeholder="Nombre del jugador  ej: Pedri">
+      </div>
+      <div class="cm-field-row">
+        <label>Label / Club</label>
+        <input type="text" id="cm-label" placeholder="Nombre (Club)  ej: Pedri (FC Barcelona)">
+      </div>
+      <div class="cm-field-row cm-row-multi">
+        <div class="cm-field-group">
+          <label>Posición</label>
+          <select id="cm-pos">
+            <option value="POR">POR — Portero</option>
+            <option value="LD">LD — Lateral D</option>
+            <option value="DFC">DFC — Central</option>
+            <option value="LI">LI — Lateral I</option>
+            <option value="MCD">MCD — Mediocentro D</option>
+            <option value="MC">MC — Mediocentro</option>
+            <option value="MCO">MCO — Mediocentro O</option>
+            <option value="ED">ED — Extremo D</option>
+            <option value="EI">EI — Extremo I</option>
+            <option value="DC">DC — Delantero</option>
+          </select>
+        </div>
+        <div class="cm-field-group">
+          <label>Rareza</label>
+          <select id="cm-rar">
+            <option value="mediano">Mediano</option>
+            <option value="top">Top</option>
+            <option value="leyenda">Leyenda</option>
+            <option value="troll">Troll</option>
+          </select>
+        </div>
+        <div class="cm-field-group" style="max-width:80px">
+          <label>Media</label>
+          <input type="number" id="cm-media" min="1" max="99" style="width:100%">
+        </div>
+        <div class="cm-field-group cm-troll-group">
+          <label>Troll</label>
+          <input type="checkbox" id="cm-troll">
+        </div>
+      </div>
+      <div class="cm-id-row">
+        <span class="cm-id-label">ID:</span>
+        <span class="cm-id-val" id="cm-id-display"></span>
+        <input type="text" id="cm-id-input" placeholder="auto (editable)" style="display:none">
+      </div>
+    </div>
+
     <div class="cm-images">
       <div class="cm-img-wrap">
         <span>Silueta</span>
         <img id="cm-sil" src="" alt="silueta">
+        <label class="cm-upload-btn">📤 Subir silueta<input type="file" id="cm-upload-sil" accept="image/*" style="display:none"></label>
       </div>
       <div class="cm-img-wrap">
         <span>Real</span>
         <img id="cm-real" src="" alt="real">
+        <label class="cm-upload-btn">📤 Subir imagen real<input type="file" id="cm-upload-real" accept="image/*" style="display:none"></label>
       </div>
+    </div>
+
+    <div class="cm-footer">
+      <button class="btn btn-primary" id="cm-save">Guardar carta</button>
     </div>
   </div>
 </div>
@@ -607,11 +688,18 @@ document.getElementById('add-wave').addEventListener('click', ()=>{
 document.getElementById('save-wavelength').addEventListener('click', ()=>doSave('wavelength'));
 
 // ============================================================
-// SUBASTA (read-only)
+// SUBASTA (editable)
 // ============================================================
+function makeId(name){
+  return name.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\s*\(.*?\)/g,'').replace(/[^a-z0-9\s]/g,'')
+    .replace(/\s+/g,'_').trim();
+}
+
 function renderSubasta(){
   const q = subastaSearch.toLowerCase();
-  const list = DATA.subasta.filter(c=>
+  const list = DATA.subasta.map((c,i)=>({c,i})).filter(({c})=>
     (!q || c.name.toLowerCase().includes(q) || (c.label||'').toLowerCase().includes(q)) &&
     (!subastaPos || c.position === subastaPos) &&
     (!subastaRar || c.rareza === subastaRar)
@@ -619,48 +707,152 @@ function renderSubasta(){
   const el = document.getElementById('sub-grid');
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
-  el.innerHTML = list.map(c=>`
-    <div class="sub-card" data-id="${esc(c.id)}" data-name="${esc(c.label||c.name)}" data-pos="${esc(c.position||'')}" data-rar="${esc(c.rareza||'')}" data-media="${c.media}" data-troll="${c.troll?'1':'0'}">
+  el.innerHTML = list.map(({c,i})=>`
+    <div class="sub-card" data-idx="${i}">
       <div class="sc-name">${esc(c.label||c.name)}</div>
       <div class="sc-meta">
         <span>${esc(c.position||'')}</span>
         <span class="sc-media">${c.media}</span>
         <span class="rareza-${esc(c.rareza||'normal')}">${esc(c.rareza||'normal')}</span>
-        ${c.troll?'<span style="color:var(--red)">troll</span>':''}
+        ${c.troll?'<span style="color:var(--red)">🃏</span>':''}
       </div>
     </div>`).join('');
 }
 
-document.getElementById('sub-grid').addEventListener('click', e=>{
-  const card = e.target.closest('.sub-card');
-  if(!card) return;
-  const id = card.dataset.id;
-  document.getElementById('cm-title').textContent = card.dataset.name;
-  const rar = card.dataset.rar;
-  const rarColor = {mediano:'var(--soft)',top:'var(--gold)',leyenda:'var(--neon)',troll:'var(--red)'}[rar]||'var(--soft)';
-  document.getElementById('cm-meta').innerHTML =
-    `<span>${card.dataset.pos}</span>` +
-    `<span class="sc-media">${card.dataset.media}</span>` +
-    `<span style="color:${rarColor}">${rar}</span>` +
-    (card.dataset.troll==='1'?'<span style="color:var(--red)">troll</span>':'');
+let _cmIdx = -1; // -1 = nueva carta
 
-  const silImg  = document.getElementById('cm-sil');
-  const realImg = document.getElementById('cm-real');
-  const sil  = `/images/siluetas/${id}.png`;
-  const real = `/images/reales/${id}.png`;
-  silImg.src  = sil;
-  realImg.src = real;
-  silImg.onerror  = ()=>{ silImg.style.display='none';  silImg.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
-  realImg.onerror = ()=>{ realImg.style.display='none'; realImg.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
-  silImg.style.display=''; realImg.style.display='';
-  // limpiar mensajes de error previos
-  document.querySelectorAll('.cm-missing').forEach(el=>el.remove());
+function openCardModal(idx){
+  _cmIdx = idx;
+  const isNew = idx === -1;
+  const c = isNew
+    ? {id:'',name:'',label:'',position:'DC',rareza:'mediano',media:80,troll:false}
+    : DATA.subasta[idx];
 
+  document.getElementById('cm-title-display').textContent = isNew ? 'Nueva carta' : (c.label||c.name);
+  document.getElementById('cm-name').value   = c.name;
+  document.getElementById('cm-label').value  = c.label||'';
+  document.getElementById('cm-pos').value    = c.position||'DC';
+  document.getElementById('cm-rar').value    = c.rareza||'mediano';
+  document.getElementById('cm-media').value  = c.media||80;
+  document.getElementById('cm-troll').checked= !!c.troll;
+  document.getElementById('cm-delete').style.display = isNew ? 'none' : '';
+
+  // ID row: editable for new, readonly for existing
+  document.getElementById('cm-id-display').textContent = isNew ? '' : c.id;
+  document.getElementById('cm-id-display').style.display = isNew ? 'none' : '';
+  document.getElementById('cm-id-input').style.display  = isNew ? '' : 'none';
+  document.getElementById('cm-id-input').value = '';
+
+  // Auto-fill ID as name is typed (new cards only)
+  document.getElementById('cm-name').oninput = ()=>{
+    if(isNew) document.getElementById('cm-id-input').value = makeId(document.getElementById('cm-name').value);
+  };
+
+  loadCardImages(isNew ? null : c.id);
   document.getElementById('card-modal').classList.add('open');
-});
+}
 
+function loadCardImages(id){
+  document.querySelectorAll('.cm-missing').forEach(e=>e.remove());
+  const sil  = document.getElementById('cm-sil');
+  const real = document.getElementById('cm-real');
+  sil.style.display=''; real.style.display='';
+  if(!id){ sil.src=''; real.src=''; return; }
+  const t=Date.now();
+  sil.src  = `/images/siluetas/${id}.png?t=${t}`;
+  real.src = `/images/reales/${id}.png?t=${t}`;
+  sil.onerror  = ()=>{ sil.style.display='none';  sil.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+  real.onerror = ()=>{ real.style.display='none'; real.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+}
+
+function saveCardModal(){
+  const isNew = _cmIdx === -1;
+  const name  = document.getElementById('cm-name').value.trim();
+  const label = document.getElementById('cm-label').value.trim();
+  const pos   = document.getElementById('cm-pos').value;
+  const rar   = document.getElementById('cm-rar').value;
+  const media = parseInt(document.getElementById('cm-media').value)||0;
+  const troll = document.getElementById('cm-troll').checked;
+  const id    = isNew
+    ? (document.getElementById('cm-id-input').value.trim() || makeId(name))
+    : DATA.subasta[_cmIdx].id;
+
+  if(!name)  { toast('El nombre es obligatorio','err'); return; }
+  if(!label) { toast('El label (nombre + club) es obligatorio','err'); return; }
+  if(!id)    { toast('No se pudo generar un ID — escribe el nombre primero','err'); return; }
+  if(media<1){ toast('Media inválida','err'); return; }
+
+  const card = {id, name, label, position:pos, rareza:rar, media, troll};
+
+  if(isNew){
+    DATA.subasta.push(card);
+    _cmIdx = DATA.subasta.length - 1;
+    document.getElementById('cm-title-display').textContent = label||name;
+    document.getElementById('cm-delete').style.display = '';
+    // Switch ID row to read-only
+    document.getElementById('cm-id-display').textContent = id;
+    document.getElementById('cm-id-display').style.display = '';
+    document.getElementById('cm-id-input').style.display = 'none';
+    toast('✓ Carta añadida — sube las imágenes debajo','ok');
+  } else {
+    DATA.subasta[_cmIdx] = card;
+    document.getElementById('cm-title-display').textContent = label||name;
+    toast('✓ Cambios guardados','ok');
+  }
+
+  setDirty('subasta', true);
+  renderSubasta();
+}
+
+function deleteCard(){
+  if(_cmIdx < 0) return;
+  const c = DATA.subasta[_cmIdx];
+  if(!confirm(`¿Eliminar "${c.name}"?\nEsto no borra las imágenes del servidor.`)) return;
+  DATA.subasta.splice(_cmIdx, 1);
+  setDirty('subasta', true);
+  renderSubasta();
+  document.getElementById('card-modal').classList.remove('open');
+  toast('Carta eliminada','ok');
+}
+
+async function uploadImage(type, file){
+  const id = _cmIdx === -1
+    ? (document.getElementById('cm-id-input').value.trim() || makeId(document.getElementById('cm-name').value))
+    : DATA.subasta[_cmIdx].id;
+  if(!id){ toast('Guarda la carta primero para poder subir imágenes','err'); return; }
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    const btn = type==='real'
+      ? document.querySelector('#cm-upload-real').closest('.cm-upload-btn')
+      : document.querySelector('#cm-upload-sil').closest('.cm-upload-btn');
+    const origText = btn.childNodes[0].nodeValue;
+    btn.childNodes[0].nodeValue = '⏳ Subiendo...';
+    try{
+      const res = await fetch('/admin/upload-image'+_passQ, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id, type, data:e.target.result})
+      });
+      const json = await res.json();
+      if(json.ok){ toast('✓ Imagen subida','ok'); loadCardImages(id); }
+      else toast('Error: '+(json.error||'desconocido'),'err');
+    }catch(err){ toast('Error de red','err'); }
+    btn.childNodes[0].nodeValue = origText;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('sub-grid').addEventListener('click', e=>{
+  const card = e.target.closest('.sub-card'); if(!card) return;
+  openCardModal(parseInt(card.dataset.idx));
+});
+document.getElementById('btn-new-card').addEventListener('click', ()=>openCardModal(-1));
+document.getElementById('cm-save').addEventListener('click', saveCardModal);
+document.getElementById('cm-delete').addEventListener('click', deleteCard);
 document.getElementById('cm-close').addEventListener('click', ()=>document.getElementById('card-modal').classList.remove('open'));
 document.getElementById('card-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
+document.getElementById('cm-upload-sil').addEventListener('change', function(){ if(this.files[0]) uploadImage('silueta',this.files[0]); this.value=''; });
+document.getElementById('cm-upload-real').addEventListener('change', function(){ if(this.files[0]) uploadImage('real',this.files[0]); this.value=''; });
+document.getElementById('save-subasta').addEventListener('click', ()=>doSave('subasta'));
 
 document.getElementById('search-subasta').addEventListener('input', e=>{ subastaSearch=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-pos').addEventListener('change', e=>{ subastaPos=e.target.value; renderSubasta(); });
@@ -690,7 +882,7 @@ document.getElementById('discard-btn').addEventListener('click', ()=>{
 // ============================================================
 // SAVE BAR sync with tab save buttons
 // ============================================================
-['concepts','mentiroso','wavelength'].forEach(tab=>{
+['concepts','mentiroso','wavelength','subasta'].forEach(tab=>{
   document.getElementById('save-' + tab)?.addEventListener('click', ()=>doSave(tab));
 });
 
