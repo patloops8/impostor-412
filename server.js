@@ -1371,6 +1371,9 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json({ok:true,count:req.body.length});
   });
 
+  // Imágenes subidas en esta sesión pendientes de publicar en GitHub
+  const pendingImages = new Set(); // cada entry: "public/images/reales/id.png"
+
   // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
   app.post('/admin/upload-image', adminAuth, (req,res)=>{
     const { id, type, data } = req.body||{};
@@ -1380,7 +1383,12 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     const imgPath = path.join(__dirname,'public','images',folder,`${id}.png`);
     const base64 = data.replace(/^data:image\/\w+;base64,/,'');
     fs.writeFileSync(imgPath, Buffer.from(base64,'base64'));
-    res.json({ok:true, path:`/images/${folder}/${id}.png`});
+    pendingImages.add(`public/images/${folder}/${id}.png`);
+    res.json({ok:true, path:`/images/${folder}/${id}.png`, pendingCount:pendingImages.size});
+  });
+
+  app.get('/admin/pending-images', adminAuth, (_q,res)=>{
+    res.json({count: pendingImages.size, paths:[...pendingImages]});
   });
 
   // Publica todos los archivos de datos en GitHub en un solo commit
@@ -1410,7 +1418,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
       const commitData = await (await ghFetch(`${GH}/git/commits/${headSha}`)).json();
       const baseTree   = commitData.tree?.sha;
 
-      // 3. Crear un blob por cada archivo
+      // 3. Crear un blob por cada archivo de datos
       const FILE_REPO_PATHS = {
         concepts:  'data/concepts.json',
         mentiroso: 'data/mentiroso-categories.json',
@@ -1426,6 +1434,21 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
         });
         const blob = await blobRes.json();
         if(!blob.sha) throw new Error('Error creando blob para ' + key + ': ' + JSON.stringify(blob));
+        tree.push({path: repoPath, mode:'100644', type:'blob', sha: blob.sha});
+      }
+
+      // 3b. Agregar imágenes subidas desde el panel (si las hay)
+      const imgPaths = [...pendingImages];
+      for(const repoPath of imgPaths){
+        const absPath = path.join(__dirname, repoPath);
+        if(!fs.existsSync(absPath)) continue;
+        const b64 = fs.readFileSync(absPath).toString('base64');
+        const blobRes = await ghFetch(`${GH}/git/blobs`, {
+          method: 'POST',
+          body: JSON.stringify({content: b64, encoding:'base64'}),
+        });
+        const blob = await blobRes.json();
+        if(!blob.sha) throw new Error('Error creando blob para imagen ' + repoPath);
         tree.push({path: repoPath, mode:'100644', type:'blob', sha: blob.sha});
       }
 
@@ -1453,7 +1476,9 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
         body: JSON.stringify({sha: newCommit.sha}),
       });
 
-      res.json({ok:true, sha: newCommit.sha.slice(0,7)});
+      const publishedImages = imgPaths.length;
+      pendingImages.clear();
+      res.json({ok:true, sha: newCommit.sha.slice(0,7), publishedImages});
     } catch(e){
       console.error('[admin:publish]', e);
       res.status(500).json({error: e.message});

@@ -161,6 +161,7 @@
   /* ---- PUBLISH BAR ---- */
   .publish-bar{display:none;position:fixed;bottom:64px;left:0;right:0;background:#1a1a2e;border-top:1px solid #2d2d4e;padding:10px 24px;align-items:center;gap:12px;z-index:89}
   .publish-bar.visible{display:flex}
+  .img-pending-badge{background:rgba(0,255,135,.15);border:1px solid var(--neon);color:var(--neon);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px}
   .btn-publish{margin-left:auto;padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,#6c63ff,#48bb78);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:opacity .15s}
   .btn-publish:hover{opacity:.88}
   .btn-publish:disabled{opacity:.45;cursor:not-allowed}
@@ -404,6 +405,10 @@
 <!-- Publish bar -->
 <div class="publish-bar" id="publish-bar">
   <span style="color:var(--soft);font-size:12px">Cambios guardados en el servidor.</span>
+  <span id="img-pending-info" style="display:none;color:var(--soft);font-size:12px">
+    + <span id="img-pending-count">0</span> imagen(es) nuevas
+    <span class="img-pending-badge">📷</span>
+  </span>
   <button class="btn-publish" id="btn-publish">🚀 Publicar en GitHub</button>
 </div>
 
@@ -833,8 +838,11 @@ async function uploadImage(type, file){
         body:JSON.stringify({id, type, data:e.target.result})
       });
       const json = await res.json();
-      if(json.ok){ toast('✓ Imagen subida','ok'); loadCardImages(id); }
-      else toast('Error: '+(json.error||'desconocido'),'err');
+      if(json.ok){
+        toast('✓ Imagen subida','ok');
+        loadCardImages(id);
+        showPublishBar();
+      } else toast('Error: '+(json.error||'desconocido'),'err');
     }catch(err){ toast('Error de red','err'); }
     btn.childNodes[0].nodeValue = origText;
   };
@@ -1172,7 +1180,15 @@ let _anySaved = false; // se activa cuando se guarda cualquier archivo
 const _pubBar  = document.getElementById('publish-bar');
 const _pubBtn  = document.getElementById('btn-publish');
 
-function showPublishBar(){ _pubBar.classList.add('visible'); }
+async function refreshPendingImages(){
+  try{
+    const r = await fetch('/admin/pending-images'+_passQ);
+    const {count} = await r.json();
+    document.getElementById('img-pending-info').style.display = count>0 ? '' : 'none';
+    document.getElementById('img-pending-count').textContent = count;
+  }catch(_){}
+}
+function showPublishBar(){ _pubBar.classList.add('visible'); refreshPendingImages(); }
 
 // Interceptar saveData para saber cuándo hay algo pendiente de publicar
 const _origSaveData = saveData;
@@ -1189,8 +1205,10 @@ _pubBtn.addEventListener('click', async ()=>{
     const r = await fetch('/admin/publish' + _passQ, { method:'POST' });
     const res = await r.json();
     if(res.ok){
-      toast(`✓ Publicado en GitHub (${res.sha})`, 'ok');
+      const imgMsg = res.publishedImages > 0 ? ` + ${res.publishedImages} imagen(es)` : '';
+      toast(`✓ Publicado en GitHub (${res.sha})${imgMsg}`, 'ok');
       _pubBar.classList.remove('visible');
+      document.getElementById('img-pending-info').style.display = 'none';
       _anySaved = false;
     } else {
       toast('Error: ' + (res.error||'desconocido'), 'err');
