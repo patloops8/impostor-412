@@ -1391,6 +1391,15 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json({count: pendingImages.size, paths:[...pendingImages]});
   });
 
+  app.get('/admin/image-status', adminAuth, (_q,res)=>{
+    const readIds = dir => {
+      const full = path.join(__dirname, 'public/images', dir);
+      try { return fs.readdirSync(full).filter(f=>f.endsWith('.png')).map(f=>f.replace('.png','')); }
+      catch{ return []; }
+    };
+    res.json({ reales: readIds('reales'), siluetas: readIds('siluetas') });
+  });
+
   // Publica todos los archivos de datos en GitHub en un solo commit
   app.post('/admin/publish', adminAuth, async (req,res)=>{
     const token  = process.env.GITHUB_TOKEN;

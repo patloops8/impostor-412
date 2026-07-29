@@ -105,10 +105,15 @@
   /* ---- SUBASTA read-only ---- */
   .sub-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:4px}
   .sub-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-  .sub-card .sc-name{font-weight:700;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sub-card .sc-meta{color:var(--soft);font-size:11px;display:flex;gap:8px;flex-wrap:wrap}
+  .sub-card .sc-name{font-weight:700;font-size:13px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sub-card .sc-id{font-size:10px;color:var(--soft);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:monospace}
+  .sub-card .sc-meta{color:var(--soft);font-size:11px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .sc-media{color:var(--gold);font-weight:700}
   .rareza-oro{color:#ffd700}.rareza-plata{color:#b0b0b0}.rareza-bronce{color:#cd7f32}.rareza-normal{color:var(--soft)}
+  .sc-imgs{display:flex;gap:4px;margin-top:5px}
+  .sc-img-badge{font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;border:1px solid}
+  .sc-img-ok{color:#4caf50;border-color:#4caf50;background:rgba(76,175,80,.1)}
+  .sc-img-miss{color:var(--red);border-color:var(--red);background:rgba(255,80,80,.08)}
 
   .empty-state{padding:40px;text-align:center;color:var(--soft)}
 
@@ -288,6 +293,7 @@
       <label class="btn-export" id="lbl-import-subasta" style="cursor:pointer">⬆ Importar Excel<input type="file" id="import-subasta-file" accept=".xlsx,.xls" style="display:none"></label>
     </div>
     <button class="btn btn-ghost" id="btn-new-card">+ Nueva carta</button>
+    <button class="btn btn-ghost" id="btn-refresh-imgs" title="Refrescar estado de imágenes">🔄 Imágenes</button>
     <button class="btn btn-primary" id="save-subasta" disabled>Guardar cambios</button>
   </div>
   <div class="filter-row">
@@ -433,6 +439,15 @@ let wavelengthSearch = '';
 let subastaSearch = '';
 let subastaPos = '';
 let subastaRar = '';
+let imgStatus = { reales: new Set(), siluetas: new Set() };
+
+async function loadImgStatus(){
+  try{
+    const r = await fetch('/admin/image-status' + _passQ);
+    const d = await r.json();
+    imgStatus = { reales: new Set(d.reales), siluetas: new Set(d.siluetas) };
+  }catch(e){ console.warn('image-status error',e); }
+}
 
 // ============================================================
 // UTILS
@@ -489,7 +504,7 @@ async function loadTab(tab){
   if(tab === 'concepts') renderConcepts();
   if(tab === 'mentiroso') renderMentiroso();
   if(tab === 'wavelength') renderWavelength();
-  if(tab === 'subasta') renderSubasta();
+  if(tab === 'subasta'){ loadImgStatus().then(()=>renderSubasta()); }
 }
 
 // ============================================================
@@ -712,16 +727,24 @@ function renderSubasta(){
   const el = document.getElementById('sub-grid');
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
-  el.innerHTML = list.map(({c,i})=>`
+  el.innerHTML = list.map(({c,i})=>{
+    const hasSil  = imgStatus.siluetas.has(c.id);
+    const hasReal = imgStatus.reales.has(c.id);
+    const silBadge  = `<span class="sc-img-badge ${hasSil ?'sc-img-ok':'sc-img-miss'}">sil</span>`;
+    const realBadge = `<span class="sc-img-badge ${hasReal?'sc-img-ok':'sc-img-miss'}">img</span>`;
+    return `
     <div class="sub-card" data-idx="${i}">
       <div class="sc-name">${esc(c.label||c.name)}</div>
+      <div class="sc-id">${esc(c.id)}</div>
       <div class="sc-meta">
         <span>${esc(c.position||'')}</span>
         <span class="sc-media">${c.media}</span>
         <span class="rareza-${esc(c.rareza||'normal')}">${esc(c.rareza||'normal')}</span>
         ${c.troll?'<span style="color:var(--red)">🃏</span>':''}
       </div>
-    </div>`).join('');
+      <div class="sc-imgs">${silBadge}${realBadge}</div>
+    </div>`;
+  }).join('');
 }
 
 let _cmIdx = -1; // -1 = nueva carta
@@ -854,6 +877,7 @@ document.getElementById('sub-grid').addEventListener('click', e=>{
   openCardModal(parseInt(card.dataset.idx));
 });
 document.getElementById('btn-new-card').addEventListener('click', ()=>openCardModal(-1));
+document.getElementById('btn-refresh-imgs').addEventListener('click', ()=>loadImgStatus().then(()=>renderSubasta()));
 document.getElementById('cm-save').addEventListener('click', saveCardModal);
 document.getElementById('cm-delete').addEventListener('click', deleteCard);
 document.getElementById('cm-close').addEventListener('click', ()=>document.getElementById('card-modal').classList.remove('open'));
