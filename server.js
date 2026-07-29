@@ -1327,7 +1327,7 @@ io.on('connection', socket => {
 
 /* ===================== EXPRESS ===================== */
 app.use(express.static(path.join(__dirname,'public')));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
