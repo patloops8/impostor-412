@@ -116,6 +116,22 @@
   .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .add-row input,  .add-row select{flex:1;min-width:120px}
 
+  /* ---- CARD PREVIEW MODAL ---- */
+  #card-modal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:20px}
+  #card-modal.open{display:flex}
+  .card-modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:620px;width:100%;position:relative}
+  .card-modal-box h3{font-size:16px;font-weight:700;margin-bottom:4px}
+  .card-modal-box .cm-meta{color:var(--soft);font-size:12px;margin-bottom:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .cm-images{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cm-img-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;align-items:center}
+  .cm-img-wrap span{font-size:11px;color:var(--soft);padding:8px 0 6px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  .cm-img-wrap img{width:100%;max-height:240px;object-fit:contain;background:var(--bg);display:block}
+  .cm-img-wrap .cm-missing{width:100%;height:180px;display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:12px;flex-direction:column;gap:6px}
+  .cm-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--soft);font-size:18px;line-height:1;padding:4px 8px;cursor:pointer}
+  .cm-close:hover{color:var(--text);border-color:var(--text)}
+  .sub-card{cursor:pointer;transition:border-color .15s,transform .1s}
+  .sub-card:hover{border-color:var(--blue);transform:translateY(-1px)}
+
   /* ---- EXPORT ---- */
   .export-group{display:flex;gap:6px;align-items:center}
   .btn-export{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--soft);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -268,13 +284,32 @@
     </select>
     <select id="filter-sub-rar">
       <option value="">Todas las rarezas</option>
-      <option value="oro">Oro</option>
-      <option value="plata">Plata</option>
-      <option value="bronce">Bronce</option>
-      <option value="normal">Normal</option>
+      <option value="mediano">Mediano</option>
+      <option value="top">Top</option>
+      <option value="leyenda">Leyenda</option>
+      <option value="troll">Troll</option>
     </select>
   </div>
   <div id="sub-grid" class="sub-card-grid"></div>
+</div>
+
+<!-- Card preview modal -->
+<div id="card-modal">
+  <div class="card-modal-box">
+    <button class="cm-close" id="cm-close">✕</button>
+    <h3 id="cm-title"></h3>
+    <div class="cm-meta" id="cm-meta"></div>
+    <div class="cm-images">
+      <div class="cm-img-wrap">
+        <span>Silueta</span>
+        <img id="cm-sil" src="" alt="silueta">
+      </div>
+      <div class="cm-img-wrap">
+        <span>Real</span>
+        <img id="cm-real" src="" alt="real">
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Save bar -->
@@ -585,7 +620,7 @@ function renderSubasta(){
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
   el.innerHTML = list.map(c=>`
-    <div class="sub-card">
+    <div class="sub-card" data-id="${esc(c.id)}" data-name="${esc(c.label||c.name)}" data-pos="${esc(c.position||'')}" data-rar="${esc(c.rareza||'')}" data-media="${c.media}" data-troll="${c.troll?'1':'0'}">
       <div class="sc-name">${esc(c.label||c.name)}</div>
       <div class="sc-meta">
         <span>${esc(c.position||'')}</span>
@@ -595,6 +630,37 @@ function renderSubasta(){
       </div>
     </div>`).join('');
 }
+
+document.getElementById('sub-grid').addEventListener('click', e=>{
+  const card = e.target.closest('.sub-card');
+  if(!card) return;
+  const id = card.dataset.id;
+  document.getElementById('cm-title').textContent = card.dataset.name;
+  const rar = card.dataset.rar;
+  const rarColor = {mediano:'var(--soft)',top:'var(--gold)',leyenda:'var(--neon)',troll:'var(--red)'}[rar]||'var(--soft)';
+  document.getElementById('cm-meta').innerHTML =
+    `<span>${card.dataset.pos}</span>` +
+    `<span class="sc-media">${card.dataset.media}</span>` +
+    `<span style="color:${rarColor}">${rar}</span>` +
+    (card.dataset.troll==='1'?'<span style="color:var(--red)">troll</span>':'');
+
+  const silImg  = document.getElementById('cm-sil');
+  const realImg = document.getElementById('cm-real');
+  const sil  = `/images/siluetas/${id}.png`;
+  const real = `/images/reales/${id}.png`;
+  silImg.src  = sil;
+  realImg.src = real;
+  silImg.onerror  = ()=>{ silImg.style.display='none';  silImg.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+  realImg.onerror = ()=>{ realImg.style.display='none'; realImg.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+  silImg.style.display=''; realImg.style.display='';
+  // limpiar mensajes de error previos
+  document.querySelectorAll('.cm-missing').forEach(el=>el.remove());
+
+  document.getElementById('card-modal').classList.add('open');
+});
+
+document.getElementById('cm-close').addEventListener('click', ()=>document.getElementById('card-modal').classList.remove('open'));
+document.getElementById('card-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 document.getElementById('search-subasta').addEventListener('input', e=>{ subastaSearch=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-pos').addEventListener('change', e=>{ subastaPos=e.target.value; renderSubasta(); });
