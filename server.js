@@ -1376,7 +1376,8 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
   // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
   app.post('/admin/upload-image', adminAuth, (req,res)=>{
-    const { id, type, data } = req.body||{};
+    const { type, data } = req.body||{};
+    const id = (req.body?.id||'').toLowerCase();
     if(!id||!data||(type!=='real'&&type!=='silueta')) return res.status(400).json({error:'Faltan campos id/type/data'});
     if(!/^[a-z0-9_]+$/.test(id)) return res.status(400).json({error:'id inválido'});
     const folder = type==='real' ? 'reales' : 'siluetas';
