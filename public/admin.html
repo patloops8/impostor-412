@@ -844,9 +844,9 @@ function deleteCard(){
 }
 
 async function uploadImage(type, file){
-  const id = _cmIdx === -1
+  const id = (_cmIdx === -1
     ? (document.getElementById('cm-id-input').value.trim() || makeId(document.getElementById('cm-name').value))
-    : DATA.subasta[_cmIdx].id;
+    : DATA.subasta[_cmIdx].id).toLowerCase();
   if(!id){ toast('Guarda la carta primero para poder subir imágenes','err'); return; }
   const reader = new FileReader();
   reader.onload = async e=>{
