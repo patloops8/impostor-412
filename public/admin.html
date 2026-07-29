@@ -127,6 +127,11 @@
   .card-modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:700px;width:100%;position:relative;margin:auto}
   .cm-close{position:absolute;top:14px;right:14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--soft);font-size:18px;line-height:1;padding:4px 8px;cursor:pointer}
   .cm-close:hover{color:var(--text);border-color:var(--text)}
+  .cm-nav{position:absolute;top:50%;transform:translateY(-50%);background:var(--bg3);border:1px solid var(--border);border-radius:50%;color:var(--soft);font-size:20px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,opacity .15s;z-index:10}
+  .cm-nav:hover{color:var(--text);border-color:var(--text)}
+  .cm-nav:disabled{opacity:.25;cursor:default;pointer-events:none}
+  .cm-nav-prev{left:-18px}
+  .cm-nav-next{right:-18px}
   .cm-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-right:36px}
   .cm-header h3{font-size:16px;font-weight:700;flex:1}
   /* form */
@@ -328,6 +333,8 @@
 <div id="card-modal">
   <div class="card-modal-box">
     <button class="cm-close" id="cm-close">✕</button>
+    <button class="cm-nav cm-nav-prev" id="cm-prev" title="Carta anterior">&#8592;</button>
+    <button class="cm-nav cm-nav-next" id="cm-next" title="Carta siguiente">&#8594;</button>
     <div class="cm-header">
       <h3 id="cm-title-display"></h3>
       <button class="btn btn-danger btn-sm" id="cm-delete">🗑 Eliminar</button>
@@ -721,6 +728,8 @@ function makeId(name){
     .replace(/\s+/g,'_').trim();
 }
 
+let _filteredIdxs = []; // índices originales de la lista filtrada activa
+
 function renderSubasta(){
   const q = subastaSearch.toLowerCase();
   const list = DATA.subasta.map((c,i)=>({c,i})).filter(({c})=>
@@ -728,6 +737,7 @@ function renderSubasta(){
     (!subastaPos || c.position === subastaPos) &&
     (!subastaRar || c.rareza === subastaRar)
   );
+  _filteredIdxs = list.map(({i})=>i);
   const el = document.getElementById('sub-grid');
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
@@ -781,6 +791,12 @@ function openCardModal(idx){
   };
 
   loadCardImages(isNew ? null : c.id);
+
+  // Nav arrows: only meaningful for existing cards within filtered list
+  const pos = _filteredIdxs.indexOf(idx);
+  document.getElementById('cm-prev').disabled = (isNew || pos <= 0);
+  document.getElementById('cm-next').disabled = (isNew || pos < 0 || pos >= _filteredIdxs.length - 1);
+
   document.getElementById('card-modal').classList.add('open');
 }
 
@@ -892,6 +908,20 @@ document.getElementById('btn-refresh-imgs').addEventListener('click', ()=>loadIm
 document.getElementById('cm-save').addEventListener('click', saveCardModal);
 document.getElementById('cm-delete').addEventListener('click', deleteCard);
 document.getElementById('cm-close').addEventListener('click', ()=>document.getElementById('card-modal').classList.remove('open'));
+document.getElementById('cm-prev').addEventListener('click', ()=>{
+  const pos = _filteredIdxs.indexOf(_cmIdx);
+  if(pos > 0) openCardModal(_filteredIdxs[pos - 1]);
+});
+document.getElementById('cm-next').addEventListener('click', ()=>{
+  const pos = _filteredIdxs.indexOf(_cmIdx);
+  if(pos >= 0 && pos < _filteredIdxs.length - 1) openCardModal(_filteredIdxs[pos + 1]);
+});
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('card-modal').classList.contains('open')) return;
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if(e.key === 'ArrowLeft')  document.getElementById('cm-prev').click();
+  if(e.key === 'ArrowRight') document.getElementById('cm-next').click();
+});
 document.getElementById('card-modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 document.getElementById('cm-upload-sil').addEventListener('change', function(){ if(this.files[0]) uploadImage('silueta',this.files[0]); this.value=''; });
 document.getElementById('cm-upload-real').addEventListener('change', function(){ if(this.files[0]) uploadImage('real',this.files[0]); this.value=''; });
