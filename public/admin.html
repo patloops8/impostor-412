@@ -151,6 +151,8 @@
   .cm-missing{width:100%;height:140px;display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:12px;flex-direction:column;gap:4px}
   .cm-upload-btn{display:block;width:100%;text-align:center;padding:7px;font-size:11px;font-weight:600;color:var(--soft);cursor:pointer;border-top:1px solid var(--border);transition:color .15s,background .15s}
   .cm-upload-btn:hover{color:var(--blue);background:rgba(79,195,247,.06)}
+  .cm-dl-btn{color:var(--neon);text-decoration:none}
+  .cm-dl-btn:hover{color:var(--neon);background:rgba(57,255,20,.06)}
   /* footer */
   .cm-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:4px}
   /* grid cards */
@@ -386,11 +388,13 @@
         <span>Silueta</span>
         <img id="cm-sil" src="" alt="silueta">
         <label class="cm-upload-btn">📤 Subir silueta<input type="file" id="cm-upload-sil" accept="image/*" style="display:none"></label>
+        <a id="cm-dl-sil" class="cm-upload-btn cm-dl-btn" style="display:none" download>⬇ Descargar</a>
       </div>
       <div class="cm-img-wrap">
         <span>Real</span>
         <img id="cm-real" src="" alt="real">
         <label class="cm-upload-btn">📤 Subir imagen real<input type="file" id="cm-upload-real" accept="image/*" style="display:none"></label>
+        <a id="cm-dl-real" class="cm-upload-btn cm-dl-btn" style="display:none" download>⬇ Descargar</a>
       </div>
     </div>
 
@@ -784,13 +788,20 @@ function loadCardImages(id){
   document.querySelectorAll('.cm-missing').forEach(e=>e.remove());
   const sil  = document.getElementById('cm-sil');
   const real = document.getElementById('cm-real');
+  const dlSil  = document.getElementById('cm-dl-sil');
+  const dlReal = document.getElementById('cm-dl-real');
   sil.style.display=''; real.style.display='';
+  dlSil.style.display='none'; dlReal.style.display='none';
   if(!id){ sil.src=''; real.src=''; return; }
   const t=Date.now();
-  sil.src  = `/images/siluetas/${id}.png?t=${t}`;
-  real.src = `/images/reales/${id}.png?t=${t}`;
-  sil.onerror  = ()=>{ sil.style.display='none';  sil.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
-  real.onerror = ()=>{ real.style.display='none'; real.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+  const silUrl  = `/images/siluetas/${id}.png?t=${t}`;
+  const realUrl = `/images/reales/${id}.png?t=${t}`;
+  sil.src  = silUrl;
+  real.src = realUrl;
+  sil.onload  = ()=>{ dlSil.href=silUrl; dlSil.download=`${id}_silueta.png`; dlSil.style.display='block'; };
+  real.onload = ()=>{ dlReal.href=realUrl; dlReal.download=`${id}.png`; dlReal.style.display='block'; };
+  sil.onerror  = ()=>{ sil.style.display='none';  dlSil.style.display='none';  sil.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
+  real.onerror = ()=>{ real.style.display='none'; dlReal.style.display='none'; real.parentElement.insertAdjacentHTML('beforeend','<div class="cm-missing">📷<span>Sin imagen</span></div>'); };
 }
 
 function saveCardModal(){
