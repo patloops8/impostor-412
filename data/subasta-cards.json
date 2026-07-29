@@ -3349,7 +3349,7 @@
   },
   {
     "id": "santi_cal",
-    "name": "Santiago Giménez Cal",
+    "name": "Santiago Giménez",
     "label": "Santiago Gimenez (En descomposición)",
     "position": "DC",
     "rareza": "troll",
@@ -3358,7 +3358,7 @@
   },
   {
     "id": "cantona_patada",
-    "name": "Cantona patada",
+    "name": "Eric Cantona",
     "label": "Cantona (Patada aficionado)",
     "position": "DC",
     "rareza": "troll",
@@ -3367,7 +3367,7 @@
   },
   {
     "id": "muslera_dinosaurio",
-    "name": "Muslera dinosaurio",
+    "name": "Fernando Muslera",
     "label": "Muslera (Dinosaurio)",
     "position": "POR",
     "rareza": "troll",
@@ -3376,7 +3376,7 @@
   },
   {
     "id": "edson_mundialista",
-    "name": "Edson mundialista",
+    "name": "Edson Álvarez",
     "label": "Edson Álvarez (En mundiales)",
     "position": "MCD",
     "rareza": "troll",
@@ -3385,7 +3385,7 @@
   },
   {
     "id": "dani_prision",
-    "name": "Dani Alves Prisión",
+    "name": "Dani Alves",
     "label": "Dani Alves (Prisión FC)",
     "position": "LD",
     "rareza": "troll",
@@ -3394,7 +3394,7 @@
   },
   {
     "id": "boateng_cadera",
-    "name": "Boateng cadera",
+    "name": "Jerome Boateng",
     "label": "Boateng (Sin cadera)",
     "position": "DFC",
     "rareza": "troll",
@@ -3412,7 +3412,7 @@
   },
   {
     "id": "walker_portero",
-    "name": "Walker Portero",
+    "name": "Kyle Walker",
     "label": "Kyle walker (Portero)",
     "position": "POR",
     "rareza": "troll",
@@ -3457,7 +3457,7 @@
   },
   {
     "id": "casillas_kings",
-    "name": "Iker Casillas Kingsleague",
+    "name": "Iker Casillas",
     "label": "Iker Casillas (Kings League)",
     "position": "POR",
     "rareza": "troll",
@@ -3466,7 +3466,7 @@
   },
   {
     "id": "carvajal_lesion",
-    "name": "Carvajal Lesionado",
+    "name": "Dani Carvajal",
     "label": "Dani Carvajal (Lesionado)",
     "position": "LD",
     "rareza": "troll",
@@ -3475,7 +3475,7 @@
   },
   {
     "id": "arbeloa_cono",
-    "name": "Arbeloa Cono",
+    "name": "Alvaro Arbeloa",
     "label": "Alvaro Arbeloa (Cono)",
     "position": "LD",
     "rareza": "troll",
@@ -3493,7 +3493,7 @@
   },
   {
     "id": "pique_estatua",
-    "name": "Piqué Estatua",
+    "name": "Gerard Piqué",
     "label": "Gerard Piqué (La estatua)",
     "position": "DFC",
     "rareza": "troll",
@@ -3502,7 +3502,7 @@
   },
   {
     "id": "araujo_expulsado",
-    "name": "Araujo expulsado",
+    "name": "Ronald Araujo",
     "label": "Ronald Araujo (Expulsado)",
     "position": "DFC",
     "rareza": "troll",
@@ -3511,7 +3511,7 @@
   },
   {
     "id": "kompany_dt",
-    "name": "Kompany DT",
+    "name": "Vincent Kompany",
     "label": "Vincent Kompany (DT)",
     "position": "DFC",
     "rareza": "troll",
@@ -3520,7 +3520,7 @@
   },
   {
     "id": "maguire_meme",
-    "name": "Maguire meme",
+    "name": "Harry Maguire",
     "label": "Harry Maguire (Meme)",
     "position": "DFC",
     "rareza": "troll",
@@ -3529,7 +3529,7 @@
   },
   {
     "id": "cubarsi_helicoptero",
-    "name": "Cubarsi helicoptero",
+    "name": "Pau Cubarsi",
     "label": "Pau Cubarsi (Helicóptero)",
     "position": "DFC",
     "rareza": "troll",
@@ -3538,7 +3538,7 @@
   },
   {
     "id": "marcelo_kings",
-    "name": "Marcelo kings",
+    "name": "Marcelo",
     "label": "Marcelo (Kings league)",
     "position": "LI",
     "rareza": "troll",
@@ -3547,7 +3547,7 @@
   },
   {
     "id": "rcarlos_actual",
-    "name": "Roberto Carlos actual",
+    "name": "Roberto Carlos",
     "label": "Roberto Carlos (Actualmente)",
     "position": "LI",
     "rareza": "troll",
@@ -3556,7 +3556,7 @@
   },
   {
     "id": "evra_patada",
-    "name": "Evra patada",
+    "name": "Patrice Evra",
     "label": "Patrice Evra (Pateando a un fan)",
     "position": "LI",
     "rareza": "troll",
@@ -3565,7 +3565,7 @@
   },
   {
     "id": "cucurella_gato",
-    "name": "Cucurella Gato",
+    "name": "Marc Cucurella",
     "label": "Marc Cucurella (Gato)",
     "position": "LI",
     "rareza": "troll",
@@ -3574,7 +3574,7 @@
   },
   {
     "id": "gattuso_entrenador",
-    "name": "Gattuso entrenador",
+    "name": "Gennaro Gattuso",
     "label": "Gennaro Gattuso (DT)",
     "position": "MCD",
     "rareza": "troll",
@@ -3583,7 +3583,7 @@
   },
   {
     "id": "nigel_patada",
-    "name": "Nigel patada",
+    "name": "Nigel De Jong",
     "label": "Nigel De Jong (Patada voladora)",
     "position": "MCD",
     "rareza": "troll",
@@ -3592,7 +3592,7 @@
   },
   {
     "id": "busquets_fingiendo",
-    "name": "Busquets fingiendo",
+    "name": "Sergio Busquets",
     "label": "Sergio Busquets (Miraditas)",
     "position": "MCD",
     "rareza": "troll",
@@ -3601,7 +3601,7 @@
   },
   {
     "id": "tchouameni_box",
-    "name": "Tchouameni Boxeador",
+    "name": "Aurelien Tchouameni",
     "label": "Aurelien Tchouameni (Boxeador)",
     "position": "MCD",
     "rareza": "troll",
@@ -3610,7 +3610,7 @@
   },
   {
     "id": "tonallin",
-    "name": "TonALLIN",
+    "name": "Sandro TonALLIN",
     "label": "Sandro TonALLIN (Apuestas)",
     "position": "MCD",
     "rareza": "troll",
@@ -3619,7 +3619,7 @@
   },
   {
     "id": "gerrard_resbalon",
-    "name": "Gerrard resbalon",
+    "name": "Steven Gerrard",
     "label": "Steven Gerrard (el resbalón)",
     "position": "MC",
     "rareza": "troll",
@@ -3628,8 +3628,8 @@
   },
   {
     "id": "xavi_jardinero",
-    "name": "Xavi jardinero",
-    "label": "Xavi Hernandez (Jardinero)",
+    "name": "Xavi Hernández",
+    "label": "Xavi Hernández (Jardinero)",
     "position": "MC",
     "rareza": "troll",
     "media": 50,
@@ -3637,7 +3637,7 @@
   },
   {
     "id": "fellaini_goma",
-    "name": "Fellaini goma",
+    "name": "Marouane Fellaini",
     "label": "Marouane Fellaini (Cara de goma)",
     "position": "MC",
     "rareza": "troll",
@@ -3646,7 +3646,7 @@
   },
   {
     "id": "verratti_qatar",
-    "name": "Verrati Qatar",
+    "name": "Marco Verratti",
     "label": "Marco Verratti (Qatar)",
     "position": "MC",
     "rareza": "troll",
@@ -3655,7 +3655,7 @@
   },
   {
     "id": "valverde_box",
-    "name": "Valverde Boxeador",
+    "name": "Federico Valverde",
     "label": "Federico Valverde (Boxeador)",
     "position": "MC",
     "rareza": "troll",
@@ -3664,7 +3664,7 @@
   },
   {
     "id": "vidal_mufas",
-    "name": "Arturo Vidal el mufas",
+    "name": "Arturo Vidal",
     "label": "Arturo Vidal (El mufas)",
     "position": "MC",
     "rareza": "troll",
@@ -3673,7 +3673,7 @@
   },
   {
     "id": "baggio_depie",
-    "name": "Baggio el hombre que murió de pie",
+    "name": "Roberto Baggio",
     "label": "Roberto Baggio (El hombre que murió de pie)",
     "position": "MCO",
     "rareza": "troll",
@@ -3682,7 +3682,7 @@
   },
   {
     "id": "socrates_filosofo",
-    "name": "Sócrates Filosofo",
+    "name": "Sócrates",
     "label": "Sócrates (Filosofo)",
     "position": "MCO",
     "rareza": "troll",
@@ -3691,7 +3691,7 @@
   },
   {
     "id": "lingard_flautista",
-    "name": "Lingardinho el flautista",
+    "name": "Jesse Lingard",
     "label": "Lingardinho (El flautista)",
     "position": "MCO",
     "rareza": "troll",
@@ -3700,7 +3700,7 @@
   },
   {
     "id": "zidane_cabezazo",
-    "name": "Zidane cabezazo",
+    "name": "Zinedine Zidane",
     "label": "Zinedine Zidane (El toro)",
     "position": "MCO",
     "rareza": "troll",
@@ -3709,7 +3709,7 @@
   },
   {
     "id": "neymar_trompo",
-    "name": "Neymar el trompo",
+    "name": "Neymar Jr.",
     "label": "Neymar Jr. (El trompo)",
     "position": "EI",
     "rareza": "troll",
@@ -3718,8 +3718,8 @@
   },
   {
     "id": "leao_rapero",
-    "name": "Leao Rapero",
-    "label": "Rafael Leão (Way 45)",
+    "name": "Rafael Leão",
+    "label": "Rafael Leão (Way 45-Rapero)",
     "position": "EI",
     "rareza": "troll",
     "media": 45,
@@ -3727,7 +3727,7 @@
   },
   {
     "id": "nasri_gordo",
-    "name": "Nasri actualmente",
+    "name": "Samir Nasri",
     "label": "Samir Nasri (Actualmente)",
     "position": "EI",
     "rareza": "troll",
@@ -3736,7 +3736,7 @@
   },
   {
     "id": "henry_comentarista",
-    "name": "Henry comentarista",
+    "name": "Thierry Henry",
     "label": "Thierry Henry (Comentarista)",
     "position": "EI",
     "rareza": "troll",
@@ -3745,7 +3745,7 @@
   },
   {
     "id": "suarez_vampiro",
-    "name": "Suárez vampiro",
+    "name": "Luis Suárez",
     "label": "Luis Suárez (El Vampiro)",
     "position": "DC",
     "rareza": "troll",
@@ -3754,7 +3754,7 @@
   },
   {
     "id": "balotelli_taconazo",
-    "name": "Balotelli Taconazo",
+    "name": "Mario Balotelli",
     "label": "Balotelli (Taconazo)",
     "position": "DC",
     "rareza": "troll",
@@ -3763,7 +3763,7 @@
   },
   {
     "id": "martial_monterrey",
-    "name": "Martial Monterrey",
+    "name": "Anthony Martial",
     "label": "Anthony Martial (en Monterrey)",
     "position": "DC",
     "rareza": "troll",
@@ -3772,7 +3772,7 @@
   },
   {
     "id": "mbappe_dictador",
-    "name": "Mbappe Dictador",
+    "name": "Kylian Mbappe",
     "label": "Kylian Mbappé (Dictador)",
     "position": "DC",
     "rareza": "troll",
@@ -3781,7 +3781,7 @@
   },
   {
     "id": "anthony_spinner",
-    "name": "Anthony Fidget Spinner",
+    "name": "Anthony",
     "label": "Anthony (Fidget Spinner)",
     "position": "ED",
     "rareza": "troll",
@@ -3790,7 +3790,7 @@
   },
   {
     "id": "best_excesos",
-    "name": "Best Excesos",
+    "name": "George Best",
     "label": "George Best (Excesos)",
     "position": "ED",
     "rareza": "troll",
@@ -3799,7 +3799,7 @@
   },
   {
     "id": "traore_bebe",
-    "name": "Traore aceitoso",
+    "name": "Adama Traoré",
     "label": "Adama Traore (Aceite de bebe)",
     "position": "ED",
     "rareza": "troll",
