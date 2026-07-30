@@ -28,10 +28,12 @@ const WAVE_PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wave
 
 const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
 const DEFAULT_SETTINGS = {
+  impostor:  { impostorCount: 1, mangaCount: 3 },
   mentiroso: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
   frecuencia: { roundCount: 5 },
   quienSoy:   { roundCount: 1 },
   subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5 } },
+  opciones:  { impMangaOptions:[1,3,5,7,10], lieRoundOptions:[3,5,8,10], waveRoundOptions:[3,5,8,10], whoRoundOptions:[1,2,3,5] },
 };
 let SETTINGS = (() => {
   try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')); }
@@ -77,7 +79,7 @@ function newRoom(code, hostId) {
     players: new Map(),
     gameType: null,
     status: 'lobby',
-    impostorConfig: { impostorCount: 1, mangaCount: 3, categories: ALL_CATEGORIES.slice() },
+    impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
     votes: new Map(), roundNumber: 0,
@@ -125,6 +127,7 @@ function emitRoom(r){
     whoConfig: r.whoConfig,
     maxImpostors: maxImpostorsFor(r.players.size),
     minPlayers: r.gameType ? MIN_PLAYERS[r.gameType] : 3,
+    gameOptions: SETTINGS.opciones || DEFAULT_SETTINGS.opciones,
   });
 }
 
@@ -1382,15 +1385,20 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json({ok:true,count:req.body.length});
   });
 
-  app.post('/admin/save-settings', adminAuth, (req,res)=>{
-    const s = req.body;
-    if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
-    // Validar y sanear
-    const clean = {
+  function cleanSettings(s){
+    const toOpts = (arr, def) => {
+      const v = Array.isArray(arr) ? arr.map(Number).filter(n=>n>0&&n<=100) : def;
+      return v.length ? [...new Set(v)].sort((a,b)=>a-b) : def;
+    };
+    return {
+      impostor: {
+        impostorCount: Math.min(5, Math.max(1, parseInt(s.impostor?.impostorCount)||1)),
+        mangaCount:    Math.min(20, Math.max(1, parseInt(s.impostor?.mangaCount)||3)),
+      },
       mentiroso: {
-        roundCount:   Math.min(20, Math.max(1, parseInt(s.mentiroso?.roundCount)||5)),
-        mode:         ['texto','numeros'].includes(s.mentiroso?.mode) ? s.mentiroso.mode : 'texto',
-        namingSeconds:Math.min(60, Math.max(5, parseInt(s.mentiroso?.namingSeconds)||15)),
+        roundCount:    Math.min(20, Math.max(1, parseInt(s.mentiroso?.roundCount)||5)),
+        mode:          ['texto','numeros'].includes(s.mentiroso?.mode) ? s.mentiroso.mode : 'texto',
+        namingSeconds: Math.min(60, Math.max(5, parseInt(s.mentiroso?.namingSeconds)||15)),
       },
       frecuencia: { roundCount: Math.min(20, Math.max(1, parseInt(s.frecuencia?.roundCount)||5)) },
       quienSoy:   { roundCount: Math.min(10, Math.max(1, parseInt(s.quienSoy?.roundCount)||1)) },
@@ -1402,10 +1410,56 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
           troll:   Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.troll)||1.5),
         },
       },
+      opciones: {
+        impMangaOptions:  toOpts(s.opciones?.impMangaOptions,  [1,3,5,7,10]),
+        lieRoundOptions:  toOpts(s.opciones?.lieRoundOptions,  [3,5,8,10]),
+        waveRoundOptions: toOpts(s.opciones?.waveRoundOptions, [3,5,8,10]),
+        whoRoundOptions:  toOpts(s.opciones?.whoRoundOptions,  [1,2,3,5]),
+      },
     };
+  }
+
+  app.post('/admin/save-settings', adminAuth, (req,res)=>{
+    const s = req.body;
+    if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
+    const clean = cleanSettings(s);
     fs.writeFileSync(SETTINGS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
-    SETTINGS = clean; // aplica en caliente: nuevas salas y mazos usarán los nuevos pesos
+    SETTINGS = clean;
     res.json({ok:true});
+  });
+
+  app.post('/admin/publish-settings', adminAuth, async (req,res)=>{
+    const s = req.body;
+    if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
+    const clean = cleanSettings(s);
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
+    SETTINGS = clean;
+
+    const token  = process.env.GITHUB_TOKEN;
+    const repo   = process.env.GITHUB_REPO;
+    const branch = process.env.GITHUB_BRANCH || 'main';
+    if(!token||!repo) return res.json({ok:true, published:false, reason:'Sin credenciales GitHub — solo guardado local'});
+
+    try{
+      const GH = `https://api.github.com/repos/${repo}`;
+      const ghFetch = (url,opts={})=>fetch(url,{...opts,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',...(opts.headers||{})}});
+      const refData    = await (await ghFetch(`${GH}/git/refs/heads/${branch}`)).json();
+      const headSha    = refData.object?.sha;
+      const commitData = await (await ghFetch(`${GH}/git/commits/${headSha}`)).json();
+      const baseTree   = commitData.tree?.sha;
+      const content    = fs.readFileSync(SETTINGS_PATH, 'utf-8');
+      const blobRes    = await ghFetch(`${GH}/git/blobs`,{method:'POST',body:JSON.stringify({content,encoding:'utf-8'})});
+      const blob       = await blobRes.json();
+      if(!blob.sha) throw new Error('blob error');
+      const treeRes  = await ghFetch(`${GH}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:baseTree,tree:[{path:'data/settings.json',mode:'100644',type:'blob',sha:blob.sha}]})});
+      const tree     = await treeRes.json();
+      const commitRes= await ghFetch(`${GH}/git/commits`,{method:'POST',body:JSON.stringify({message:'chore(settings): update game config from admin panel',tree:tree.sha,parents:[headSha]})});
+      const commit   = await commitRes.json();
+      await ghFetch(`${GH}/git/refs/heads/${branch}`,{method:'PATCH',body:JSON.stringify({sha:commit.sha})});
+      res.json({ok:true, published:true});
+    }catch(e){
+      res.status(500).json({ok:false, error:e.message});
+    }
   });
 
   // Imágenes subidas en esta sesión pendientes de publicar en GitHub

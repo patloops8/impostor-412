@@ -350,76 +350,61 @@
 <div class="panel" id="panel-config">
   <div class="panel-header">
     <h2>⚙ Configuración de juegos</h2>
-    <p>Estos valores son los que se cargan por defecto cuando se crea una sala. Los jugadores pueden modificarlos en el lobby de cada partida.</p>
+    <p>Defaults al crear sala + opciones disponibles en el lobby. Usa <strong>Guardar y publicar</strong> para que los cambios persistan en producción.</p>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">🕵 El Impostor</h3>
+    <div class="cfg-row"><label>Impostores por defecto</label><input type="number" id="cfg-imp-count-def" min="1" max="5" value="1"></div>
+    <div class="cfg-row"><label>Rondas por defecto</label><input type="number" id="cfg-imp-mangas-def" min="1" max="20" value="3"></div>
+    <div class="cfg-row"><label>Opciones de rondas en lobby</label><input type="text" id="cfg-imp-manga-opts" value="1,3,5,7,10" style="width:200px" placeholder="ej: 1,3,5,7,10"></div>
   </div>
 
   <div class="cfg-section">
     <h3 class="cfg-title">🃏 El Mentiroso</h3>
-    <div class="cfg-row">
-      <label>Rondas por defecto</label>
-      <input type="number" id="cfg-lie-rounds" min="1" max="20" value="5">
-    </div>
-    <div class="cfg-row">
-      <label>Modo</label>
+    <div class="cfg-row"><label>Rondas por defecto</label><input type="number" id="cfg-lie-rounds" min="1" max="20" value="5"></div>
+    <div class="cfg-row"><label>Opciones de rondas en lobby</label><input type="text" id="cfg-lie-round-opts" value="3,5,8,10" style="width:200px" placeholder="ej: 3,5,8,10"></div>
+    <div class="cfg-row"><label>Modo</label>
       <select id="cfg-lie-mode">
         <option value="texto">Texto (nombres)</option>
         <option value="numeros">Números</option>
       </select>
     </div>
-    <div class="cfg-row">
-      <label>Segundos para nombrar</label>
-      <input type="number" id="cfg-lie-naming" min="5" max="60" value="15">
-    </div>
+    <div class="cfg-row"><label>Segundos para nombrar</label><input type="number" id="cfg-lie-naming" min="5" max="60" value="15"></div>
   </div>
 
   <div class="cfg-section">
     <h3 class="cfg-title">📻 La Frecuencia</h3>
-    <div class="cfg-row">
-      <label>Rondas por defecto</label>
-      <input type="number" id="cfg-wave-rounds" min="1" max="20" value="5">
-    </div>
+    <div class="cfg-row"><label>Rondas por defecto</label><input type="number" id="cfg-wave-rounds" min="1" max="20" value="5"></div>
+    <div class="cfg-row"><label>Opciones de rondas en lobby</label><input type="text" id="cfg-wave-round-opts" value="3,5,8,10" style="width:200px" placeholder="ej: 3,5,8,10"></div>
   </div>
 
   <div class="cfg-section">
     <h3 class="cfg-title">🙋 ¿Quién Soy?</h3>
-    <div class="cfg-row">
-      <label>Rondas por defecto</label>
-      <input type="number" id="cfg-who-rounds" min="1" max="10" value="1">
-    </div>
+    <div class="cfg-row"><label>Rondas por defecto</label><input type="number" id="cfg-who-rounds" min="1" max="10" value="1"></div>
+    <div class="cfg-row"><label>Opciones de rondas en lobby</label><input type="text" id="cfg-who-round-opts" value="1,2,3,5" style="width:200px" placeholder="ej: 1,2,3,5"></div>
   </div>
 
   <div class="cfg-section">
     <h3 class="cfg-title">⚽ Subasta Futbolera — Pesos de rareza</h3>
-    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Mayor peso = sale con más frecuencia. Los pesos son relativos entre sí: si Mediano=12 y Top=6, los medianos salen el doble de veces que los top.</p>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Mayor peso = sale con más frecuencia. Son relativos: Mediano=12 y Top=6 → medianos salen el doble que los top.</p>
     <div class="cfg-rareza-grid">
-      <div class="cfg-rareza-row" data-rar="mediano">
-        <span class="cfg-rar-label rareza-mediano">Mediano</span>
-        <input type="range" id="cfg-rar-mediano" min="0.5" max="30" step="0.5" value="12">
-        <input type="number" id="cfg-rar-mediano-num" min="0.5" max="30" step="0.5" value="12" style="width:62px">
-      </div>
-      <div class="cfg-rareza-row" data-rar="top">
-        <span class="cfg-rar-label rareza-top">Top</span>
-        <input type="range" id="cfg-rar-top" min="0.5" max="30" step="0.5" value="6">
-        <input type="number" id="cfg-rar-top-num" min="0.5" max="30" step="0.5" value="6" style="width:62px">
-      </div>
-      <div class="cfg-rareza-row" data-rar="leyenda">
-        <span class="cfg-rar-label rareza-leyenda">Leyenda</span>
-        <input type="range" id="cfg-rar-leyenda" min="0.5" max="30" step="0.5" value="2">
-        <input type="number" id="cfg-rar-leyenda-num" min="0.5" max="30" step="0.5" value="2" style="width:62px">
-      </div>
-      <div class="cfg-rareza-row" data-rar="troll">
-        <span class="cfg-rar-label rareza-troll">Troll</span>
-        <input type="range" id="cfg-rar-troll" min="0.5" max="30" step="0.5" value="1.5">
-        <input type="number" id="cfg-rar-troll-num" min="0.5" max="30" step="0.5" value="1.5" style="width:62px">
-      </div>
+      <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-mediano">Mediano</span><input type="range" id="cfg-rar-mediano" min="0.5" max="30" step="0.5" value="12"><input type="number" id="cfg-rar-mediano-num" min="0.5" max="30" step="0.5" value="12" style="width:62px"></div>
+      <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-top">Top</span><input type="range" id="cfg-rar-top" min="0.5" max="30" step="0.5" value="6"><input type="number" id="cfg-rar-top-num" min="0.5" max="30" step="0.5" value="6" style="width:62px"></div>
+      <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-leyenda">Leyenda</span><input type="range" id="cfg-rar-leyenda" min="0.5" max="30" step="0.5" value="2"><input type="number" id="cfg-rar-leyenda-num" min="0.5" max="30" step="0.5" value="2" style="width:62px"></div>
+      <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-troll">Troll</span><input type="range" id="cfg-rar-troll" min="0.5" max="30" step="0.5" value="1.5"><input type="number" id="cfg-rar-troll-num" min="0.5" max="30" step="0.5" value="1.5" style="width:62px"></div>
     </div>
     <div class="cfg-prob-preview">
-      <p style="font-size:12px;color:var(--soft);margin-bottom:6px">Probabilidad relativa estimada por rareza:</p>
+      <p style="font-size:12px;color:var(--soft);margin-bottom:6px">Probabilidad relativa estimada:</p>
       <div class="cfg-prob-bars" id="cfg-prob-bars"></div>
     </div>
   </div>
 
-  <button class="btn btn-primary" id="btn-save-settings" style="margin-top:8px">Guardar configuración</button>
+  <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <button class="btn btn-ghost" id="btn-save-settings">Guardar local</button>
+    <button class="btn btn-primary" id="btn-publish-settings">Guardar y publicar en GitHub ↑</button>
+  </div>
+  <p id="cfg-publish-status" style="font-size:12px;color:var(--soft);margin-top:8px"></p>
 </div>
 
 <!-- Card edit modal -->
@@ -1050,17 +1035,56 @@ function updateProbBars(){
 }
 
 function populateConfig(s){
-  document.getElementById('cfg-lie-rounds').value  = s.mentiroso?.roundCount ?? 5;
-  document.getElementById('cfg-lie-mode').value    = s.mentiroso?.mode ?? 'texto';
-  document.getElementById('cfg-lie-naming').value  = s.mentiroso?.namingSeconds ?? 15;
-  document.getElementById('cfg-wave-rounds').value = s.frecuencia?.roundCount ?? 5;
-  document.getElementById('cfg-who-rounds').value  = s.quienSoy?.roundCount ?? 1;
+  const opts = s.opciones || {};
+  // Impostor
+  document.getElementById('cfg-imp-count-def').value  = s.impostor?.impostorCount ?? 1;
+  document.getElementById('cfg-imp-mangas-def').value = s.impostor?.mangaCount ?? 3;
+  document.getElementById('cfg-imp-manga-opts').value = (opts.impMangaOptions || [1,3,5,7,10]).join(',');
+  // Mentiroso
+  document.getElementById('cfg-lie-rounds').value     = s.mentiroso?.roundCount ?? 5;
+  document.getElementById('cfg-lie-round-opts').value = (opts.lieRoundOptions || [3,5,8,10]).join(',');
+  document.getElementById('cfg-lie-mode').value       = s.mentiroso?.mode ?? 'texto';
+  document.getElementById('cfg-lie-naming').value     = s.mentiroso?.namingSeconds ?? 15;
+  // Frecuencia
+  document.getElementById('cfg-wave-rounds').value     = s.frecuencia?.roundCount ?? 5;
+  document.getElementById('cfg-wave-round-opts').value = (opts.waveRoundOptions || [3,5,8,10]).join(',');
+  // Quién Soy
+  document.getElementById('cfg-who-rounds').value     = s.quienSoy?.roundCount ?? 1;
+  document.getElementById('cfg-who-round-opts').value = (opts.whoRoundOptions || [1,2,3,5]).join(',');
+  // Subasta rareza
   for(const r of RAREZA_ORDER){
     const v = s.subasta?.rarezaPesos?.[r] ?? {mediano:12,top:6,leyenda:2,troll:1.5}[r];
     document.getElementById('cfg-rar-'+r).value     = v;
     document.getElementById('cfg-rar-'+r+'-num').value = v;
   }
   updateProbBars();
+}
+
+function parseOpts(str){ return str.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v)&&v>0); }
+
+function buildSettingsPayload(){
+  return {
+    impostor: {
+      impostorCount: parseInt(document.getElementById('cfg-imp-count-def').value)||1,
+      mangaCount:    parseInt(document.getElementById('cfg-imp-mangas-def').value)||3,
+    },
+    mentiroso: {
+      roundCount:    parseInt(document.getElementById('cfg-lie-rounds').value)||5,
+      mode:          document.getElementById('cfg-lie-mode').value,
+      namingSeconds: parseInt(document.getElementById('cfg-lie-naming').value)||15,
+    },
+    frecuencia: { roundCount: parseInt(document.getElementById('cfg-wave-rounds').value)||5 },
+    quienSoy:   { roundCount: parseInt(document.getElementById('cfg-who-rounds').value)||1 },
+    subasta: { rarezaPesos: Object.fromEntries(
+      RAREZA_ORDER.map(r=>[r, parseFloat(document.getElementById('cfg-rar-'+r+'-num').value)||1])
+    )},
+    opciones: {
+      impMangaOptions:  parseOpts(document.getElementById('cfg-imp-manga-opts').value),
+      lieRoundOptions:  parseOpts(document.getElementById('cfg-lie-round-opts').value),
+      waveRoundOptions: parseOpts(document.getElementById('cfg-wave-round-opts').value),
+      whoRoundOptions:  parseOpts(document.getElementById('cfg-who-round-opts').value),
+    },
+  };
 }
 
 async function loadConfig(){
@@ -1078,26 +1102,42 @@ for(const r of RAREZA_ORDER){
 }
 
 document.getElementById('btn-save-settings').addEventListener('click', async ()=>{
-  const payload = {
-    mentiroso: {
-      roundCount:    parseInt(document.getElementById('cfg-lie-rounds').value)||5,
-      mode:          document.getElementById('cfg-lie-mode').value,
-      namingSeconds: parseInt(document.getElementById('cfg-lie-naming').value)||15,
-    },
-    frecuencia: { roundCount: parseInt(document.getElementById('cfg-wave-rounds').value)||5 },
-    quienSoy:   { roundCount: parseInt(document.getElementById('cfg-who-rounds').value)||1 },
-    subasta: { rarezaPesos: Object.fromEntries(
-      RAREZA_ORDER.map(r=>[r, parseFloat(document.getElementById('cfg-rar-'+r+'-num').value)||1])
-    )},
-  };
   try{
     const res = await fetch('/admin/save-settings'+_passQ, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload),
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(buildSettingsPayload()),
     });
     const json = await res.json();
-    if(json.ok) toast('✓ Configuración guardada','ok');
+    if(json.ok) toast('✓ Configuración guardada (solo local)','ok');
     else toast('Error: '+(json.error||'?'),'err');
   }catch(e){ toast('Error de red','err'); }
+});
+
+document.getElementById('btn-publish-settings').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btn-publish-settings');
+  const status = document.getElementById('cfg-publish-status');
+  btn.disabled = true;
+  btn.textContent = 'Publicando…';
+  status.textContent = '';
+  try{
+    const res = await fetch('/admin/publish-settings'+_passQ, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(buildSettingsPayload()),
+    });
+    const json = await res.json();
+    if(json.ok && json.published){
+      toast('✓ Publicado en GitHub','ok');
+      status.textContent = '✓ Publicado. Los cambios estarán activos en Render tras el próximo deploy.';
+      status.style.color = 'var(--ok,#4caf50)';
+    } else if(json.ok && !json.published){
+      toast('Guardado local (sin GitHub: '+(json.reason||'?')+')','warn');
+      status.textContent = 'Guardado localmente. No se publicó en GitHub: '+(json.reason||'sin token');
+      status.style.color = 'var(--warn,#ff9800)';
+    } else {
+      toast('Error: '+(json.error||'?'),'err');
+      status.textContent = 'Error: '+(json.error||'?');
+      status.style.color = 'var(--err,#f44336)';
+    }
+  }catch(e){ toast('Error de red','err'); status.textContent = 'Error de red.'; }
+  finally{ btn.disabled=false; btn.textContent='Guardar y publicar en GitHub ↑'; }
 });
 
 // ============================================================

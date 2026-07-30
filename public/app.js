@@ -214,7 +214,11 @@ function renderLobby(st){
 
   if(isHost){
     renderGamePicker(st.gameType);
-    if(st.gameType==='impostor') renderImpostorCfg(st.impostorConfig);
+    const opts = st.gameOptions || {};
+    populateSelect('cfg-lie-rounds',  opts.lieRoundOptions,  st.mentirosoConfig?.roundCount);
+    populateSelect('cfg-wave-rounds', opts.waveRoundOptions, st.waveConfig?.roundCount);
+    populateSelect('cfg-who-rounds',  opts.whoRoundOptions,  st.whoConfig?.roundCount);
+    if(st.gameType==='impostor') renderImpostorCfg(st.impostorConfig, opts);
     if(st.gameType==='who') renderWhoCfg(st.whoConfig);
     updateStartBtn(st.players.length);
   }
@@ -245,11 +249,20 @@ $('pick-subasta').addEventListener('click',()=>socket.emit('host:select_game',{c
 $('pick-wavelength').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'wavelength'}));
 $('pick-who').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'who'}));
 
+function populateSelect(selId, options, currentVal){
+  const sel=$(selId);
+  if(!sel||!options?.length) return;
+  const prev = currentVal ?? Number(sel.value);
+  sel.innerHTML = options.map(v=>`<option value="${v}">${v}</option>`).join('');
+  const best = options.includes(prev) ? prev : options.reduce((a,b)=>Math.abs(b-prev)<Math.abs(a-prev)?b:a);
+  sel.value = best;
+}
+
 let impCfgRendered=false;
-function renderImpostorCfg(cfg){
+function renderImpostorCfg(cfg, opts){
   const sel=$('cfg-imp-count'); const prev=Number(sel.value)||cfg.impostorCount;
   sel.innerHTML=''; for(let i=1;i<=maxImpostors;i++){const o=document.createElement('option');o.value=i;o.textContent=i;sel.appendChild(o);} sel.value=Math.min(prev,maxImpostors);
-  $('cfg-imp-mangas').value=cfg.mangaCount;
+  populateSelect('cfg-imp-mangas', opts?.impMangaOptions, cfg.mangaCount);
   if(!impCfgRendered){
     const wrap=$('cfg-imp-cats'); wrap.innerHTML='';
     ALL_CATEGORIES.forEach(cat=>{
