@@ -433,8 +433,25 @@
   <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
     <!-- Cancha editora -->
     <div id="fpe-pitch" style="position:relative;width:260px;flex-shrink:0;aspect-ratio:2/3;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 24px, transparent 24px 48px),linear-gradient(160deg,#2f7544 0%,#1f5630 55%,#143d22 100%);border:2px solid rgba(182,255,46,0.5);border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(182,255,46,0.12);touch-action:none;user-select:none">
+      <!-- Línea de medio campo (horizontal) -->
       <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,0.35)"></div>
+      <!-- Círculo central -->
       <div style="position:absolute;top:calc(50% - 28px);left:calc(50% - 28px);width:56px;height:56px;border:2px solid rgba(255,255,255,0.35);border-radius:50%"></div>
+      <!-- Grid de referencia (solo admin) -->
+      <!-- Línea vertical central -->
+      <div style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,0.18)"></div>
+      <!-- Líneas verticales en 25% y 75% -->
+      <div style="position:absolute;top:0;bottom:0;left:25%;width:1px;background:rgba(255,255,255,0.08)"></div>
+      <div style="position:absolute;top:0;bottom:0;left:75%;width:1px;background:rgba(255,255,255,0.08)"></div>
+      <!-- Líneas horizontales en 25%, 75% (la de 50% ya es el medio campo) -->
+      <div style="position:absolute;left:0;right:0;top:25%;height:1px;background:rgba(255,255,255,0.08)"></div>
+      <div style="position:absolute;left:0;right:0;top:75%;height:1px;background:rgba(255,255,255,0.08)"></div>
+      <!-- Etiquetas de porcentaje en la línea vertical central -->
+      <div style="position:absolute;left:51%;top:2%;font-size:8px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none">y10</div>
+      <div style="position:absolute;left:51%;top:23%;font-size:8px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none">y25</div>
+      <div style="position:absolute;left:51%;top:48%;font-size:8px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none">y50</div>
+      <div style="position:absolute;left:51%;top:73%;font-size:8px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none">y75</div>
+      <div style="position:absolute;left:51%;top:90%;font-size:8px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none">y90</div>
     </div>
 
     <!-- Panel derecho: añadir slot + leyenda -->
