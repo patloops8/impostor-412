@@ -135,8 +135,8 @@
   /* ---- FORMATIONS EDITOR ---- */
   .fpe-slot{position:absolute;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--display,monospace);color:#fff;border:2px solid rgba(255,255,255,0.7);box-shadow:0 2px 6px rgba(0,0,0,0.6);cursor:grab;transform:translate(-50%,-50%);transition:box-shadow .1s;touch-action:none;user-select:none}
   .fpe-slot:active{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,0.8);z-index:10}
-  .fpe-slot-rm{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;border:none;font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-weight:700}
-  .fpe-slot-rm:hover{background:#dc2626}
+  .fpe-slot-rm{position:absolute;top:0;right:0;transform:translate(35%,-35%);width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;border:2px solid #fff;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-weight:900;box-shadow:0 1px 4px rgba(0,0,0,0.5)}
+  .fpe-slot-rm:hover{background:#b91c1c;transform:translate(35%,-35%) scale(1.2)}
   .fpe-slot-label{font-size:9.5px;font-weight:800;pointer-events:none}
   .fpe-legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
 
@@ -432,7 +432,7 @@
 
   <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
     <!-- Cancha editora -->
-    <div id="fpe-pitch" style="position:relative;width:260px;flex-shrink:0;aspect-ratio:2/3;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 24px, transparent 24px 48px),linear-gradient(160deg,#2f7544 0%,#1f5630 55%,#143d22 100%);border:2px solid rgba(182,255,46,0.5);border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(182,255,46,0.12);touch-action:none;user-select:none">
+    <div id="fpe-pitch" style="position:relative;width:260px;flex-shrink:0;aspect-ratio:2/3;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 24px, transparent 24px 48px),linear-gradient(160deg,#2f7544 0%,#1f5630 55%,#143d22 100%);border:2px solid rgba(182,255,46,0.5);border-radius:8px;overflow:visible;box-shadow:0 0 16px rgba(182,255,46,0.12);touch-action:none;user-select:none">
       <!-- Línea de medio campo (horizontal) -->
       <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,0.35)"></div>
       <!-- Círculo central -->
