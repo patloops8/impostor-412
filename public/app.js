@@ -186,6 +186,7 @@ socket.on('room:update', (st) => {
   isHost = (st.hostId === myId);
   currentGame = st.gameType;
   maxImpostors = st.maxImpostors; minPlayers = st.minPlayers;
+  if(st.formations) formationsData = st.formations;
 
   if(st.status==='lobby'){
     renderLobby(st);
@@ -470,6 +471,7 @@ function loadSil(imgEl,phEl,phPosEl,cardId,posName,revealed){
 function silPh(img,ph,phPos,posName){ if(img){img.classList.add('hidden');img.src='';} if(ph)ph.classList.remove('hidden'); if(phPos&&posName)phPos.textContent=posName.charAt(0); }
 
 let subState={budget:1000,skipsLeft:5,teamCount:0}, subHighest=0, subStart=0, subEligible=false, subFormCd=null, iSkipped=false, currentFormation='4-3-3';
+let formationsData={}, currentFormationSlots=[];
 // Countdown de subasta: animación local fluida, corregida por cada tick del servidor.
 // Esto evita el "correteo" en celulares con red lenta: el número baja suave
 // localmente, pero cada tick del servidor lo re-sincroniza si se desvió.
@@ -513,7 +515,8 @@ function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subC
 function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; $('sub-team-count').textContent=`${subState.teamCount}/11`; bump($('sub-budget')); bump($('sub-skips')); }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
-socket.on('sub:formation_vote',({formations,secondsLeft})=>{
+socket.on('sub:formation_vote',({formations,formationsData:fd,secondsLeft})=>{
+  if(fd) formationsData=fd;
   const box=$('sub-form-buttons'); box.innerHTML=''; $('sub-form-voted').classList.add('hidden');
   formations.forEach(f=>{ const b=document.createElement('button'); b.className='btn-secondary'; b.textContent=f; b.addEventListener('click',()=>{ box.querySelectorAll('button').forEach(x=>x.disabled=true); socket.emit('player:vote_formation',{code:roomCode,formation:f}); $('sub-form-voted').classList.remove('hidden'); }); box.appendChild(b); });
   const el=$('sub-form-countdown'); el.textContent=secondsLeft; el.classList.toggle('urgent',secondsLeft<=5);
@@ -521,7 +524,7 @@ socket.on('sub:formation_vote',({formations,secondsLeft})=>{
 });
 socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
 socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
-socket.on('sub:formation_decided',({formation})=>{ currentFormation=formation; subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:formation_decided',({formation,formationSlots})=>{ currentFormation=formation; currentFormationSlots=formationSlots||(formationsData[formation]||[]); subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,secondsLeft})=>{
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
@@ -713,10 +716,11 @@ function showSubPitchFor(pid, isMine){
   $('sub-pitch-title').textContent = isMine ? 'Tu alineación' : `Alineación de ${s.name}`;
   if(subOverMode==='votacion'){ $('sub-my-total').textContent = subOverChampionName===s.name ? '🏆 Campeón' : ''; }
   else { $('sub-my-total').textContent = `OVR ${s.ovr.toFixed(1)}`; }
-  drawPitch($('sub-pitch'), currentFormation, s.cards||[]);
+  drawPitch($('sub-pitch'), currentFormationSlots.length?currentFormationSlots:(formationsData[currentFormation]||[]), s.cards||[]);
 }
-socket.on('sub:game_over',({mode,scores,formation,championName})=>{
+socket.on('sub:game_over',({mode,scores,formation,formationSlots,championName})=>{
   if(formation)currentFormation=formation;
+  if(formationSlots)currentFormationSlots=formationSlots; else if(formation)currentFormationSlots=formationsData[formation]||[];
   subOverScores=scores; subOverMode=mode; subOverChampionName=championName||'';
   showSubPitchFor(myId, true);
   const sb=$('sub-scoreboard'); sb.innerHTML='';
@@ -731,46 +735,30 @@ socket.on('sub:game_over',({mode,scores,formation,championName})=>{
   $('sub-over-wait').classList.toggle('hidden',isHost);
   showWinnerThen(scores,()=>show('s-sub-over'));
 });
-// Dibuja la alineación en una cancha. Las filas van de arriba (delanteros) a abajo (portero).
-const FORMATION_SLOTS={
-  '4-3-3':   {POR:1,LD:1,DFC:2,LI:1,MCD:1,MC:2,MCO:0,ED:1,EI:1,DC:1},
-  '4-4-2':   {POR:1,LD:1,DFC:2,LI:1,MCD:0,MC:2,MCO:0,ED:1,EI:1,DC:2},
-  '4-2-3-1': {POR:1,LD:1,DFC:2,LI:1,MCD:2,MC:0,MCO:1,ED:1,EI:1,DC:1},
-  '3-5-2':   {POR:1,LD:0,DFC:3,LI:0,MCD:1,MC:2,MCO:1,ED:1,EI:1,DC:1},
-  '3-4-3':   {POR:1,LD:0,DFC:3,LI:0,MCD:1,MC:2,MCO:0,ED:1,EI:1,DC:2},
-  '4-3-1-2': {POR:1,LD:1,DFC:2,LI:1,MCD:1,MC:2,MCO:1,ED:0,EI:0,DC:2},
-};
-function drawPitch(container, formation, cards){
+// Dibuja la alineación en una cancha usando coordenadas absolutas por slot.
+function drawPitch(container, slots, cards){
   container.innerHTML='';
-  const slots=FORMATION_SLOTS[formation]||FORMATION_SLOTS['4-3-3'];
-  // Agrupar las cartas ganadas por posición
+  if(!slots||!slots.length) return;
   const byPos={}; (cards||[]).forEach(c=>{ (byPos[c.position]=byPos[c.position]||[]).push(c); });
-  // Filas visuales de arriba (ataque) hacia abajo (portería).
-  // El orden DENTRO de cada fila es de izquierda a derecha en pantalla:
-  // los jugadores del lado izquierdo (LI, EI) van primero, los del derecho (LD, ED) al final.
-  const rows=[ ['DC'], ['EI','MCO','ED'], ['MC','MCD'], ['LI','DFC','LD'], ['POR'] ];
-  // Distribuir verticalmente
-  const usableRows=rows.filter(row=>row.some(p=>slots[p]>0));
-  const n=usableRows.length;
-  usableRows.forEach((row,idx)=>{
-    const rowDiv=document.createElement('div'); rowDiv.className='pitch-row';
-    rowDiv.style.top=`${(idx+0.5)/n*100}%`; rowDiv.style.transform='translateY(-50%)';
-    // Para cada posición de la fila, dibujar tantos tokens como pida la formación
-    row.forEach(pos=>{
-      const count=slots[pos]||0;
-      for(let k=0;k<count;k++){
-        const card=(byPos[pos]&&byPos[pos][k])||null;
-        const pl=document.createElement('div'); pl.className='pitch-player'+(card?'':' pitch-empty');
-        pl.appendChild(pitchTokenEl(card,pos));
-        const nm=document.createElement('div'); nm.className='pitch-name'; nm.textContent=card?shortName(card.name):'—';
-        pl.appendChild(nm);
-        if(card){ const pl2=document.createElement('div'); pl2.className='pitch-pos'; pl2.textContent=pos; pl.appendChild(pl2); }
-        if(card){ const v=document.createElement('div'); v.className='pitch-val'; v.textContent=`${card.media}`; pl.appendChild(v); }
-        rowDiv.appendChild(pl);
-      }
-    });
-    container.appendChild(rowDiv);
-  });
+  const usedIdx={};
+  for(const slot of slots){
+    const pos=slot.pos;
+    const idx=usedIdx[pos]=(usedIdx[pos]||0);
+    const card=(byPos[pos]&&byPos[pos][idx])||null;
+    usedIdx[pos]=idx+1;
+    const pl=document.createElement('div');
+    pl.className='pitch-player'+(card?'':' pitch-empty');
+    pl.style.position='absolute';
+    pl.style.left=slot.x+'%';
+    pl.style.top=slot.y+'%';
+    pl.style.transform='translate(-50%,-50%)';
+    pl.appendChild(pitchTokenEl(card,pos));
+    const nm=document.createElement('div'); nm.className='pitch-name'; nm.textContent=card?shortName(card.name):'—';
+    pl.appendChild(nm);
+    if(card){ const p2=document.createElement('div'); p2.className='pitch-pos'; p2.textContent=pos; pl.appendChild(p2); }
+    if(card){ const vl=document.createElement('div'); vl.className='pitch-val'; vl.textContent=card.media; pl.appendChild(vl); }
+    container.appendChild(pl);
+  }
 }
 function shortName(name){ const parts=name.split(' '); return parts.length>1?parts[parts.length-1]:name; }
 // Token de la cancha final: foto real circular si existe (/images/reales/<id>.png),

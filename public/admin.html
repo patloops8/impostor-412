@@ -132,6 +132,14 @@
   .cfg-prob-bars{display:flex;gap:4px;height:28px;border-radius:6px;overflow:hidden}
   .cfg-prob-bar{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;transition:flex .3s;min-width:0;overflow:hidden;white-space:nowrap}
 
+  /* ---- FORMATIONS EDITOR ---- */
+  .fpe-slot{position:absolute;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--display,monospace);color:#fff;border:2px solid rgba(255,255,255,0.7);box-shadow:0 2px 6px rgba(0,0,0,0.6);cursor:grab;transform:translate(-50%,-50%);transition:box-shadow .1s;touch-action:none;user-select:none}
+  .fpe-slot:active{cursor:grabbing;box-shadow:0 4px 14px rgba(0,0,0,0.8);z-index:10}
+  .fpe-slot-rm{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;border:none;font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-weight:700}
+  .fpe-slot-rm:hover{background:#dc2626}
+  .fpe-slot-label{font-size:9.5px;font-weight:800;pointer-events:none}
+  .fpe-legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
   /* ---- ADD ROW ---- */
   .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .add-row input,  .add-row select{flex:1;min-width:120px}
@@ -208,6 +216,7 @@
   <div class="tab" data-tab="wavelength">La Frecuencia <span class="badge" id="badge-wavelength">–</span></div>
   <div class="tab" data-tab="subasta">Subasta <span class="badge" id="badge-subasta">–</span></div>
   <div class="tab" data-tab="config">⚙ Config</div>
+  <div class="tab" data-tab="formations">⚽ Formaciones</div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -407,6 +416,67 @@
   <p id="cfg-publish-status" style="font-size:12px;color:var(--soft);margin-top:8px"></p>
 </div>
 
+<!-- Formations panel -->
+<div class="panel" id="panel-formations">
+  <div class="panel-header">
+    <h2>⚽ Editor de Formaciones</h2>
+    <p>Arrastrá los slots sobre la cancha. Lo que ves acá es exactamente lo que aparece en el juego al final de cada partida.</p>
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <select id="fpe-select" style="flex:1;min-width:120px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px"></select>
+    <button class="btn btn-ghost" id="fpe-btn-rename" style="white-space:nowrap">Renombrar</button>
+    <button class="btn btn-ghost" id="fpe-btn-delete" style="white-space:nowrap;color:var(--red)">Eliminar</button>
+    <button class="btn btn-ghost" id="fpe-btn-new" style="white-space:nowrap">+ Nueva</button>
+  </div>
+
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <!-- Cancha editora -->
+    <div id="fpe-pitch" style="position:relative;width:260px;flex-shrink:0;aspect-ratio:2/3;background:repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 24px, transparent 24px 48px),linear-gradient(160deg,#2f7544 0%,#1f5630 55%,#143d22 100%);border:2px solid rgba(182,255,46,0.5);border-radius:8px;overflow:hidden;box-shadow:0 0 16px rgba(182,255,46,0.12);touch-action:none;user-select:none">
+      <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,0.35)"></div>
+      <div style="position:absolute;top:calc(50% - 28px);left:calc(50% - 28px);width:56px;height:56px;border:2px solid rgba(255,255,255,0.35);border-radius:50%"></div>
+    </div>
+
+    <!-- Panel derecho: añadir slot + leyenda -->
+    <div style="flex:1;min-width:160px">
+      <p style="font-size:12px;color:var(--soft);margin-bottom:10px">Conteo de slots en esta formación: <strong id="fpe-slot-count">0</strong></p>
+
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;color:var(--soft);display:block;margin-bottom:4px">Añadir posición</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select id="fpe-add-pos" style="flex:1;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px">
+            <option value="POR">POR — Portero</option>
+            <option value="LD">LD — Lat. Derecho</option>
+            <option value="DFC">DFC — Def. Central</option>
+            <option value="LI">LI — Lat. Izquierdo</option>
+            <option value="MCD">MCD — MC Defensivo</option>
+            <option value="MC">MC — Mediocentro</option>
+            <option value="MCO">MCO — MC Ofensivo</option>
+            <option value="ED">ED — Extremo Der.</option>
+            <option value="EI">EI — Extremo Izq.</option>
+            <option value="DC">DC — Delantero</option>
+          </select>
+          <button class="btn btn-ghost" id="fpe-btn-add" style="white-space:nowrap">Añadir</button>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--soft);line-height:1.7">
+        <div><span class="fpe-legend-dot" style="background:#f59e0b"></span> Portero</div>
+        <div><span class="fpe-legend-dot" style="background:#3b82f6"></span> Defensa</div>
+        <div><span class="fpe-legend-dot" style="background:#22c55e"></span> Mediocampo</div>
+        <div><span class="fpe-legend-dot" style="background:#ef4444"></span> Delantero</div>
+        <p style="margin-top:8px;font-size:11px">Arrastrá para mover.<br>Tap en ✕ para eliminar.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+    <button class="btn btn-ghost" id="fpe-btn-save">Guardar local</button>
+    <button class="btn btn-primary" id="fpe-btn-publish">Guardar y publicar en GitHub ↑</button>
+  </div>
+  <p id="fpe-status" style="font-size:12px;color:var(--soft);margin-top:8px"></p>
+</div>
+
 <!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
@@ -582,6 +652,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     currentTab = tab.dataset.tab;
     document.getElementById('panel-' + currentTab).classList.add('active');
     if(currentTab === 'config'){ loadConfig(); }
+    else if(currentTab === 'formations'){ fpeLoad(); }
     else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
@@ -1139,6 +1210,174 @@ document.getElementById('btn-publish-settings').addEventListener('click', async 
   }catch(e){ toast('Error de red','err'); status.textContent = 'Error de red.'; }
   finally{ btn.disabled=false; btn.textContent='Guardar y publicar en GitHub ↑'; }
 });
+
+// ============================================================
+// FORMATIONS EDITOR
+// ============================================================
+let fpeData = {};      // { '4-3-3': [{pos,x,y},...], ... }
+let fpeCurrent = null; // formación seleccionada
+let fpeDrag = null;    // { idx, pitchEl, pitchRect }
+
+const POS_COLORS = {POR:'#f59e0b',LD:'#3b82f6',DFC:'#3b82f6',LI:'#3b82f6',MCD:'#22c55e',MC:'#22c55e',MCO:'#22c55e',ED:'#ef4444',EI:'#ef4444',DC:'#ef4444'};
+
+function fpeRenderSelect(){
+  const sel = document.getElementById('fpe-select');
+  const cur = fpeCurrent;
+  sel.innerHTML = Object.keys(fpeData).map(n=>`<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+  if(!fpeCurrent && sel.options.length) fpeCurrent = sel.options[0].value;
+}
+
+function fpeRenderPitch(){
+  const pitch = document.getElementById('fpe-pitch');
+  // remove old slots only (keep the field markings which are static divs)
+  pitch.querySelectorAll('.fpe-slot').forEach(el=>el.remove());
+  const slots = fpeData[fpeCurrent] || [];
+  document.getElementById('fpe-slot-count').textContent = slots.length;
+
+  slots.forEach((slot, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'fpe-slot';
+    chip.style.left = slot.x + '%';
+    chip.style.top  = slot.y + '%';
+    chip.style.background = POS_COLORS[slot.pos] || '#888';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'fpe-slot-label';
+    lbl.textContent = slot.pos;
+    chip.appendChild(lbl);
+
+    const rm = document.createElement('button');
+    rm.className = 'fpe-slot-rm';
+    rm.textContent = '✕';
+    rm.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fpeData[fpeCurrent].splice(i, 1);
+      fpeRenderPitch();
+    });
+    chip.appendChild(rm);
+
+    // Mouse drag
+    chip.addEventListener('mousedown', (e) => {
+      if(e.target === rm) return;
+      e.preventDefault();
+      fpeDrag = { idx: i, pitchEl: pitch, pitchRect: pitch.getBoundingClientRect() };
+      chip.style.zIndex = 20;
+    });
+    // Touch drag
+    chip.addEventListener('touchstart', (e) => {
+      if(e.target === rm) return;
+      e.preventDefault();
+      fpeDrag = { idx: i, pitchEl: pitch, pitchRect: pitch.getBoundingClientRect() };
+    }, {passive:false});
+
+    pitch.appendChild(chip);
+  });
+}
+
+function fpeMoveSlot(clientX, clientY) {
+  if(!fpeDrag) return;
+  const r = fpeDrag.pitchRect;
+  const x = Math.max(2, Math.min(98, Math.round((clientX - r.left) / r.width * 100)));
+  const y = Math.max(2, Math.min(98, Math.round((clientY - r.top)  / r.height * 100)));
+  fpeData[fpeCurrent][fpeDrag.idx].x = x;
+  fpeData[fpeCurrent][fpeDrag.idx].y = y;
+  const chips = fpeDrag.pitchEl.querySelectorAll('.fpe-slot');
+  if(chips[fpeDrag.idx]){
+    chips[fpeDrag.idx].style.left = x + '%';
+    chips[fpeDrag.idx].style.top  = y + '%';
+  }
+}
+
+document.addEventListener('mousemove', e => fpeMoveSlot(e.clientX, e.clientY));
+document.addEventListener('touchmove', e => { if(fpeDrag && e.touches[0]) fpeMoveSlot(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+document.addEventListener('mouseup',  () => { fpeDrag = null; });
+document.addEventListener('touchend', () => { fpeDrag = null; });
+
+async function fpeLoad(){
+  try{
+    const r = await fetch('/admin/data/formations'+_passQ);
+    fpeData = await r.json();
+    fpeCurrent = Object.keys(fpeData)[0] || null;
+    fpeRenderSelect();
+    fpeRenderPitch();
+  } catch(e){ console.warn('formations load error', e); }
+}
+
+document.getElementById('fpe-select').addEventListener('change', function(){
+  fpeCurrent = this.value;
+  fpeRenderPitch();
+});
+
+document.getElementById('fpe-btn-new').addEventListener('click', ()=>{
+  const name = prompt('Nombre de la nueva formación (ej: 5-3-2):');
+  if(!name || !name.trim()) return;
+  const n = name.trim();
+  if(fpeData[n]){ toast('Ya existe esa formación','err'); return; }
+  fpeData[n] = [];
+  fpeCurrent = n;
+  fpeRenderSelect();
+  fpeRenderPitch();
+});
+
+document.getElementById('fpe-btn-rename').addEventListener('click', ()=>{
+  if(!fpeCurrent) return;
+  const name = prompt('Nuevo nombre:', fpeCurrent);
+  if(!name || !name.trim() || name.trim() === fpeCurrent) return;
+  const n = name.trim();
+  if(fpeData[n]){ toast('Ya existe esa formación','err'); return; }
+  fpeData[n] = fpeData[fpeCurrent];
+  delete fpeData[fpeCurrent];
+  fpeCurrent = n;
+  fpeRenderSelect();
+});
+
+document.getElementById('fpe-btn-delete').addEventListener('click', ()=>{
+  if(!fpeCurrent) return;
+  if(!confirm(`¿Eliminar la formación "${fpeCurrent}"?`)) return;
+  delete fpeData[fpeCurrent];
+  fpeCurrent = Object.keys(fpeData)[0] || null;
+  fpeRenderSelect();
+  fpeRenderPitch();
+});
+
+document.getElementById('fpe-btn-add').addEventListener('click', ()=>{
+  if(!fpeCurrent){ toast('Primero seleccioná una formación','err'); return; }
+  const pos = document.getElementById('fpe-add-pos').value;
+  fpeData[fpeCurrent].push({ pos, x: 50, y: 50 });
+  fpeRenderPitch();
+});
+
+async function fpePost(endpoint){
+  const btn = document.getElementById(endpoint==='save' ? 'fpe-btn-save' : 'fpe-btn-publish');
+  const status = document.getElementById('fpe-status');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'Guardando…';
+  status.textContent = '';
+  try{
+    const res = await fetch(`/admin/${endpoint}-formations`+_passQ, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fpeData),
+    });
+    const json = await res.json();
+    if(json.ok && json.published){
+      toast('✓ Formaciones publicadas en GitHub','ok');
+      status.textContent = '✓ Publicado. Activo en Render tras el próximo deploy.';
+      status.style.color = 'var(--ok,#4caf50)';
+    } else if(json.ok){
+      toast('✓ Guardado local','ok');
+      status.textContent = endpoint==='publish' ? 'Guardado local (sin GitHub: '+(json.reason||'sin token')+')' : 'Guardado local correctamente.';
+      status.style.color = 'var(--soft)';
+    } else {
+      toast('Error: '+(json.error||'?'),'err');
+      status.textContent = 'Error: '+(json.error||'?');
+      status.style.color = 'var(--err,#f44336)';
+    }
+  }catch(e){ toast('Error de red','err'); }
+  finally{ btn.disabled=false; btn.textContent=origText; }
+}
+
+document.getElementById('fpe-btn-save').addEventListener('click', ()=>fpePost('save'));
+document.getElementById('fpe-btn-publish').addEventListener('click', ()=>fpePost('publish'));
 
 // ============================================================
 // SAVE

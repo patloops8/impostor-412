@@ -46,15 +46,21 @@ const POSITION_LABELS = {
   MCD:'Mediocentro Defensivo', MC:'Mediocentro', MCO:'Mediocentro Ofensivo',
   ED:'Extremo Derecho', EI:'Extremo Izquierdo', DC:'Delantero Centro',
 };
-const FORMATIONS = {
-  '4-3-3':   { POR:1, LD:1, DFC:2, LI:1, MCD:1, MC:2, MCO:0, ED:1, EI:1, DC:1 },
-  '4-4-2':   { POR:1, LD:1, DFC:2, LI:1, MCD:0, MC:2, MCO:0, ED:1, EI:1, DC:2 },
-  '4-2-3-1': { POR:1, LD:1, DFC:2, LI:1, MCD:2, MC:0, MCO:1, ED:1, EI:1, DC:1 },
-  '3-5-2':   { POR:1, LD:0, DFC:3, LI:0, MCD:1, MC:2, MCO:1, ED:1, EI:1, DC:1 },
-  '3-4-3':   { POR:1, LD:0, DFC:3, LI:0, MCD:1, MC:2, MCO:0, ED:1, EI:1, DC:2 },
-  '4-3-1-2': { POR:1, LD:1, DFC:2, LI:1, MCD:1, MC:2, MCO:1, ED:0, EI:0, DC:2 },
-};
-const ALL_FORMATIONS = Object.keys(FORMATIONS);
+const FORMATIONS_PATH = path.join(__dirname, 'data', 'formations.json');
+function loadFormationsData(){
+  try { return JSON.parse(fs.readFileSync(FORMATIONS_PATH,'utf-8')); }
+  catch { return {}; }
+}
+let FORMATIONS_DATA = loadFormationsData();
+// Deriva conteos por posición desde los slots de una formación
+function slotCounts(name){
+  const slots = FORMATIONS_DATA[name] || [];
+  const counts = {};
+  for(const s of slots) counts[s.pos] = (counts[s.pos]||0)+1;
+  return counts;
+}
+function allFormationNames(){ return Object.keys(FORMATIONS_DATA); }
+const ALL_FORMATIONS = allFormationNames(); // compat snapshot; ver allFormationNames() para valor dinámico
 
 /* ===================== ESTADO ===================== */
 const rooms = new Map();
@@ -128,6 +134,7 @@ function emitRoom(r){
     maxImpostors: maxImpostorsFor(r.players.size),
     minPlayers: r.gameType ? MIN_PLAYERS[r.gameType] : 3,
     gameOptions: SETTINGS.opciones || DEFAULT_SETTINGS.opciones,
+    formations: FORMATIONS_DATA,
   });
 }
 
@@ -349,7 +356,7 @@ function weightedSample(pool, cuantas){
   return out;
 }
 function buildDeck(r){
-  const slots=FORMATIONS[r.subasta.formation], pc=r.players.size, pool={};
+  const slots=slotCounts(r.subasta.formation), pc=r.players.size, pool={};
   for(const p of POSITION_ORDER)pool[p]=[];
   for(const c of SUBASTA_CARDS) if(pool[c.position])pool[c.position].push(c);
   const deck=[];
@@ -366,7 +373,7 @@ function buildDeck(r){
 }
 // ¿Algún jugador todavía necesita (y podría llegar a llenar) esta posición?
 function someoneNeedsPosition(r, pos){
-  const slots=FORMATIONS[r.subasta.formation];
+  const slots=slotCounts(r.subasta.formation);
   for(const [pid] of r.players.entries()){
     const ps=r.subasta.playerState.get(pid);
     if(ps && ps.team[pos].length < slots[pos]) return true;
@@ -390,7 +397,7 @@ function showCard(r){
   if(!card){console.error('[Subasta] sin carta',s.currentCardIndex);return;}
   clearSubTimer(r);
   s.currentCard=card; s.bids=new Map(); s.highestBid=null; s.auctionPhase='analysis'; s.secondsLeft=ANALYSIS_S;
-  const slots=FORMATIONS[s.formation]; let elig=0;
+  const slots=slotCounts(s.formation); let elig=0;
   for(const [pid] of r.players.entries()){
     const ps=s.playerState.get(pid);
     if(!ps){s.bids.set(pid,{amount:null,skip:false,eligible:false,responded:true});continue;}
@@ -575,7 +582,7 @@ function finishSubastaOVR(r){
   const scores=[...s.teams.values()].map(t=>({id:t.id,name:t.name,ovr:t.ovr,totalMedia:t.cards.reduce((a,c)=>a+c.media,0),budgetLeft:t.budgetLeft,cards:t.cards}));
   scores.sort((a,b)=>b.ovr-a.ovr || b.totalMedia-a.totalMedia);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
-  io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,formation:s.formation});
+  io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 
 /* ===== TORNEO DE BRACKETS (modo votación) ===== */
@@ -698,13 +705,13 @@ function finishTournament(r,championId){
   const order=[championId, ...s.bracket.eliminated.slice().reverse().filter(id=>id!==championId)];
   order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
   const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
-  io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation});
+  io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 function startFormationVote(r){
   const s=r.subasta; s.phase='formation_vote'; s.formationVotes=new Map(); r.status='subasta_formation';
   s.formationSecondsLeft=FORMATION_S;
   emitRoom(r);
-  io.to(r.code).emit('sub:formation_vote',{formations:ALL_FORMATIONS,secondsLeft:s.formationSecondsLeft});
+  io.to(r.code).emit('sub:formation_vote',{formations:allFormationNames(),formationsData:FORMATIONS_DATA,secondsLeft:s.formationSecondsLeft});
   startFormationClock(r);
 }
 function startFormationClock(r){
@@ -725,9 +732,9 @@ function resolveFormationVote(r){
   for(const f of s.formationVotes.values())tally.set(f,(tally.get(f)||0)+1);
   let mx=0; for(const v of tally.values())mx=Math.max(mx,v);
   const top=[...tally.keys()].filter(f=>tally.get(f)===mx);
-  s.formation = top.length?top[Math.floor(Math.random()*top.length)]:ALL_FORMATIONS[Math.floor(Math.random()*ALL_FORMATIONS.length)];
+  const names=allFormationNames(); s.formation = top.length?top[Math.floor(Math.random()*top.length)]:names[Math.floor(Math.random()*names.length)];
   s.phase='auction';
-  io.to(r.code).emit('sub:formation_decided',{formation:s.formation});
+  io.to(r.code).emit('sub:formation_decided',{formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
   for(const [pid] of r.players.entries()) s.playerState.set(pid,subPlayerState(r.subastaConfig.budget,r.subastaConfig.skipLimit));
   s.deck=buildDeck(r); s.currentCardIndex=0;
   setTimeout(()=>showCard(r),1500);
@@ -1005,7 +1012,7 @@ io.on('connection', socket => {
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
-    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
+    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
   });
 
@@ -1018,7 +1025,7 @@ io.on('connection', socket => {
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
     socket.join(room.code); socket.data.roomCode=room.code;
-    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
+    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
   });
 
@@ -1310,7 +1317,7 @@ io.on('connection', socket => {
       if(r.hostId===playerId)r.hostId=socket.id;
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
-      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:ALL_FORMATIONS});
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames()});
       emitRoom(r);
       sendResumeState(r, socket);
     } else { cb&&cb({ok:false}); }
@@ -1354,6 +1361,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     wavelength:  path.join(__dirname,'data','wavelength-pairs.json'),
     subasta:     path.join(__dirname,'data','subasta-cards.json'),
     settings:    SETTINGS_PATH,
+    formations:  FORMATIONS_PATH,
   };
 
   function adminAuth(req,res,next){
@@ -1462,6 +1470,60 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     }
   });
 
+  // ── Formaciones ──────────────────────────────────────────────────
+  function cleanFormations(data){
+    const VALID_POS = new Set(['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC']);
+    if(!data||typeof data!=='object'||Array.isArray(data)) return FORMATIONS_DATA;
+    const out={};
+    for(const [name, slots] of Object.entries(data)){
+      if(typeof name!=='string'||!name.trim()) continue;
+      if(!Array.isArray(slots)) continue;
+      const clean = slots
+        .filter(s=>s&&VALID_POS.has(s.pos))
+        .map(s=>({ pos:s.pos, x:Math.max(2,Math.min(98,Math.round(Number(s.x)||50))), y:Math.max(2,Math.min(98,Math.round(Number(s.y)||50))) }));
+      if(clean.length) out[name.trim()] = clean;
+    }
+    return Object.keys(out).length ? out : FORMATIONS_DATA;
+  }
+
+  app.post('/admin/save-formations', adminAuth, (req,res)=>{
+    const clean = cleanFormations(req.body);
+    fs.writeFileSync(FORMATIONS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
+    FORMATIONS_DATA = clean;
+    res.json({ok:true});
+  });
+
+  app.post('/admin/publish-formations', adminAuth, async (req,res)=>{
+    const clean = cleanFormations(req.body);
+    fs.writeFileSync(FORMATIONS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
+    FORMATIONS_DATA = clean;
+
+    const token  = process.env.GITHUB_TOKEN;
+    const repo   = process.env.GITHUB_REPO;
+    const branch = process.env.GITHUB_BRANCH || 'main';
+    if(!token||!repo) return res.json({ok:true, published:false, reason:'Sin credenciales GitHub'});
+    try{
+      const GH = `https://api.github.com/repos/${repo}`;
+      const ghFetch = (url,opts={})=>fetch(url,{...opts,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json',...(opts.headers||{})}});
+      const refData    = await (await ghFetch(`${GH}/git/refs/heads/${branch}`)).json();
+      const headSha    = refData.object?.sha;
+      const commitData = await (await ghFetch(`${GH}/git/commits/${headSha}`)).json();
+      const baseTree   = commitData.tree?.sha;
+      const content    = fs.readFileSync(FORMATIONS_PATH,'utf-8');
+      const blobRes    = await ghFetch(`${GH}/git/blobs`,{method:'POST',body:JSON.stringify({content,encoding:'utf-8'})});
+      const blob       = await blobRes.json();
+      if(!blob.sha) throw new Error('blob error');
+      const treeRes  = await ghFetch(`${GH}/git/trees`,{method:'POST',body:JSON.stringify({base_tree:baseTree,tree:[{path:'data/formations.json',mode:'100644',type:'blob',sha:blob.sha}]})});
+      const tree     = await treeRes.json();
+      const commitRes= await ghFetch(`${GH}/git/commits`,{method:'POST',body:JSON.stringify({message:'chore(formations): update from admin panel',tree:tree.sha,parents:[headSha]})});
+      const commit   = await commitRes.json();
+      await ghFetch(`${GH}/git/refs/heads/${branch}`,{method:'PATCH',body:JSON.stringify({sha:commit.sha})});
+      res.json({ok:true, published:true});
+    }catch(e){
+      res.status(500).json({ok:false, error:e.message});
+    }
+  });
+
   // Imágenes subidas en esta sesión pendientes de publicar en GitHub
   const pendingImages = new Set(); // cada entry: "public/images/reales/id.png"
 
@@ -1521,11 +1583,12 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
       // 3. Crear un blob por cada archivo de datos
       const FILE_REPO_PATHS = {
-        concepts:  'data/concepts.json',
-        mentiroso: 'data/mentiroso-categories.json',
-        wavelength:'data/wavelength-pairs.json',
-        subasta:   'data/subasta-cards.json',
-        settings:  'data/settings.json',
+        concepts:   'data/concepts.json',
+        mentiroso:  'data/mentiroso-categories.json',
+        wavelength: 'data/wavelength-pairs.json',
+        subasta:    'data/subasta-cards.json',
+        settings:   'data/settings.json',
+        formations: 'data/formations.json',
       };
       const tree = [];
       for(const [key, repoPath] of Object.entries(FILE_REPO_PATHS)){
