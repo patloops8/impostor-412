@@ -117,6 +117,21 @@
 
   .empty-state{padding:40px;text-align:center;color:var(--soft)}
 
+  /* ---- CONFIG panel ---- */
+  .cfg-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+  .cfg-title{font-size:15px;font-weight:700;margin:0 0 14px}
+  .cfg-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .cfg-row label{min-width:180px;font-size:13px;color:var(--soft)}
+  .cfg-row input[type=number],.cfg-row select{width:90px;padding:5px 8px;font-size:13px}
+  .cfg-rareza-grid{display:flex;flex-direction:column;gap:10px}
+  .cfg-rareza-row{display:grid;grid-template-columns:90px 1fr 70px;align-items:center;gap:10px}
+  .cfg-rar-label{font-size:13px;font-weight:600;text-align:right}
+  .cfg-rareza-row input[type=range]{width:100%}
+  .rareza-mediano{color:#aaa}.rareza-top{color:#4fc3f7}.rareza-leyenda{color:#ffd700}.rareza-troll{color:var(--red)}
+  .cfg-prob-preview{margin-top:16px}
+  .cfg-prob-bars{display:flex;gap:4px;height:28px;border-radius:6px;overflow:hidden}
+  .cfg-prob-bar{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;transition:flex .3s;min-width:0;overflow:hidden;white-space:nowrap}
+
   /* ---- ADD ROW ---- */
   .add-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   .add-row input,  .add-row select{flex:1;min-width:120px}
@@ -192,6 +207,7 @@
   <div class="tab" data-tab="mentiroso">Mentiroso <span class="badge" id="badge-mentiroso">–</span></div>
   <div class="tab" data-tab="wavelength">La Frecuencia <span class="badge" id="badge-wavelength">–</span></div>
   <div class="tab" data-tab="subasta">Subasta <span class="badge" id="badge-subasta">–</span></div>
+  <div class="tab" data-tab="config">⚙ Config</div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -328,6 +344,82 @@
     <span id="sub-filter-count" style="white-space:nowrap;color:var(--soft);font-size:13px;font-weight:600"></span>
   </div>
   <div id="sub-grid" class="sub-card-grid"></div>
+</div>
+
+<!-- Config panel -->
+<div class="panel" id="panel-config">
+  <div class="panel-header">
+    <h2>⚙ Configuración de juegos</h2>
+    <p>Estos valores son los que se cargan por defecto cuando se crea una sala. Los jugadores pueden modificarlos en el lobby de cada partida.</p>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">🃏 El Mentiroso</h3>
+    <div class="cfg-row">
+      <label>Rondas por defecto</label>
+      <input type="number" id="cfg-lie-rounds" min="1" max="20" value="5">
+    </div>
+    <div class="cfg-row">
+      <label>Modo</label>
+      <select id="cfg-lie-mode">
+        <option value="texto">Texto (nombres)</option>
+        <option value="numeros">Números</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label>Segundos para nombrar</label>
+      <input type="number" id="cfg-lie-naming" min="5" max="60" value="15">
+    </div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">📻 La Frecuencia</h3>
+    <div class="cfg-row">
+      <label>Rondas por defecto</label>
+      <input type="number" id="cfg-wave-rounds" min="1" max="20" value="5">
+    </div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">🙋 ¿Quién Soy?</h3>
+    <div class="cfg-row">
+      <label>Rondas por defecto</label>
+      <input type="number" id="cfg-who-rounds" min="1" max="10" value="1">
+    </div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">⚽ Subasta Futbolera — Pesos de rareza</h3>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Mayor peso = sale con más frecuencia. Los pesos son relativos entre sí: si Mediano=12 y Top=6, los medianos salen el doble de veces que los top.</p>
+    <div class="cfg-rareza-grid">
+      <div class="cfg-rareza-row" data-rar="mediano">
+        <span class="cfg-rar-label rareza-mediano">Mediano</span>
+        <input type="range" id="cfg-rar-mediano" min="0.5" max="30" step="0.5" value="12">
+        <input type="number" id="cfg-rar-mediano-num" min="0.5" max="30" step="0.5" value="12" style="width:62px">
+      </div>
+      <div class="cfg-rareza-row" data-rar="top">
+        <span class="cfg-rar-label rareza-top">Top</span>
+        <input type="range" id="cfg-rar-top" min="0.5" max="30" step="0.5" value="6">
+        <input type="number" id="cfg-rar-top-num" min="0.5" max="30" step="0.5" value="6" style="width:62px">
+      </div>
+      <div class="cfg-rareza-row" data-rar="leyenda">
+        <span class="cfg-rar-label rareza-leyenda">Leyenda</span>
+        <input type="range" id="cfg-rar-leyenda" min="0.5" max="30" step="0.5" value="2">
+        <input type="number" id="cfg-rar-leyenda-num" min="0.5" max="30" step="0.5" value="2" style="width:62px">
+      </div>
+      <div class="cfg-rareza-row" data-rar="troll">
+        <span class="cfg-rar-label rareza-troll">Troll</span>
+        <input type="range" id="cfg-rar-troll" min="0.5" max="30" step="0.5" value="1.5">
+        <input type="number" id="cfg-rar-troll-num" min="0.5" max="30" step="0.5" value="1.5" style="width:62px">
+      </div>
+    </div>
+    <div class="cfg-prob-preview">
+      <p style="font-size:12px;color:var(--soft);margin-bottom:6px">Probabilidad relativa estimada por rareza:</p>
+      <div class="cfg-prob-bars" id="cfg-prob-bars"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-save-settings" style="margin-top:8px">Guardar configuración</button>
 </div>
 
 <!-- Card edit modal -->
@@ -504,7 +596,8 @@ document.querySelectorAll('.tab').forEach(tab=>{
     tab.classList.add('active');
     currentTab = tab.dataset.tab;
     document.getElementById('panel-' + currentTab).classList.add('active');
-    if(!DATA[currentTab]) loadTab(currentTab);
+    if(currentTab === 'config'){ loadConfig(); }
+    else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
 });
@@ -934,6 +1027,78 @@ document.getElementById('save-subasta').addEventListener('click', ()=>doSave('su
 document.getElementById('search-subasta').addEventListener('input', e=>{ subastaSearch=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-pos').addEventListener('change', e=>{ subastaPos=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-rar').addEventListener('change', e=>{ subastaRar=e.target.value; renderSubasta(); });
+
+// ============================================================
+// CONFIG TAB
+// ============================================================
+const RAREZA_COLORS = { mediano:'#999', top:'#4fc3f7', leyenda:'#ffd700', troll:'#e53935' };
+const RAREZA_ORDER  = ['mediano','top','leyenda','troll'];
+
+function updateProbBars(){
+  const vals = {};
+  let total = 0;
+  for(const r of RAREZA_ORDER){
+    vals[r] = parseFloat(document.getElementById('cfg-rar-'+r)?.value||0)||0;
+    total += vals[r];
+  }
+  const bars = document.getElementById('cfg-prob-bars');
+  if(!bars) return;
+  bars.innerHTML = RAREZA_ORDER.map(r=>{
+    const pct = total>0 ? (vals[r]/total*100).toFixed(1) : 0;
+    return `<div class="cfg-prob-bar" style="flex:${vals[r]};background:${RAREZA_COLORS[r]}">${pct}%</div>`;
+  }).join('');
+}
+
+function populateConfig(s){
+  document.getElementById('cfg-lie-rounds').value  = s.mentiroso?.roundCount ?? 5;
+  document.getElementById('cfg-lie-mode').value    = s.mentiroso?.mode ?? 'texto';
+  document.getElementById('cfg-lie-naming').value  = s.mentiroso?.namingSeconds ?? 15;
+  document.getElementById('cfg-wave-rounds').value = s.frecuencia?.roundCount ?? 5;
+  document.getElementById('cfg-who-rounds').value  = s.quienSoy?.roundCount ?? 1;
+  for(const r of RAREZA_ORDER){
+    const v = s.subasta?.rarezaPesos?.[r] ?? {mediano:12,top:6,leyenda:2,troll:1.5}[r];
+    document.getElementById('cfg-rar-'+r).value     = v;
+    document.getElementById('cfg-rar-'+r+'-num').value = v;
+  }
+  updateProbBars();
+}
+
+async function loadConfig(){
+  try{
+    const r = await fetch('/admin/data/settings'+_passQ);
+    const s = await r.json();
+    populateConfig(s);
+  }catch(e){ console.warn('config load error',e); }
+}
+
+// Sync slider <-> number input for each rareza
+for(const r of RAREZA_ORDER){
+  document.getElementById('cfg-rar-'+r)?.addEventListener('input', function(){ document.getElementById('cfg-rar-'+r+'-num').value=this.value; updateProbBars(); });
+  document.getElementById('cfg-rar-'+r+'-num')?.addEventListener('input', function(){ document.getElementById('cfg-rar-'+r).value=this.value; updateProbBars(); });
+}
+
+document.getElementById('btn-save-settings').addEventListener('click', async ()=>{
+  const payload = {
+    mentiroso: {
+      roundCount:    parseInt(document.getElementById('cfg-lie-rounds').value)||5,
+      mode:          document.getElementById('cfg-lie-mode').value,
+      namingSeconds: parseInt(document.getElementById('cfg-lie-naming').value)||15,
+    },
+    frecuencia: { roundCount: parseInt(document.getElementById('cfg-wave-rounds').value)||5 },
+    quienSoy:   { roundCount: parseInt(document.getElementById('cfg-who-rounds').value)||1 },
+    subasta: { rarezaPesos: Object.fromEntries(
+      RAREZA_ORDER.map(r=>[r, parseFloat(document.getElementById('cfg-rar-'+r+'-num').value)||1])
+    )},
+  };
+  try{
+    const res = await fetch('/admin/save-settings'+_passQ, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if(json.ok) toast('✓ Configuración guardada','ok');
+    else toast('Error: '+(json.error||'?'),'err');
+  }catch(e){ toast('Error de red','err'); }
+});
 
 // ============================================================
 // SAVE

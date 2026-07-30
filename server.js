@@ -26,6 +26,18 @@ const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', '
 const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
 const WAVE_PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wavelength-pairs.json'), 'utf-8'));
 
+const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
+const DEFAULT_SETTINGS = {
+  mentiroso: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
+  frecuencia: { roundCount: 5 },
+  quienSoy:   { roundCount: 1 },
+  subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5 } },
+};
+let SETTINGS = (() => {
+  try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')); }
+  catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
+})();
+
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
   POR:'Portero', LD:'Lateral Derecho', DFC:'Defensa Central', LI:'Lateral Izquierdo',
@@ -69,7 +81,7 @@ function newRoom(code, hostId) {
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
     votes: new Map(), roundNumber: 0,
-    mentirosoConfig: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
+    mentirosoConfig: { roundCount: SETTINGS.mentiroso?.roundCount??5, mode: SETTINGS.mentiroso?.mode??'texto', namingSeconds: SETTINGS.mentiroso?.namingSeconds??15 },
     lie: { roundNumber:0, turnStartIndex:0, category:null, turnOrder:[], currentTurnIndex:0, currentClaim:0, lastClaimerId:null, challenge:null },
     subastaConfig: { budget: 1000, skipLimit: 5, winMode: 'ovr' }, // winMode: 'ovr' | 'votacion'
     subasta: {
@@ -78,12 +90,12 @@ function newRoom(code, hostId) {
       auctionPhase:null, secondsLeft:0, totalEligible:0,
       bids:new Map(), highestBid:null, playerState:new Map(), resolvedCards:[], rps:null, rpsTimer:null, teams:null, bracket:null,
     },
-    waveConfig: { roundCount: 5 },
+    waveConfig: { roundCount: SETTINGS.frecuencia?.roundCount??5 },
     wave: {
       roundNumber:0, order:[], orderIndex:0, psychicId:null, pair:null, target:null,
       usedPairIndexes:new Set(), guesses:new Map(), secondsLeft:0, deadlineAt:null,
     },
-    whoConfig: { categories: ['futbolista','dt','equipo','selección'], roundCount: 1 },
+    whoConfig: { categories: ['futbolista','dt','equipo','selección'], roundCount: SETTINGS.quienSoy?.roundCount??1 },
     who: {
       roundNumber:0, order:[], turnIndex:0, turnToken:0, assignments:new Map(), revealed:new Set(), failed:new Set(), pendingGuess:null,
     },
@@ -318,12 +330,10 @@ function resolveLie(r,success,reason){
 const ANALYSIS_S=8, BIDDING_S=10, EXT_S=5, FORMATION_S=45;
 function clearSubTimer(r){ if(timers.has(r.code)){clearInterval(timers.get(r.code));timers.delete(r.code);} }
 function subPlayerState(budget,skip){ const t={}; for(const p of POSITION_ORDER)t[p]=[]; return {budget,skipsLeft:skip,team:t,mediaSum:0}; }
-// Pesos de aparición por rareza. Mayor peso = sale más seguido.
-const RAREZA_PESO = { mediano: 12, top: 6, leyenda: 2, troll: 1.5 };
-// Selección ponderada SIN reemplazo: saca 'cuantas' cartas del pool dando más
-// probabilidad a las comunes (medianos) y menos a las raras (leyendas/trolls).
+// Pesos de aparición por rareza — leídos desde SETTINGS para que sean editables en el admin.
 function weightedSample(pool, cuantas){
-  const items = pool.map(c => ({ c, w: RAREZA_PESO[c.rareza] || 5 }));
+  const pesos = SETTINGS.subasta?.rarezaPesos || DEFAULT_SETTINGS.subasta.rarezaPesos;
+  const items = pool.map(c => ({ c, w: pesos[c.rareza] || 5 }));
   const out = [];
   for(let n=0; n<cuantas && items.length>0; n++){
     const total = items.reduce((a,it)=>a+it.w, 0);
@@ -1340,6 +1350,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     mentiroso:   path.join(__dirname,'data','mentiroso-categories.json'),
     wavelength:  path.join(__dirname,'data','wavelength-pairs.json'),
     subasta:     path.join(__dirname,'data','subasta-cards.json'),
+    settings:    SETTINGS_PATH,
   };
 
   function adminAuth(req,res,next){
@@ -1369,6 +1380,32 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     if(!req.body||!Array.isArray(req.body))return res.status(400).json({error:'body must be array'});
     fs.writeFileSync(f, JSON.stringify(req.body, null, 2), 'utf-8');
     res.json({ok:true,count:req.body.length});
+  });
+
+  app.post('/admin/save-settings', adminAuth, (req,res)=>{
+    const s = req.body;
+    if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
+    // Validar y sanear
+    const clean = {
+      mentiroso: {
+        roundCount:   Math.min(20, Math.max(1, parseInt(s.mentiroso?.roundCount)||5)),
+        mode:         ['texto','numeros'].includes(s.mentiroso?.mode) ? s.mentiroso.mode : 'texto',
+        namingSeconds:Math.min(60, Math.max(5, parseInt(s.mentiroso?.namingSeconds)||15)),
+      },
+      frecuencia: { roundCount: Math.min(20, Math.max(1, parseInt(s.frecuencia?.roundCount)||5)) },
+      quienSoy:   { roundCount: Math.min(10, Math.max(1, parseInt(s.quienSoy?.roundCount)||1)) },
+      subasta: {
+        rarezaPesos: {
+          mediano: Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.mediano)||12),
+          top:     Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.top)||6),
+          leyenda: Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.leyenda)||2),
+          troll:   Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.troll)||1.5),
+        },
+      },
+    };
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
+    SETTINGS = clean; // aplica en caliente: nuevas salas y mazos usarán los nuevos pesos
+    res.json({ok:true});
   });
 
   // Imágenes subidas en esta sesión pendientes de publicar en GitHub
@@ -1434,6 +1471,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
         mentiroso: 'data/mentiroso-categories.json',
         wavelength:'data/wavelength-pairs.json',
         subasta:   'data/subasta-cards.json',
+        settings:  'data/settings.json',
       };
       const tree = [];
       for(const [key, repoPath] of Object.entries(FILE_REPO_PATHS)){

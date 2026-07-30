@@ -1,0 +1,21 @@
+{
+  "mentiroso": {
+    "roundCount": 5,
+    "mode": "texto",
+    "namingSeconds": 15
+  },
+  "frecuencia": {
+    "roundCount": 5
+  },
+  "quienSoy": {
+    "roundCount": 1
+  },
+  "subasta": {
+    "rarezaPesos": {
+      "mediano": 12,
+      "top": 6,
+      "leyenda": 2,
+      "troll": 1.5
+    }
+  }
+}
