@@ -325,6 +325,7 @@
       <option value="leyenda">Leyenda</option>
       <option value="troll">Troll</option>
     </select>
+    <span id="sub-filter-count" style="white-space:nowrap;color:var(--soft);font-size:13px;font-weight:600"></span>
   </div>
   <div id="sub-grid" class="sub-card-grid"></div>
 </div>
@@ -740,6 +741,9 @@ function renderSubasta(){
   _filteredIdxs = list.map(({i})=>i);
   const el = document.getElementById('sub-grid');
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
+  const total = DATA.subasta.length;
+  const filtered = list.length;
+  document.getElementById('sub-filter-count').textContent = filtered === total ? total + ' cartas' : filtered + ' de ' + total;
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
   el.innerHTML = list.map(({c,i})=>{
     const hasSil  = imgStatus.siluetas.has(c.id);
