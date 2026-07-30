@@ -4,15 +4,15 @@
     "mangaCount": 3
   },
   "mentiroso": {
-    "roundCount": 5,
+    "roundCount": 3,
     "mode": "texto",
     "namingSeconds": 15
   },
   "frecuencia": {
-    "roundCount": 5
+    "roundCount": 3
   },
   "quienSoy": {
-    "roundCount": 1
+    "roundCount": 3
   },
   "subasta": {
     "rarezaPesos": {
@@ -23,9 +23,33 @@
     }
   },
   "opciones": {
-    "impMangaOptions": [1, 3, 5, 7, 10],
-    "lieRoundOptions": [3, 5, 8, 10],
-    "waveRoundOptions": [3, 5, 8, 10],
-    "whoRoundOptions": [1, 2, 3, 5]
+    "impMangaOptions": [
+      1,
+      3,
+      5,
+      7,
+      10
+    ],
+    "lieRoundOptions": [
+      1,
+      3,
+      5,
+      7,
+      10
+    ],
+    "waveRoundOptions": [
+      1,
+      3,
+      5,
+      7,
+      10
+    ],
+    "whoRoundOptions": [
+      1,
+      3,
+      5,
+      7,
+      10
+    ]
   }
 }
