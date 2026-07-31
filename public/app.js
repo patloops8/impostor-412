@@ -124,7 +124,8 @@ function avatarHTML(id,name){
 function bump(el){ if(!el)return; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
 const MEDALS=['🥇','🥈','🥉'];
 function rankLabel(i){ return MEDALS[i]||('#'+(i+1)); }
-const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-round-over','s-who-reveal','s-who-over','s-force-over'];
+const SECTIONS = ['s-home','s-lobby','s-imp-role','s-imp-clue','s-imp-vote','s-imp-reveal','s-imp-over','s-lie-claim','s-lie-naming','s-lie-final','s-lie-over','s-sub-formation','s-sub-wait-deck','s-sub-play','s-sub-rps','s-sub-result','s-sub-tournament','s-sub-duel','s-sub-matchup','s-sub-over','s-wave-psychic','s-wave-guess','s-wave-reveal','s-who-board','s-who-guess-pending','s-who-round-over','s-who-reveal','s-who-over','s-force-over'];
+const POS_LABELS = {POR:'Portero',LD:'Lat. Derecho',DFC:'Def. Central',LI:'Lat. Izquierdo',MCD:'MC Defensivo',MC:'Mediocentro',MCO:'MC Ofensivo',ED:'Extremo Der.',EI:'Extremo Izq.',DC:'Delantero'};
 function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).classList.remove('hidden'); }
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
@@ -704,9 +705,6 @@ socket.on('sub:duel_result',({winnerName,loserName,scoreA,scoreB})=>{
 });
 
 let subOverScores=[], subOverMode='ovr', subOverChampionName='';
-// Muestra la cancha final de cualquier jugador (no solo la propia). isMine
-// controla el titulo y si el total mostrado es el presupuesto usado o el OVR
-// del equipo elegido.
 function showSubPitchFor(pid, isMine){
   const s=subOverScores.find(x=>x.id===pid); if(!s)return;
   document.querySelectorAll('#sub-scoreboard .score-row').forEach(r=>r.classList.remove('selected'));
@@ -715,10 +713,85 @@ function showSubPitchFor(pid, isMine){
   if(row)row.classList.add('selected');
   $('sub-pitch-title').textContent = isMine ? 'Tu alineación' : `Alineación de ${s.name}`;
   if(subOverMode==='votacion'){ $('sub-my-total').textContent = subOverChampionName===s.name ? '🏆 Campeón' : ''; }
-  else { $('sub-my-total').textContent = `OVR ${s.ovr.toFixed(1)}`; }
+  else { $('sub-my-total').textContent = `${s.points??'?'} pts`; }
   drawPitch($('sub-pitch'), currentFormationSlots.length?currentFormationSlots:(formationsData[currentFormation]||[]), s.cards||[]);
 }
-socket.on('sub:game_over',({mode,scores,formation,formationSlots,championName})=>{
+
+// ── Matchup animation ──────────────────────────────────────
+let _muMatchups=[], _muIdx=0, _muTimer=null, _muRunning={}, _muOnDone=null;
+
+function _muRenderTally(){
+  const el=$('mu-tally'); if(!el)return;
+  el.innerHTML='';
+  const maxPts=Math.max(0,...Object.values(_muRunning));
+  subOverScores.forEach(s=>{
+    const pts=_muRunning[s.id]||0;
+    const chip=document.createElement('div');
+    chip.className='mu-tally-chip'+(pts===maxPts&&pts>0?' leading':'');
+    chip.innerHTML=`${esc(s.name)}<span class="mu-pts">${pts}</span>`;
+    el.appendChild(chip);
+  });
+}
+
+function _muRenderCards(mu){
+  const el=$('mu-cards'); if(!el)return;
+  el.innerHTML='';
+  const sorted=[...mu.players].sort((a,b)=>(b.id===myId)-(a.id===myId));
+  sorted.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='mu-card'+(p.card?(p.won?' winner':' loser'):' empty');
+    if(p.won){
+      const crown=document.createElement('div'); crown.className='mu-card-crown'; crown.textContent='★';
+      div.appendChild(crown);
+    }
+    if(p.card){
+      const img=document.createElement('img');
+      img.className='mu-card-img'; img.src=`/images/reales/${p.card.id}.png`; img.alt=p.card.name;
+      img.onerror=()=>{ const ph=document.createElement('div'); ph.className='mu-card-img'; ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--soft)'; ph.textContent=mu.pos; img.replaceWith(ph); };
+      div.appendChild(img);
+    } else {
+      const ph=document.createElement('div'); ph.className='mu-card-img';
+      ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--soft)';
+      ph.textContent='—'; div.appendChild(ph);
+    }
+    const nm=document.createElement('div'); nm.className='mu-card-name'; nm.textContent=p.card?p.card.name:'Sin carta'; div.appendChild(nm);
+    const pl=document.createElement('div'); pl.className='mu-card-player'; pl.textContent=p.name+(p.id===myId?' (tú)':''); div.appendChild(pl);
+    const med=document.createElement('div'); med.className='mu-card-media'; med.textContent=p.card?p.card.media:'—'; div.appendChild(med);
+    if(p.card?.troll){ const t=document.createElement('div'); t.style.cssText='font-size:10px;color:var(--red,#f55);font-weight:700'; t.textContent='TROLL'; div.appendChild(t); }
+    el.appendChild(div);
+  });
+}
+
+function _muStep(){
+  if(_muIdx>=_muMatchups.length){ clearTimeout(_muTimer); if(_muOnDone)_muOnDone(); return; }
+  const mu=_muMatchups[_muIdx];
+  for(const p of mu.players) if(p.won) _muRunning[p.id]=(_muRunning[p.id]||0)+1;
+  $('mu-progress').textContent=`${_muIdx+1} / ${_muMatchups.length}`;
+  $('mu-pos-label').textContent=POS_LABELS[mu.pos]||mu.pos;
+  $('mu-winner-label').textContent='';
+  _muRenderTally();
+  _muRenderCards(mu);
+  const winners=mu.players.filter(p=>p.won);
+  if(winners.length){
+    setTimeout(()=>{
+      const lbl=$('mu-winner-label');
+      if(lbl) lbl.textContent=winners.length===1?`${winners[0].name} gana este duelo`:'Empate';
+    }, 700);
+  }
+  _muIdx++;
+  _muTimer=setTimeout(_muStep, 2600);
+}
+
+function startMatchupAnimation(matchups, scores, onDone){
+  _muMatchups=matchups; _muIdx=0; _muOnDone=onDone;
+  _muRunning={};
+  scores.forEach(s=>{ _muRunning[s.id]=0; });
+  show('s-sub-matchup');
+  _muStep();
+}
+// ── fin matchup ────────────────────────────────────────────
+
+socket.on('sub:game_over',({mode,scores,matchups,formation,formationSlots,championName})=>{
   if(formation)currentFormation=formation;
   if(formationSlots)currentFormationSlots=formationSlots; else if(formation)currentFormationSlots=formationsData[formation]||[];
   subOverScores=scores; subOverMode=mode; subOverChampionName=championName||'';
@@ -726,14 +799,18 @@ socket.on('sub:game_over',({mode,scores,formation,formationSlots,championName})=
   const sb=$('sub-scoreboard'); sb.innerHTML='';
   scores.forEach((s,i)=>{
     const r=document.createElement('div'); r.className='score-row sub-score-clickable'+(s.id===myId?' me':'');
-    const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):(`OVR ${s.ovr.toFixed(1)}`);
+    const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):(`${s.points??'?'} pts`);
     r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?' (tú)':''}</span><span class="points">${detail}</span>`;
     r.addEventListener('click', ()=>showSubPitchFor(s.id, s.id===myId));
     sb.appendChild(r);
   });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
-  showWinnerThen(scores,()=>show('s-sub-over'));
+  if(mode==='ovr'&&matchups?.length){
+    startMatchupAnimation(matchups, scores, ()=>showWinnerThen(scores,()=>show('s-sub-over')));
+  } else {
+    showWinnerThen(scores,()=>show('s-sub-over'));
+  }
 });
 // Dibuja la alineación en una cancha usando coordenadas absolutas por slot.
 function drawPitch(container, slots, cards){

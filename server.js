@@ -579,10 +579,40 @@ function endSubasta(r){
 function finishSubastaOVR(r){
   r.subasta.phase='over'; r.status='subasta_over';
   const s=r.subasta;
-  const scores=[...s.teams.values()].map(t=>({id:t.id,name:t.name,ovr:t.ovr,totalMedia:t.cards.reduce((a,c)=>a+c.media,0),budgetLeft:t.budgetLeft,cards:t.cards}));
-  scores.sort((a,b)=>b.ovr-a.ovr || b.totalMedia-a.totalMedia);
+  // Ordenar slots de mayor y a menor (portero→delantero = GK primero)
+  const rawSlots=FORMATIONS_DATA[s.formation]||[];
+  const slots=[...rawSlots].sort((a,b)=>b.y-a.y);
+
+  const posUsedIdx={}, matchups=[], playerPoints=new Map();
+  for(const [pid] of r.players) playerPoints.set(pid,0);
+
+  for(const slot of slots){
+    const pos=slot.pos;
+    const sIdx=posUsedIdx[pos]=(posUsedIdx[pos]||0);
+    posUsedIdx[pos]=sIdx+1;
+    // Obtener la carta completa de cada jugador para este slot
+    const entries=[];
+    for(const [pid] of r.players){
+      const fullCard=s.teams.get(pid)?.cards.filter(c=>c.position===pos)[sIdx]||null;
+      entries.push({id:pid, name:r.players.get(pid)?.name||'?', card:fullCard});
+    }
+    const maxMedia=Math.max(0,...entries.filter(e=>e.card).map(e=>e.card.media));
+    const players=entries.map(e=>({...e, won:!!(e.card&&e.card.media===maxMedia&&maxMedia>0)}));
+    for(const e of players) if(e.won) playerPoints.set(e.id,(playerPoints.get(e.id)||0)+1);
+    matchups.push({pos, slotIdx:sIdx, x:slot.x, y:slot.y, players, maxMedia});
+  }
+
+  const scores=[...s.teams.values()].map(t=>({
+    id:t.id, name:t.name,
+    points:playerPoints.get(t.id)||0,
+    ovr:t.ovr,
+    budgetLeft:t.budgetLeft,
+    cards:t.cards
+  }));
+  // Ordenar por puntos ganados; desempate por OVR (sin penalizar trolls ya que perdiste ese punto)
+  scores.sort((a,b)=>b.points-a.points||b.ovr-a.ovr);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
-  io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
+  io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,matchups,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 
 /* ===== TORNEO DE BRACKETS (modo votación) ===== */

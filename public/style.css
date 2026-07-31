@@ -337,6 +337,25 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 /* ===== Pitch player: z-index para solapamiento con posición absoluta ===== */
 .pitch-player { z-index: 1; }
 
+/* ===== Subasta — Matchup posición a posición ===== */
+.mu-tally{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.mu-tally-chip{padding:5px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:999px;font-size:13px;font-weight:700;transition:border-color .3s,color .3s}
+.mu-tally-chip.leading{border-color:var(--neon);color:var(--neon)}
+.mu-tally-chip .mu-pts{font-family:var(--mono);font-size:16px;margin-left:6px}
+.mu-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.mu-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 14px;background:var(--card);border:2px solid var(--border);border-radius:12px;min-width:90px;max-width:130px;transition:border-color .4s,box-shadow .4s,opacity .4s}
+.mu-card.winner{border-color:var(--neon);box-shadow:0 0 18px rgba(182,255,46,0.35),0 0 4px rgba(182,255,46,0.2)}
+.mu-card.loser{opacity:.42}
+.mu-card.empty{opacity:.3;border-style:dashed}
+.mu-card-img{width:54px;height:54px;border-radius:50%;object-fit:cover;object-position:top center;border:2px solid var(--border);background:var(--bg2)}
+.mu-card.winner .mu-card-img{border-color:var(--neon)}
+.mu-card-player{font-size:11px;color:var(--soft);font-weight:600}
+.mu-card-name{font-size:12px;font-weight:700;color:var(--text);text-align:center;line-height:1.2;max-width:110px;word-break:break-word}
+.mu-card-media{font-family:var(--mono);font-size:1.35rem;font-weight:700}
+.mu-card.winner .mu-card-media{color:var(--neon)}
+.mu-card.loser .mu-card-media{color:var(--soft)}
+.mu-card-crown{font-size:18px;line-height:1}
+
 /* ===== La Frecuencia: ruleta/dial semicircular ===== */
 .wave-dial-wrap{width:100%;max-width:340px;margin:0 auto;}
 .wave-dial{position:relative;width:100%;touch-action:none;user-select:none;}
