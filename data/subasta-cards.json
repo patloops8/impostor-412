@@ -4633,5 +4633,50 @@
     "rareza": "mediano",
     "media": 82,
     "troll": false
+  },
+  {
+    "id": "gianluca_mancini",
+    "name": "Gianluca Mancini",
+    "label": "Gianluca Mancini (Roma)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "alessandro_buongiorno",
+    "name": "Alessandro Buongiorno",
+    "label": "Alessandro Buongiorno (Napoli)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "alessio_romagnoli",
+    "name": "Alessio Romagnoli",
+    "label": "Alessio Romagnoli (Lazio)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "nathan_ake",
+    "name": "Nathan Aké",
+    "label": "Nathan Aké (Manchester City)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "ezri_konsa",
+    "name": "Ezri Konsa",
+    "label": "Ezri Konsa (Aston Villa)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
   }
 ]
