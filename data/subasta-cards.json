@@ -4471,5 +4471,59 @@
     "rareza": "mediano",
     "media": 74,
     "troll": false
+  },
+  {
+    "id": "gabriel_magalhaes",
+    "name": "Gabriel Magalhães",
+    "label": "Gabriel Magalhães (Arsenal)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "willian_pacho",
+    "name": "Willian Pacho",
+    "label": "Willian Pacho (PSG)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "piero_hincapie",
+    "name": "Piero Hincapié",
+    "label": "Piero Hincapié (Arsenal)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "aymeric_laporte",
+    "name": "Aymeric Laporte",
+    "label": "Aymeric Laporte (Athletic Club)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "jonathan_tah",
+    "name": "Jonathan Tah",
+    "label": "Jonathan Tah (Bayern Munich)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "nico_schlotterbeck",
+    "name": "Nico Schlotterbeck",
+    "label": "Nico Schlotterbeck (B. Dortmund)",
+    "position": "DFC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
   }
 ]
