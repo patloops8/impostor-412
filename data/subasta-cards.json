@@ -247,8 +247,8 @@
     "name": "Cristian Romero",
     "label": "Cristian Romero (Tottenham)",
     "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -256,8 +256,8 @@
     "name": "Dayot Upamecano",
     "label": "Dayot Upamecano (Bayern Múnich)",
     "position": "DFC",
-    "rareza": "mediano",
-    "media": 84,
+    "rareza": "top",
+    "media": 87,
     "troll": false
   },
   {
@@ -311,7 +311,7 @@
     "label": "Matthijs de Ligt (Manchester United)",
     "position": "DFC",
     "rareza": "mediano",
-    "media": 81,
+    "media": 80,
     "troll": false
   },
   {
@@ -347,7 +347,7 @@
     "label": "Ronald Araújo (FC Barcelona)",
     "position": "DFC",
     "rareza": "mediano",
-    "media": 82,
+    "media": 80,
     "troll": false
   },
   {
