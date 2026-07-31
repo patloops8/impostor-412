@@ -4723,5 +4723,14 @@
     "rareza": "mediano",
     "media": 83,
     "troll": false
+  },
+  {
+    "id": "maxence_lacroix",
+    "name": "Maxence Lacroix",
+    "label": "Maxence Lacroix (Chelsea)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
   }
 ]
