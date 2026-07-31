@@ -140,7 +140,7 @@
     "label": "Dani Carvajal (Real Madrid)",
     "position": "LD",
     "rareza": "mediano",
-    "media": 84,
+    "media": 81,
     "troll": false
   },
   {
@@ -148,8 +148,8 @@
     "name": "Denzel Dumfries",
     "label": "Denzel Dumfries (Real Madrid)",
     "position": "LD",
-    "rareza": "mediano",
-    "media": 84,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -175,8 +175,8 @@
     "name": "Jules Kounde",
     "label": "Jules Koundé (FC Barcelona)",
     "position": "LD",
-    "rareza": "mediano",
-    "media": 85,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -202,8 +202,8 @@
     "name": "Trent Alexander-Arnold",
     "label": "Trent Alexander-Arnold (Real Madrid)",
     "position": "LD",
-    "rareza": "mediano",
-    "media": 85,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -4117,6 +4117,186 @@
     "name": "Édouard Mendy",
     "label": "Édouard Mendy (Al-Ahli)",
     "position": "POR",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "marcos_llorente",
+    "name": "Marcos Llorente",
+    "label": "Marcos Llorente (Atletico de Madrid)",
+    "position": "LD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "eric_garcia",
+    "name": "Eric García",
+    "label": "Eric García",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "nahuel_molina",
+    "name": "Nahuel Molina",
+    "label": "Nahuel Molina (Atletico de Madrid)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "andrei_ratiu",
+    "name": "Andrei Rațiu",
+    "label": "Andrei Rațiu (Rayo Vallecano)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "pablo_maffeo",
+    "name": "Pablo Maffeo",
+    "label": "Pablo Maffeo (Olympiacos F. C.)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "juan_foyth",
+    "name": "Juan Foyth",
+    "label": "Juan Foyth (Villarreal)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "ben_white",
+    "name": "Ben White",
+    "label": "Ben White (Arsenal)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "jurrien_timber",
+    "name": "Jurriën Timber",
+    "label": "Jurriën Timber (Arsenal)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "jeremie_frimpong",
+    "name": "Jeremie Frimpong",
+    "label": "Jeremie Frimpong (Liverpool)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "pedro_porro",
+    "name": "Pedro Porro",
+    "label": "Pedro Porro (Tottenham)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "daniel_munoz",
+    "name": "Daniel Muñoz",
+    "label": "Daniel Muñoz (Crystal Palace)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "aaron_wanbissaka",
+    "name": "Aaron Wan-Bissaka",
+    "label": "Aaron Wan-Bissaka (West Ham)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "noussair_mazraoui",
+    "name": "Noussair Mazraoui",
+    "label": "Noussair Mazraoui (Manchester United",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "diogo_dalot",
+    "name": "Diogo Dalot",
+    "label": "Diogo Dalot (Manchester United)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "malo_gusto",
+    "name": "Malo Gusto",
+    "label": "Malo Gusto (Chelsea)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "matheus_nunes",
+    "name": "Matheus Nunes",
+    "label": "Matheus Nunes (Manchester City)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "djed_spence",
+    "name": "Djed Spence",
+    "label": "Djed Spence (Tottenham)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "kyle_walker",
+    "name": "Kyle Walker",
+    "label": "Kyle Walker (Burnley)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "marco_palestra",
+    "name": "Marco Palestra",
+    "label": "Marco Palestra (Chelsea)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "wesley",
+    "name": "Wesley",
+    "label": "Wesley (Roma)",
+    "position": "LD",
     "rareza": "mediano",
     "media": 77,
     "troll": false
