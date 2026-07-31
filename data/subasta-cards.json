@@ -22,8 +22,8 @@
     "name": "Emiliano Martínez",
     "label": "Emiliano Martínez (Aston Villa)",
     "position": "POR",
-    "rareza": "mediano",
-    "media": 85,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -58,7 +58,7 @@
     "name": "Jan Oblak",
     "label": "Jan Oblak (Atlético de Madrid)",
     "position": "POR",
-    "rareza": "mediano",
+    "rareza": "top",
     "media": 86,
     "troll": false
   },
@@ -79,15 +79,6 @@
     "rareza": "troll",
     "media": 48,
     "troll": true
-  },
-  {
-    "id": "marc_andre_ter_stegen",
-    "name": "Marc-André ter Stegen",
-    "label": "Marc-André ter Stegen (FC Barcelona)",
-    "position": "POR",
-    "rareza": "mediano",
-    "media": 83,
-    "troll": false
   },
   {
     "id": "oliver_kahn",
@@ -3805,5 +3796,14 @@
     "rareza": "troll",
     "media": 59,
     "troll": true
+  },
+  {
+    "id": "david_raya",
+    "name": "David Raya",
+    "label": "David Raya (Arsenal)",
+    "position": "DC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
   }
 ]
