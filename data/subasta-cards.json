@@ -3430,8 +3430,8 @@
   },
   {
     "id": "david_degea",
-    "name": "David Degea",
-    "label": "David Degea (vs Portugal)",
+    "name": "David De Gea",
+    "label": "David De Gea (vs Portugal)",
     "position": "POR",
     "rareza": "troll",
     "media": 53,
@@ -3849,6 +3849,195 @@
     "position": "POR",
     "rareza": "top",
     "media": 86,
+    "troll": false
+  },
+  {
+    "id": "diogo_costa",
+    "name": "Diogo Costa",
+    "label": "Diogo Costa (Porto)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "andriy_lunin",
+    "name": "Andriy Lunin",
+    "label": "Andriy Lunin (Real Madrid)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "juan_musso",
+    "name": "Juan Musso",
+    "label": "Juan Musso (Atletico de Madrid)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "alex_remiro",
+    "name": "Alex Remiro",
+    "label": "Alex Remiro (Real Sociedad)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "guglielmo_vicario",
+    "name": "Guglielmo Vicario",
+    "label": "Guglielmo Vicario (Tottenham)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "giorgi_mamardashvili",
+    "name": "Giorgi Mamardashvili",
+    "label": "Giorgi Mamardashvili (Liverpool)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "dean_henderson",
+    "name": "Dean Henderson",
+    "label": "Dean Henderson (Crystal Palace)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "nick_pope",
+    "name": "Nick Pope",
+    "label": "Nick Pope (Newcastle)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "ederson_moraes",
+    "name": "Ederson Moraes",
+    "label": "Ederson Moraes (Fenerbahçe)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "andre_onana",
+    "name": "André Onana",
+    "label": "André Onana (Manchester United)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "robert_sanchez",
+    "name": "Robert Sánchez",
+    "label": "Robert Sánchez (Chelsea)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "david_de_gea",
+    "name": "David De Gea",
+    "label": "David De Gea (Fiorentina)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "marco_carnesecchi",
+    "name": "Marco Carnesecchi",
+    "label": "Marco Carnesecchi (Atalanta)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "michele_di_gregorio",
+    "name": "Michele Di Gregorio",
+    "label": "Michele Di Gregorio (Juventus)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "alex_meret",
+    "name": "Alex Meret",
+    "label": "Alex Meret (Napoli)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "mile_svilar",
+    "name": "Mile Svilar",
+    "label": "Mile Svilar (Roma)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "peter_gulacsi",
+    "name": "Péter Gulácsi",
+    "label": "Péter Gulácsi (RB Leipzig)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "oliver_baumann",
+    "name": "Oliver Baumann",
+    "label": "Oliver Baumann (Hoffenheim)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "jonas_urbig",
+    "name": "Jonas Urbig",
+    "label": "Jonas Urbig (Bayern Munich)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "lucas_chevalier",
+    "name": "Lucas Chevalier",
+    "label": "Lucas Chevalier (PSG)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "matvei_safonov",
+    "name": "Matvéi Safónov",
+    "label": "Matvéi Safónov (PSG)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 84,
     "troll": false
   }
 ]
