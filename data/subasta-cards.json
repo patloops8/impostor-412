@@ -4300,5 +4300,77 @@
     "rareza": "mediano",
     "media": 77,
     "troll": false
+  },
+  {
+    "id": "alexis_saelemaekers",
+    "name": "Alexis Saelemaekers",
+    "label": "Alexis Saelemaekers (AC Milan)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "joao_mario",
+    "name": "João Mário",
+    "label": "João Mário (Juventus)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "julian_ryerson",
+    "name": "Julian Ryerson",
+    "label": "Julian Ryerson (B. Dortmund)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "konrad_laimer",
+    "name": "Konrad Laimer",
+    "label": "Konrad Laimer (Bayern Munich)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "benjamin_henrichs",
+    "name": "Benjamin Henrichs",
+    "label": "Benjamin Henrichs (RB Leipzig)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "josip_stanisic",
+    "name": "Josip Stanisic",
+    "label": "Josip Stanisic (Bayern Munich)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "lucas_vazquez",
+    "name": "Lucas Vazquez",
+    "label": "Lucas Vazquez (Bayern Leverkusen)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "yan_couto",
+    "name": "Yan Couto",
+    "label": "Yan Couto (B. Dortmund)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
   }
 ]
