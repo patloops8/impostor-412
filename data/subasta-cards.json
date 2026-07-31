@@ -4525,5 +4525,113 @@
     "rareza": "top",
     "media": 86,
     "troll": false
+  },
+  {
+    "id": "illya_zabarnyi",
+    "name": "Illya Zabarnyi",
+    "label": "Illya Zabarnyi (PSG)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "lucas_beraldo",
+    "name": "Lucas Beraldo",
+    "label": "Lucas Beraldo (PSG)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "willi_orban",
+    "name": "Willi Orban",
+    "label": "Willi Orban (RB Leipzig)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "kim_min_jae",
+    "name": "Kim Min Jae",
+    "label": "Kim Min Jae (Bayern Munich)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "castello_lukeba",
+    "name": "Castello Lukeba",
+    "label": "Castello Lukeba",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "edmond_tapsoba",
+    "name": "Edmond Tapsoba",
+    "label": "Edmond Tapsoba (Bayer Leverkusen)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "hiroki_ito",
+    "name": "Hiroki Itō",
+    "label": "Hiroki Itō (Bayern Munich)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "luka_vuskovic",
+    "name": "Luka Vušković",
+    "label": "Luka Vušković (Brighton)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "gleison_bremer",
+    "name": "Gleison Bremer",
+    "label": "Gleison Bremer (Juventus)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "francesco_acerbi",
+    "name": "Francesco Acerbi",
+    "label": "Francesco Acerbi (Inter de Milan)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "amir_rrahmani",
+    "name": "Amir Rrahmani",
+    "label": "Amir Rrahmani (Napoli)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "johan_vasquez",
+    "name": "Johan Vásquez",
+    "label": "Johan Vásquez (Genoa)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
   }
 ]
