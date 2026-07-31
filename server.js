@@ -1143,7 +1143,7 @@ io.on('connection', socket => {
 
   // Subasta
   socket.on('player:vote_formation', ({code,formation}) => {
-    const r=rooms.get(code); if(!r||r.subasta.phase!=='formation_vote'||!FORMATIONS[formation])return;
+    const r=rooms.get(code); if(!r||r.subasta.phase!=='formation_vote'||!FORMATIONS_DATA[formation])return;
     r.subasta.formationVotes.set(socket.id,formation);
     io.to(r.code).emit('sub:formation_vote_cast',{name:r.players.get(socket.id)?.name,formation,votesIn:r.subasta.formationVotes.size,totalPlayers:r.players.size});
     if(r.subasta.formationVotes.size>=r.players.size)resolveFormationVote(r);
