@@ -4039,5 +4039,14 @@
     "rareza": "mediano",
     "media": 84,
     "troll": false
+  },
+  {
+    "id": "yassine_bounou",
+    "name": "Yassine Bounou",
+    "label": "Yassine Bounou (Al-Hilal)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
   }
 ]
