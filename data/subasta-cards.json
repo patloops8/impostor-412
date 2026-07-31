@@ -4678,5 +4678,50 @@
     "rareza": "mediano",
     "media": 84,
     "troll": false
+  },
+  {
+    "id": "murillo",
+    "name": "Murillo",
+    "label": "Murillo (Nottingham Forest)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "nikola_milenkovic",
+    "name": "Nikola Milenković",
+    "label": "Nikola Milenković (Nottingham Forest)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "marc_guehi",
+    "name": "Marc Guéhi",
+    "label": "Marc Guéhi (Manchester City)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "micky_van_de_ven",
+    "name": "Micky van de Ven",
+    "label": "Micky van de Ven (Tottenham)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "lisandro_martinez",
+    "name": "Lisandro Martinez",
+    "label": "Lisandro Martinez (Manchester United)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
   }
 ]
