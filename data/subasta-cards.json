@@ -4372,5 +4372,104 @@
     "rareza": "mediano",
     "media": 77,
     "troll": false
+  },
+  {
+    "id": "jonathan_clauss",
+    "name": "Jonathan Clauss",
+    "label": "Jonathan Clauss (O.G.C. Niza)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "hamari_traore",
+    "name": "Hamari Traoré",
+    "label": "Hamari Traoré (Paris FC)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "kenny_lala",
+    "name": "Kenny Lala",
+    "label": "Kenny Lala",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "timothy_weah",
+    "name": "Timothy Weah",
+    "label": "Timothy Weah (Olympique de Marsella)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "wilfried_singo",
+    "name": "Wilfried Singo",
+    "label": "Wilfried Singo (Galatasaray)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "thomas_meunier",
+    "name": "Thomas Meunier",
+    "label": "Thomas Meunier (Sunderland)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "santiago_mourino",
+    "name": "Santiago Mouriño",
+    "label": "Santiago Mouriño (Villarreal)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "israel_reyes",
+    "name": "Israel Reyes",
+    "label": "Israel Reyes (America)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "sergino_dest",
+    "name": "Sergiño Dest",
+    "label": "Sergiño Dest (PSV)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "gonzalo_montiel",
+    "name": "Gonzalo Montiel",
+    "label": "Gonzalo Montiel (River Plate)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "luis_advincula",
+    "name": "Luis Advincula",
+    "label": "Luis Advincula (Alianza Lima)",
+    "position": "LD",
+    "rareza": "mediano",
+    "media": 74,
+    "troll": false
   }
 ]
