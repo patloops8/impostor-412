@@ -4048,5 +4048,77 @@
     "rareza": "mediano",
     "media": 83,
     "troll": false
+  },
+  {
+    "id": "anatoli_trubin",
+    "name": "Anatoli Trubin",
+    "label": "Anatoli Trubin (Benfica)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "orlando_gill",
+    "name": "Orlando Gill",
+    "label": "Orlando Gill (San Lorenzo)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "raul_rangel",
+    "name": "Raúl Rangel",
+    "label": "Raúl Rangel (Chivas)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "vozinha",
+    "name": "Vozinha",
+    "label": "Vozinha (Colo-Colo)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 74,
+    "troll": false
+  },
+  {
+    "id": "agustin_marchesin",
+    "name": "Agustin Marchesin",
+    "label": "Agustin Marchesin (Boca Juniors)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "bart_verbruggen",
+    "name": "Bart Verbruggen",
+    "label": "Bart Verbruggen",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "zion_suzuki",
+    "name": "Zion Suzuki",
+    "label": "Zion Suzuki (Parma)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "edouard_mendy",
+    "name": "Édouard Mendy",
+    "label": "Édouard Mendy (Al-Ahli)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
   }
 ]
