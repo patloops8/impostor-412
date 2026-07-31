@@ -2318,7 +2318,7 @@
     "label": "Joan Garcia (Barcelona)",
     "position": "POR",
     "rareza": "top",
-    "media": 86,
+    "media": 87,
     "troll": false
   },
   {
@@ -3801,9 +3801,54 @@
     "id": "david_raya",
     "name": "David Raya",
     "label": "David Raya (Arsenal)",
-    "position": "DC",
+    "position": "POR",
     "rareza": "top",
     "media": 88,
+    "troll": false
+  },
+  {
+    "id": "mike_maignan",
+    "name": "Mike Maignan",
+    "label": "Mike Maignan (AC Milan)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "unai_simon",
+    "name": "Unai Simon",
+    "label": "Unai Simon (Athletic Club)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "gregor_kobel_",
+    "name": "Gregor Kobel",
+    "label": "Gregor Kobel (B. Dortmund)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "yann_sommer",
+    "name": "Yann Sommer",
+    "label": "Yann Sommer (Inter de Milan)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "jordan_pickford",
+    "name": "Jordan Pickford",
+    "label": "Jordan Pickford (Everton)",
+    "position": "POR",
+    "rareza": "top",
+    "media": 86,
     "troll": false
   }
 ]
