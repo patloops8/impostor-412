@@ -1090,6 +1090,7 @@ io.on('connection', socket => {
     const room=rooms.get((code||'').toUpperCase());
     if(!room){cb({ok:false,error:'Sala no encontrada.'});return;}
     if(room.status!=='lobby'){cb({ok:false,error:'La partida ya empezó.'});return;}
+    if(playersArr(room).length>=10){cb({ok:false,error:'La sala está llena (máx. 10 jugadores).'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
@@ -1097,6 +1098,17 @@ io.on('connection', socket => {
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
+  });
+
+  socket.on('host:kick_player', ({code,targetId}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(targetId===r.hostId)return;
+    const target=r.players.get(targetId); if(!target)return;
+    io.to(targetId).emit('room:kicked',{name:target.name});
+    r.players.delete(targetId);
+    const ts=io.sockets.sockets.get(targetId);
+    if(ts){ts.leave(r.code);ts.data.roomCode=null;}
+    emitRoom(r);
   });
 
   socket.on('host:select_game', ({code,gameType}) => {

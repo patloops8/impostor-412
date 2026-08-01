@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#070b10" />
 <title>412 — Juegos de fútbol</title>
-<link rel="icon" href="data:,"/>
+<link rel="icon" type="image/png" href="/images/ui/logo.png"/>
 <link rel="manifest" href="/manifest.json" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -21,6 +21,19 @@
 <body>
 <div id="conn-banner" class="conn-banner hidden">Conectando...</div>
 <button id="btn-mute" class="mute-btn" aria-label="Silenciar/activar sonidos">🔊</button>
+<button id="btn-rules" class="rules-btn" aria-label="Cómo se juega">?</button>
+
+<!-- Modal de reglas -->
+<div id="rules-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" id="rules-title">Cómo se juega</h2>
+      <button class="rules-close" id="btn-rules-close" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="rules-body" id="rules-body"></div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <!-- ===== HOME: crear o unirse ===== -->

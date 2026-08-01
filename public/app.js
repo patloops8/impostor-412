@@ -222,6 +222,116 @@ $('btn-leave-room').addEventListener('click', () => {
   location.reload();
 });
 
+socket.on('room:kicked', () => {
+  clearSession();
+  alert('El anfitrión te expulsó de la sala.');
+  location.reload();
+});
+
+/* ===== REGLAS ===== */
+const RULES = {
+  impostor: {
+    title: 'El Impostor',
+    html: `
+      <h3>Objetivo</h3>
+      <p>Todos reciben el mismo concepto futbolero en secreto — excepto uno: el Impostor, que recibe uno diferente (o ninguno).</p>
+      <h3>Cómo se juega</h3>
+      <ul>
+        <li>Por turnos, cada jugador da <strong>una pista</strong> sobre el concepto sin decirlo directamente.</li>
+        <li>El Impostor improvisa sin saber el concepto real.</li>
+        <li>Al final de la vuelta, todos votan quién creen que es el Impostor.</li>
+      </ul>
+      <h3>Puntos</h3>
+      <ul>
+        <li>Si el Impostor <strong>es descubierto</strong>: el grupo gana puntos.</li>
+        <li>Si el Impostor <strong>no es descubierto</strong>: el Impostor gana 3 puntos.</li>
+        <li>Si votas al Impostor correcto: +1 punto extra.</li>
+      </ul>`
+  },
+  mentiroso: {
+    title: 'Mentiroso Futbolero',
+    html: `
+      <h3>Objetivo</h3>
+      <p>Un jugador hace una afirmación ("Puedo nombrar 5 delanteros de la Champions 2022"). Otro puede acusarlo de mentiroso. Si te acusan, tenés que demostrarlo.</p>
+      <h3>Cómo se juega</h3>
+      <ul>
+        <li>En tu turno, puedes <strong>subir la apuesta</strong> ("Puedo nombrar 6...") o <strong>acusar de mentiroso</strong> al jugador anterior.</li>
+        <li>Si nadie te acusa, la ronda pasa al siguiente jugador.</li>
+        <li>Si te acusan, debés nombrar lo que dijiste en el tiempo límite.</li>
+      </ul>
+      <h3>Puntos</h3>
+      <ul>
+        <li>Si el acusado <strong>lo logra</strong>: el acusador pierde 1 punto.</li>
+        <li>Si el acusado <strong>falla</strong>: el acusador gana 1 punto.</li>
+      </ul>`
+  },
+  subasta: {
+    title: 'Subasta Futbolera',
+    html: `
+      <h3>Objetivo</h3>
+      <p>Construí el mejor equipo comprando jugadores reales en subasta.</p>
+      <h3>Cómo se juega</h3>
+      <ul>
+        <li>Cada carta muestra la <strong>silueta</strong> de un jugador — sin nombre ni media.</li>
+        <li>Fase de análisis (8s): todos estudian la silueta.</li>
+        <li>Fase de puja (10s): pujan dinero. La puja más alta se lleva al jugador.</li>
+        <li>Podés usar <strong>skips</strong> para no pujar por una carta.</li>
+      </ul>
+      <h3>Modos de victoria</h3>
+      <ul>
+        <li><strong>OVR:</strong> gana quien tenga mayor media posición por posición.</li>
+        <li><strong>Votación:</strong> al final, el grupo debate y vota al mejor equipo.</li>
+      </ul>`
+  },
+  wavelength: {
+    title: 'La Frecuencia',
+    html: `
+      <h3>Objetivo</h3>
+      <p>El Psíquico sabe dónde cae una zona secreta en una escala entre dos conceptos futboleros. Los demás deben adivinar.</p>
+      <h3>Cómo se juega</h3>
+      <ul>
+        <li>El Psíquico ve la zona secreta y da <strong>una sola pista hablada</strong>.</li>
+        <li>Los demás mueven su aguja individualmente (a ciegas del resto) y la bloquean antes de que se acabe el tiempo.</li>
+        <li>El Psíquico puede ver la zona para calibrar mejor su pista.</li>
+      </ul>
+      <h3>Puntos</h3>
+      <ul>
+        <li>Cuanto más cerca caigas de la zona, más puntos.</li>
+        <li>El Psíquico gana puntos según cuántos adivinen bien.</li>
+      </ul>`
+  },
+  who: {
+    title: '¿Quién Soy?',
+    html: `
+      <h3>Objetivo</h3>
+      <p>A cada jugador se le asigna un futbolista o DT en secreto — visible para todos menos para él mismo.</p>
+      <h3>Cómo se juega</h3>
+      <ul>
+        <li>Por turnos, el jugador activo hace <strong>preguntas de Sí/No</strong> en voz alta.</li>
+        <li>El <strong>primero</strong> en tocar un botón responde — esa es la respuesta oficial.</li>
+        <li>Cuando creés saber quién sos, escribe tu intento. Solo el anfitrión valida si es correcto.</li>
+      </ul>
+      <h3>Puntos</h3>
+      <ul>
+        <li><strong>+3 puntos</strong> si adivinás correctamente.</li>
+        <li>El juego termina cuando todos adivinaron su identidad.</li>
+      </ul>`
+  },
+};
+
+let _lobbyGameType = null;
+
+function openRules(){
+  const game = currentGame || _lobbyGameType;
+  const r = RULES[game];
+  $('rules-title').textContent = r ? `Cómo se juega: ${r.title}` : 'Cómo se juega';
+  $('rules-body').innerHTML = r ? r.html : Object.values(RULES).map(g=>`<h3>${g.title}</h3>${g.html}`).join('');
+  $('rules-overlay').classList.remove('hidden');
+}
+$('btn-rules').addEventListener('click', openRules);
+$('btn-rules-close').addEventListener('click', ()=>$('rules-overlay').classList.add('hidden'));
+$('rules-overlay').addEventListener('click', e=>{ if(e.target===$('rules-overlay'))$('rules-overlay').classList.add('hidden'); });
+
 /* ===== LOBBY ===== */
 let ALL_CATEGORIES=[], ALL_FORMATIONS=[], maxImpostors=1, minPlayers=3;
 const CAT_LABELS={futbolista:'Futbolistas',equipo:'Equipos','selección':'Selecciones',dt:'DTs'};
@@ -230,6 +340,7 @@ socket.on('room:update', (st) => {
   players = st.players;
   isHost = (st.hostId === myId);
   currentGame = st.gameType;
+  if(st.status==='lobby') _lobbyGameType = st.gameType||null;
   maxImpostors = st.maxImpostors; minPlayers = st.minPlayers;
   if(st.formations) formationsData = st.formations;
 
@@ -250,8 +361,12 @@ function renderLobby(st){
   const grid=$('lobby-players'); grid.innerHTML='';
   st.players.forEach(p=>{
     const c=document.createElement('div'); c.className='player-chip'+(p.id===myId?' me':'');
-    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div><div class="meta">${p.isHost?'★ anfitrión':(p.connected?'conectado':'...')}</div>`;
+    const kickHtml = isHost&&p.id!==myId ? `<button class="kick-btn" data-id="${esc(p.id)}" title="Expulsar">✕</button>` : '';
+    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div>${kickHtml}</div><div class="meta">${p.isHost?'★ anfitrión':(p.connected?'conectado':'...')}</div>`;
     grid.appendChild(c);
+  });
+  grid.querySelectorAll('.kick-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>socket.emit('host:kick_player',{code:roomCode,targetId:btn.dataset.id}));
   });
   $('player-count').textContent=st.players.length;
 
@@ -795,7 +910,7 @@ function _muRenderCards(mu){
     }
     if(p.card){
       const img=document.createElement('img');
-      img.className='mu-card-img'; img.src=`/images/reales/${p.card.id.toLowerCase()}.png`; img.alt=p.card.name;
+      img.loading='lazy'; img.className='mu-card-img'; img.src=`/images/reales/${p.card.id.toLowerCase()}.png`; img.alt=p.card.name;
       img.onerror=()=>{ const ph=document.createElement('div'); ph.className='mu-card-img'; ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--soft)'; ph.textContent=mu.pos; img.replaceWith(ph); };
       div.appendChild(img);
     } else {
@@ -888,12 +1003,20 @@ function drawPitch(container, slots, cards){
     container.appendChild(pl);
   }
 }
-function shortName(name){ const parts=name.split(' '); return parts.length>1?parts[parts.length-1]:name; }
+function shortName(name){
+  const parts=name.split(' ');
+  if(parts.length<=1)return name;
+  const PREFIXES=new Set(['van','de','di','del','der','den','von','mac','ten','ter','le','la','dos','da','af','bin','el','al','du']);
+  let start=parts.length-1;
+  while(start>1&&PREFIXES.has(parts[start-1].toLowerCase()))start--;
+  return parts.slice(start).join(' ');
+}
 // Token de la cancha final: foto real circular si existe (/images/reales/<id>.png),
 // con fallback automático al circulo con el código de posición si la imagen no carga (404).
 function pitchTokenEl(card,pos){
   if(!card) { const t=document.createElement('div'); t.className='pitch-token'; t.textContent=pos; return t; }
   const img=document.createElement('img');
+  img.loading='lazy';
   img.className='pitch-token-img'+(card.troll?' troll':'');
   img.src=`/images/reales/${card.cardId.toLowerCase()}.png`;
   img.alt=card.name;
