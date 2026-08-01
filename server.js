@@ -1637,7 +1637,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
   app.get('/admin/image-status', adminAuth, (_q,res)=>{
     const readIds = dir => {
       const full = path.join(__dirname, 'public/images', dir);
-      try { return fs.readdirSync(full).filter(f=>f.endsWith('.png')).map(f=>f.replace('.png','')); }
+      try { return fs.readdirSync(full).filter(f=>f.endsWith('.png')).map(f=>f.replace('.png','').toLowerCase()); }
       catch{ return []; }
     };
     res.json({ reales: readIds('reales'), siluetas: readIds('siluetas') });

@@ -982,9 +982,10 @@ function loadCardImages(id){
   sil.style.display=''; real.style.display='';
   dlSil.style.display='none'; dlReal.style.display='none';
   if(!id){ sil.src=''; real.src=''; return; }
+  const nid = id.toLowerCase();
   const t=Date.now();
-  const silUrl  = `/images/siluetas/${id}.png?t=${t}`;
-  const realUrl = `/images/reales/${id}.png?t=${t}`;
+  const silUrl  = `/images/siluetas/${nid}.png?t=${t}`;
+  const realUrl = `/images/reales/${nid}.png?t=${t}`;
   sil.src  = silUrl;
   real.src = realUrl;
   sil.onload  = ()=>{ dlSil.href=silUrl; dlSil.download=`${id}_silueta.png`; dlSil.style.display='block'; };
@@ -1001,9 +1002,9 @@ function saveCardModal(){
   const rar   = document.getElementById('cm-rar').value;
   const media = parseInt(document.getElementById('cm-media').value)||0;
   const troll = document.getElementById('cm-troll').checked;
-  const id    = isNew
+  const id    = (isNew
     ? (document.getElementById('cm-id-input').value.trim() || makeId(name))
-    : DATA.subasta[_cmIdx].id;
+    : DATA.subasta[_cmIdx].id).toLowerCase();
 
   if(!name)  { toast('El nombre es obligatorio','err'); return; }
   if(!label) { toast('El label (nombre + club) es obligatorio','err'); return; }

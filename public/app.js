@@ -509,7 +509,7 @@ function loadSil(imgEl,phEl,phPosEl,cardId,posName,revealed){
   if(!imgEl)return;
   if(!cardId){ silPh(imgEl,phEl,phPosEl,posName); return; }
   const carpeta = revealed ? 'reales' : 'siluetas';
-  const url = `/images/${carpeta}/${encodeURIComponent(cardId)}.png`;
+  const url = `/images/${carpeta}/${encodeURIComponent(cardId.toLowerCase())}.png`;
   imgEl.className = 'silhouette-img revealed';
   imgEl.onerror = ()=>{ silPh(imgEl,phEl,phPosEl,posName); }; // sin imagen: placeholder
   imgEl.onload = ()=>{ imgEl.classList.remove('hidden'); if(phEl)phEl.classList.add('hidden'); };
@@ -795,7 +795,7 @@ function _muRenderCards(mu){
     }
     if(p.card){
       const img=document.createElement('img');
-      img.className='mu-card-img'; img.src=`/images/reales/${p.card.id}.png`; img.alt=p.card.name;
+      img.className='mu-card-img'; img.src=`/images/reales/${p.card.id.toLowerCase()}.png`; img.alt=p.card.name;
       img.onerror=()=>{ const ph=document.createElement('div'); ph.className='mu-card-img'; ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--soft)'; ph.textContent=mu.pos; img.replaceWith(ph); };
       div.appendChild(img);
     } else {
@@ -895,7 +895,7 @@ function pitchTokenEl(card,pos){
   if(!card) { const t=document.createElement('div'); t.className='pitch-token'; t.textContent=pos; return t; }
   const img=document.createElement('img');
   img.className='pitch-token-img'+(card.troll?' troll':'');
-  img.src=`/images/reales/${card.cardId}.png`;
+  img.src=`/images/reales/${card.cardId.toLowerCase()}.png`;
   img.alt=card.name;
   img.onerror=function(){
     const fallback=document.createElement('div');
