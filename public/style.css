@@ -185,6 +185,8 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 
 .conn-banner{position:fixed;top:0;left:0;right:0;z-index:999;background:var(--neon);color:#0a1400;font-family:var(--display);font-size:0.82rem;letter-spacing:0.06em;font-weight:700;text-align:center;padding:8px 10px;text-transform:uppercase;}
 .conn-banner.error{background:var(--red);color:#fff;}
+.mute-btn{position:fixed;top:10px;right:12px;z-index:1000;background:rgba(10,12,16,0.72);border:1px solid var(--line2);border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s,transform .12s;backdrop-filter:blur(4px);}
+.mute-btn:hover{background:rgba(182,255,46,0.15);transform:scale(1.1);}
 
 /* Tarjetas de minijuegos con imagen de fondo */
 .game-pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}

@@ -15,27 +15,62 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
 function vib(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
 
 /* ===== Sonidos (Web Audio API, sin librería) ===== */
-let _ac = null;
-function ac(){ if(!_ac) _ac = new (window.AudioContext||window.webkitAudioContext)(); return _ac; }
-function beep(freq,dur,vol=0.25,type='sine'){
-  try{
-    const ctx=ac(), o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type=type; o.frequency.value=freq;
-    g.gain.setValueAtTime(vol,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
-    o.start(); o.stop(ctx.currentTime+dur);
-  }catch(e){}
-}
-const sfx = {
-  turn:    ()=>{ beep(660,0.12,0.2); setTimeout(()=>beep(880,0.15,0.22),120); },
-  urgent:  ()=>beep(440,0.08,0.18,'square'),
-  win:     ()=>{ beep(523,0.1,0.2); setTimeout(()=>beep(659,0.1,0.22),110); setTimeout(()=>beep(784,0.18,0.25),220); },
-  bid:     ()=>beep(600,0.07,0.15),
-  correct: ()=>{ beep(523,0.08,0.2); setTimeout(()=>beep(784,0.14,0.25),90); },
-  wrong:   ()=>beep(220,0.18,0.2,'sawtooth'),
-  reveal:  ()=>beep(440,0.1,0.15),
-};
+const sfx = (() => {
+  let _ac = null;
+  let _muted = localStorage.getItem('sfx_muted') === '1';
+
+  function ctx() {
+    if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (_ac.state === 'suspended') _ac.resume();
+    return _ac;
+  }
+  // freq Hz, dur s, vol 0-1, type OscillatorType, delay s
+  function b(freq, dur, vol = 0.25, type = 'sine', delay = 0) {
+    if (_muted) return;
+    try {
+      const c = ctx(), o = c.createOscillator(), g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type = type; o.frequency.value = freq;
+      const t = c.currentTime + delay;
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t); o.stop(t + dur + 0.05);
+    } catch (_) {}
+  }
+
+  return {
+    get muted() { return _muted; },
+    toggle() { _muted = !_muted; localStorage.setItem('sfx_muted', _muted ? '1' : '0'); return _muted; },
+
+    // Tu turno — dos notas ascendentes
+    turn()    { b(660,0.13,0.22); b(880,0.17,0.25,'sine',0.14); },
+    // Alerta de tiempo — cuadrada corta
+    urgent()  { b(440,0.08,0.18,'square'); },
+    // Victoria / carta ganada — acorde mayor ascendente
+    win()     { b(523,0.11,0.24); b(659,0.13,0.26,'sine',0.13); b(784,0.22,0.28,'sine',0.27); },
+    // Fanfarria — secuencia de 6 notas (game over, campeón)
+    fanfare() { [523,659,784,659,784,1047].forEach((f,i)=>b(f,0.2,0.3,'sine',i*0.12)); },
+    // Puja colocada — dos pulsos cortos triangle
+    bid()     { b(700,0.06,0.2,'triangle'); b(900,0.07,0.18,'triangle',0.08); },
+    // Respuesta correcta — intervalo de quinta ascendente
+    correct() { b(523,0.09,0.24); b(784,0.18,0.28,'sine',0.11); },
+    // Error / eliminado — dos tonos graves descendentes
+    wrong()   { b(220,0.1,0.22,'sawtooth'); b(160,0.22,0.2,'sawtooth',0.12); },
+    // Reveal dramático — tres notas: tensión→resolución
+    reveal()  { b(330,0.08,0.2); b(440,0.08,0.22,'sine',0.1); b(660,0.25,0.3,'sine',0.2); },
+    // Anuncio suave — dos notas (fase nueva, pista compartida)
+    announce(){ b(440,0.07,0.18); b(550,0.12,0.22,'sine',0.09); },
+    // Carta nueva en subasta — sweep descendente
+    card()    { b(880,0.04,0.16,'triangle'); b(660,0.06,0.18,'triangle',0.05); b(440,0.15,0.22,'sine',0.12); },
+    // Tick de alerta — cuadrada corta aguda
+    tick()    { b(1100,0.04,0.13,'square'); },
+    // PPT (piedra-papel-tijera) — dos pulsos
+    rps()     { b(440,0.05,0.2,'square'); b(330,0.08,0.18,'square',0.07); },
+    // Punto ganado en matchup de posición
+    match()   { b(550,0.07,0.2,'triangle'); b(660,0.14,0.24,'sine',0.09); },
+  };
+})();
 
 /* ===== Auto-rellenar código desde URL (?code=XXXX) ===== */
 (function checkURLCode(){
@@ -130,6 +165,15 @@ function show(id){ SECTIONS.forEach(s=>$(s).classList.add('hidden')); $(id).clas
 function posGroup(p){ if(p==='POR')return 'portero'; if(['LD','DFC','LI'].includes(p))return 'defensa'; if(['MCD','MC','MCO'].includes(p))return 'mediocampista'; return 'delantero'; }
 
 let players = [];
+
+/* ===== Botón de mute ===== */
+{
+  const btn = $('btn-mute');
+  if(btn){
+    btn.textContent = sfx.muted ? '🔇' : '🔊';
+    btn.addEventListener('click', () => { btn.textContent = sfx.toggle() ? '🔇' : '🔊'; });
+  }
+}
 
 /* ===== HOME ===== */
 $('btn-create').addEventListener('click', () => {
@@ -360,10 +404,10 @@ socket.on('imp:clue_rejected',({reason})=>{ $('clue-error').textContent=reason; 
 socket.on('imp:clue',({name,word})=>{ const log=$('imp-clue-log'); const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(word)}</span><span class="who">${esc(name)}</span>`; log.prepend(it); });
 socket.on('imp:clue_phase_ending',()=>{ $('imp-my-turn').classList.add('hidden'); $('imp-wait-turn').classList.remove('hidden'); $('imp-turn-name').textContent='Votación...'; const av=$('imp-turn-avatar'); av.style.background='var(--bg2)'; av.style.color='var(--neon)'; av.textContent='⏳'; });
 let impVoted=false;
-socket.on('imp:voting',({candidates})=>{ impVoted=false; const g=$('imp-vote-grid'); g.innerHTML=''; candidates.filter(c=>c.id!==myId).forEach(c=>{ const b=document.createElement('button'); b.className='vote-btn'; b.textContent=c.name; b.addEventListener('click',()=>castVote(c.id,b)); g.appendChild(b); }); $('imp-vote-status').textContent=''; show('s-imp-vote'); });
+socket.on('imp:voting',({candidates})=>{ sfx.announce(); impVoted=false; const g=$('imp-vote-grid'); g.innerHTML=''; candidates.filter(c=>c.id!==myId).forEach(c=>{ const b=document.createElement('button'); b.className='vote-btn'; b.textContent=c.name; b.addEventListener('click',()=>castVote(c.id,b)); g.appendChild(b); }); $('imp-vote-status').textContent=''; show('s-imp-vote'); });
 function castVote(id,btn){ if(impVoted)return; impVoted=true; document.querySelectorAll('#imp-vote-grid .vote-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); $('imp-vote-status').textContent='Voto enviado, esperando...'; socket.emit('player:submit_vote',{code:roomCode,targetId:id}); }
 socket.on('imp:vote_count',({votesIn,votesNeeded})=>{ if(impVoted)$('imp-vote-status').textContent=`Voto enviado (${votesIn}/${votesNeeded})`; });
-socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=(wasImpostor?'🎯 ¡Atrapado!':'❌ Era inocente...'); $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?'Era impostor.':'La partida sigue...'; show('s-imp-reveal'); });
+socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ wasImpostor?sfx.win():sfx.wrong(); $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=(wasImpostor?'🎯 ¡Atrapado!':'❌ Era inocente...'); $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?'Era impostor.':'La partida sigue...'; show('s-imp-reveal'); });
 socket.on('imp:tie',({tiedPlayers})=>{ $('imp-reveal-banner').className='reveal-banner escaped'; $('imp-reveal-eyebrow').textContent='Empate'; $('imp-reveal-title').textContent='Nadie sale'; $('imp-reveal-sub').textContent=(tiedPlayers||[]).join(' vs '); show('s-imp-reveal'); });
 let impLastFinal=false;
 socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount,isLastManga,scores})=>{
@@ -376,8 +420,8 @@ socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount
   $('btn-imp-next').textContent=isLastManga?'Volver al inicio':'Siguiente ronda';
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
-  if(isLastManga){ show('s-imp-over'); showWinnerThen(scores,()=>show('s-imp-over'),2.5); }
-  else show('s-imp-over');
+  if(isLastManga){ sfx.fanfare(); show('s-imp-over'); showWinnerThen(scores,()=>show('s-imp-over'),2.5); }
+  else { sfx.reveal(); show('s-imp-over'); }
 });
 $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_manga',{code:roomCode}); });
 function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
@@ -409,6 +453,7 @@ $('btn-accuse').addEventListener('click',()=>socket.emit('player:accuse_liar',{c
 socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason; $('claim-error').classList.remove('hidden'); });
 socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,category,mode,deadlineAt,paused,remainingMs})=>{
   amAccused=accusedId===myId; amAccuser=accuserId===myId; lieMode=mode;
+  if(amAccused) sfx.turn();
   $('lie-target').textContent=target; $('lie-named-count').textContent='0'; $('lie-named-log').innerHTML='';
   $('lie-naming-heading').textContent=amAccused?`${accuserName} no te creyó. Nombra ${target} de: ${category}`:`${accuserName} acusó a ${accusedName}. Categoría: ${category}`;
   $('btn-mark').classList.add('hidden'); $('lie-am-accused').classList.add('hidden'); $('lie-naming-wait').classList.add('hidden');
@@ -441,6 +486,7 @@ socket.on('lie:final_progress',({votesIn,votesNeeded})=>{ if($('lie-can-vote').c
 let lieLastFinal=false;
 socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,roundCount,isLastRound,scores})=>{
   stopLieCd(); lieLastFinal=isLastRound;
+  success ? sfx.win() : sfx.wrong();
   $('lie-over-banner').className='reveal-banner '+(success?'caught':'escaped');
   $('lie-over-eyebrow').textContent=isLastRound?'¡Resultado Final!':'Ronda '+roundNumber+'/'+roundCount;
   $('lie-over-title').textContent=success?`✅ ${accusedName} sí pudo`:(reason==='timeout'?`⏱ ${accusedName} se quedó sin tiempo`:`❌ ${accusedName} no convenció`);
@@ -528,6 +574,7 @@ socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-vote
 socket.on('sub:formation_decided',({formation,formationSlots})=>{ currentFormation=formation; currentFormationSlots=formationSlots||(formationsData[formation]||[]); subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,secondsLeft})=>{
+  sfx.card();
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
   $('sub-counter').textContent=`${cardIndex+1}/${totalCards}`;
   const badge=$('sub-pos-badge'); badge.textContent=positionLabel; badge.className='position-badge '+posGroup(position);
@@ -546,6 +593,7 @@ socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,starti
 socket.on('sub:eligibility',({eligible,skipsLeft})=>{ subState.skipsLeft=skipsLeft; subEligible=eligible; updSubStats(); $('sub-ineligible').classList.toggle('hidden',eligible); });
 socket.on('sub:tick',({phase,secondsLeft})=>{ setSubCount(secondsLeft); $('sub-phase-label').textContent=phase==='analysis'?'Analizando...':'¡Pujas abiertas!'; });
 socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
+  sfx.announce();
   $('sub-phase-label').textContent='¡Pujas abiertas!';
   // La elegibilidad viene en el propio evento: fuente de verdad confiable.
   if(typeof eligible==='boolean') subEligible=eligible;
@@ -586,7 +634,7 @@ socket.on('sub:bid_public',({name,amount,highestBid})=>{ sfx.bid();
   }
 });
 socket.on('sub:skip_public',({name})=>{ const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--text-dim);">skip</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
-socket.on('sub:timer_extended',({secondsLeft})=>{ setSubCount(secondsLeft); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span style="color:var(--red);">⏱ +5s</span>';log.prepend(it); });
+socket.on('sub:timer_extended',({secondsLeft})=>{ sfx.tick(); setSubCount(secondsLeft); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span style="color:var(--red);">⏱ +5s</span>';log.prepend(it); });
 function sendBid(inc){ const base=Math.max(subHighest,subStart); $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=`Pujando $${base+inc}M...`; socket.emit('player:submit_bid',{code:roomCode,amount:base+inc}); }
 $('btn-bid-1').addEventListener('click',()=>sendBid(1)); $('btn-bid-5').addEventListener('click',()=>sendBid(5)); $('btn-bid-10').addEventListener('click',()=>sendBid(10));
 $('btn-skip').addEventListener('click',()=>{ iSkipped=true; $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent='Pasaste esta carta.'; socket.emit('player:skip_card',{code:roomCode}); });
@@ -597,6 +645,7 @@ let subLast=false;
 // ===== Piedra-papel-tijera (cuando nadie quiere la carta) =====
 let rpsAmIn=false;
 socket.on('sub:rps_start',({playerIds,playerNames,positionLabel})=>{
+  sfx.rps();
   stopSubClock();
   rpsAmIn=playerIds.includes(myId);
   $('sub-rps-title').textContent='Piedra, papel o tijera';
@@ -773,6 +822,7 @@ function _muStep(){
   _muRenderCards(mu);
   const winners=mu.players.filter(p=>p.won);
   if(winners.length){
+    if(winners.length===1&&winners[0].id===myId) sfx.match();
     setTimeout(()=>{
       const lbl=$('mu-winner-label');
       if(lbl) lbl.textContent=winners.length===1?`${winners[0].name} gana este duelo`:'Empate';
@@ -792,6 +842,7 @@ function startMatchupAnimation(matchups, scores, onDone){
 // ── fin matchup ────────────────────────────────────────────
 
 socket.on('sub:game_over',({mode,scores,matchups,formation,formationSlots,championName})=>{
+  if(scores?.[0]?.id===myId) sfx.fanfare();
   if(formation)currentFormation=formation;
   if(formationSlots)currentFormationSlots=formationSlots; else if(formation)currentFormationSlots=formationsData[formation]||[];
   subOverScores=scores; subOverMode=mode; subOverChampionName=championName||'';
@@ -985,6 +1036,7 @@ $('btn-wave-clue').addEventListener('click', ()=>{
 });
 $('inp-wave-clue').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-wave-clue').click(); });
 socket.on('wave:clue_shared',({clue,psychicName})=>{
+  sfx.announce();
   $('wave-clue-text').textContent=clue;
   $('wave-clue-display').classList.remove('hidden');
 });
@@ -1025,6 +1077,9 @@ socket.on('wave:lock_progress', ({lockedIn,needed})=>{
 });
 
 socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,roundNumber,roundCount,isLastRound,scores})=>{
+  sfx.reveal();
+  const myScore = waveIsPsychic ? psychicScore : (guesses.find(g=>g.id===myId)?.score??0);
+  if(myScore >= 2) sfx.win();
   const needles = guesses.map(g=>({ value:g.value, color:avatarFor(g.id).bg, label:g.name }));
   renderWaveDial('wave-dial-reveal', {leftLabel:left, rightLabel:right, target, needles});
   $('wave-reveal-eyebrow').textContent = `Ronda ${roundNumber}/${roundCount}`;
@@ -1093,6 +1148,7 @@ socket.on('who:question', ({playerName, text})=>{
   log.prepend(it);
 });
 socket.on('who:answer', ({answererName,answer,activePlayerName})=>{
+  sfx.tick();
   const label={si:'Sí ✓',no:'No ✗',talvez:'Tal vez ~'}[answer]||answer;
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
   it.innerHTML=`<span>${esc(label)}</span><span class="who">${esc(answererName)}</span>`;
