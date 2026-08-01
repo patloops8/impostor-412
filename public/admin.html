@@ -1049,6 +1049,7 @@ async function uploadImage(type, file){
     ? (document.getElementById('cm-id-input').value.trim() || makeId(document.getElementById('cm-name').value))
     : DATA.subasta[_cmIdx].id).toLowerCase();
   if(!id){ toast('Guarda la carta primero para poder subir imágenes','err'); return; }
+  if(file.size > 7*1024*1024){ toast('La imagen es demasiado grande (máx. ~7MB). Comprimila antes de subirla.','err'); return; }
   const reader = new FileReader();
   reader.onload = async e=>{
     const btn = type==='real'
@@ -1061,13 +1062,15 @@ async function uploadImage(type, file){
         method:'POST', headers:_authHeaders({'Content-Type':'application/json'}),
         body:JSON.stringify({id, type, data:e.target.result})
       });
-      const json = await res.json();
+      if(res.status===413){ toast('Imagen demasiado grande — reducí el tamaño o comprimila antes de subir','err'); btn.childNodes[0].nodeValue=origText; return; }
+      if(res.status===401){ toast('Sin autorización — recargá la página e ingresá la contraseña','err'); btn.childNodes[0].nodeValue=origText; return; }
+      const json = await res.json().catch(()=>({ok:false,error:`Error del servidor (${res.status})`}));
       if(json.ok){
         toast('✓ Imagen subida','ok');
         loadCardImages(id);
         showPublishBar();
       } else toast('Error: '+(json.error||'desconocido'),'err');
-    }catch(err){ toast('Error de red','err'); }
+    }catch(err){ toast('Error de red — verificá la conexión e intentá de nuevo','err'); }
     btn.childNodes[0].nodeValue = origText;
   };
   reader.readAsDataURL(file);

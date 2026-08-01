@@ -1629,7 +1629,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
   // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
   // Parser propio de 10mb solo para este endpoint; el global es 200kb.
-  app.post('/admin/upload-image', express.json({limit:'10mb'}), adminAuth, (req,res)=>{
+  app.post('/admin/upload-image', adminAuth, express.json({limit:'10mb'}), (req,res)=>{
     const { type, data } = req.body||{};
     const id = (req.body?.id||'').toLowerCase();
     if(!id||!data||(type!=='real'&&type!=='silueta')) return res.status(400).json({error:'Faltan campos id/type/data'});
