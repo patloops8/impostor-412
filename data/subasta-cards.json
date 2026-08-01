@@ -401,7 +401,7 @@
     "label": "Alejandro Balde (FC Barcelona)",
     "position": "LI",
     "rareza": "mediano",
-    "media": 82,
+    "media": 83,
     "troll": false
   },
   {
@@ -1697,7 +1697,7 @@
     "label": "Cucurella (Real Madrid)",
     "position": "LI",
     "rareza": "top",
-    "media": 86,
+    "media": 87,
     "troll": false
   },
   {
@@ -4866,6 +4866,60 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 79,
+    "troll": false
+  },
+  {
+    "id": "nuno_mendes",
+    "name": "Nuno Mendes",
+    "label": "Nuno Mendes (PSG)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "federico_dimarco",
+    "name": "Federico Dimarco",
+    "label": "Federico Dimarco (Inter de Milan)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "nico_oreilly",
+    "name": "Nico O'Reilly",
+    "label": "Nico O'Reilly (Manchester City)",
+    "position": "LI",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "riccardo_calafiori",
+    "name": "Riccardo Calafiori",
+    "label": "Riccardo Calafiori (Arsenal)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "nathaniel_brown",
+    "name": "Nathaniel Brown",
+    "label": "Nathaniel Brown (Bayern Munich)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "myles_lewisskelly",
+    "name": "Myles Lewis-Skelly",
+    "label": "Myles Lewis-Skelly (Arsenal)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
     "troll": false
   }
 ]
