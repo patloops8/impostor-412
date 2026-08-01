@@ -1630,8 +1630,8 @@
   },
   {
     "id": "christensen",
-    "name": "Christensen",
-    "label": "Christensen (Barcelona)",
+    "name": "Andreas Christensen",
+    "label": "Andreas Christensen (Barcelona)",
     "position": "DFC",
     "rareza": "mediano",
     "media": 79,
@@ -4731,6 +4731,51 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 82,
+    "troll": false
+  },
+  {
+    "id": "david_hancko",
+    "name": "Dávid Hancko",
+    "label": "Dávid Hancko (Atletico de Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "dani_vivian",
+    "name": "Dani Vivian",
+    "label": "Dani Vivian (Athletic Club)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "robin_le_normand",
+    "name": "Robin Le Normand",
+    "label": "Robin Le Normand (Atletico de Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "dean_huijsen",
+    "name": "Dean Huijsen",
+    "label": "Dean Huijsen (Real Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "david_alaba",
+    "name": "David Alaba",
+    "label": "David Alaba (Agente Libre)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 77,
     "troll": false
   }
 ]
