@@ -1440,8 +1440,8 @@ app.use((_req, res, next) => {
 // La única forma de llegar es vía /admin (que pasa por adminAuth).
 app.get('/admin.html', (_q, res) => res.status(404).end());
 app.use(express.static(path.join(__dirname,'public')));
-// Límite pequeño para rutas normales; el upload tiene su propio parser.
-app.use(express.json({ limit: '200kb' }));
+// No hay parser JSON global: cada ruta POST declara el suyo inline
+// para evitar que el límite global interfiera con el upload de imágenes.
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
@@ -1485,7 +1485,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json(JSON.parse(fs.readFileSync(f,'utf-8')));
   });
 
-  app.post('/admin/save/:file', adminAuth, (req,res)=>{
+  app.post('/admin/save/:file', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const f=DATA_FILES[req.params.file];
     if(!f)return res.status(404).json({error:'not found'});
     if(!req.body||!Array.isArray(req.body))return res.status(400).json({error:'body must be array'});
@@ -1527,7 +1527,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     };
   }
 
-  app.post('/admin/save-settings', adminAuth, (req,res)=>{
+  app.post('/admin/save-settings', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const s = req.body;
     if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
     const clean = cleanSettings(s);
@@ -1536,7 +1536,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     res.json({ok:true});
   });
 
-  app.post('/admin/publish-settings', adminAuth, async (req,res)=>{
+  app.post('/admin/publish-settings', adminAuth, express.json({limit:'200kb'}), async (req,res)=>{
     const s = req.body;
     if(!s||typeof s!=='object'||Array.isArray(s)) return res.status(400).json({error:'body must be object'});
     const clean = cleanSettings(s);
@@ -1586,14 +1586,14 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     return Object.keys(out).length ? out : FORMATIONS_DATA;
   }
 
-  app.post('/admin/save-formations', adminAuth, (req,res)=>{
+  app.post('/admin/save-formations', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const clean = cleanFormations(req.body);
     fs.writeFileSync(FORMATIONS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
     FORMATIONS_DATA = clean;
     res.json({ok:true});
   });
 
-  app.post('/admin/publish-formations', adminAuth, async (req,res)=>{
+  app.post('/admin/publish-formations', adminAuth, express.json({limit:'200kb'}), async (req,res)=>{
     const clean = cleanFormations(req.body);
     fs.writeFileSync(FORMATIONS_PATH, JSON.stringify(clean, null, 2), 'utf-8');
     FORMATIONS_DATA = clean;
@@ -1628,7 +1628,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
   const pendingImages = new Set(); // cada entry: "public/images/reales/id.png"
 
   // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
-  // Parser propio de 10mb solo para este endpoint; el global es 200kb.
+  // Parser propio de 12mb solo para este endpoint.
   app.post('/admin/upload-image', adminAuth, express.json({limit:'12mb'}), (req,res)=>{
     const { type, data } = req.body||{};
     const id = (req.body?.id||'').toLowerCase();
