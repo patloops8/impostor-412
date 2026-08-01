@@ -1049,7 +1049,7 @@ async function uploadImage(type, file){
     ? (document.getElementById('cm-id-input').value.trim() || makeId(document.getElementById('cm-name').value))
     : DATA.subasta[_cmIdx].id).toLowerCase();
   if(!id){ toast('Guarda la carta primero para poder subir imágenes','err'); return; }
-  if(file.size > 7*1024*1024){ toast('La imagen es demasiado grande (máx. ~7MB). Comprimila antes de subirla.','err'); return; }
+  if(file.size > 9*1024*1024){ toast('La imagen es demasiado grande (máx. ~9MB). Comprimila antes de subirla.','err'); return; }
   const reader = new FileReader();
   reader.onload = async e=>{
     const btn = type==='real'
