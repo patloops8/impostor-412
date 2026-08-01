@@ -647,10 +647,13 @@ function updateSaveBar(){
     document.getElementById('save-bar-count').textContent = DATA[currentTab].length + ' entradas';
   }
 }
-const _adminPass = new URLSearchParams(location.search).get('pass') || '';
-// La contraseña viaja por header en todas las APIs (no en la URL — evita logs y historial).
-// El query param solo se usa en la carga inicial de la página /admin?pass=...
-const _passQ = _adminPass ? '?pass=' + encodeURIComponent(_adminPass) : ''; // solo para carga inicial
+// Contraseña: tomar de la URL si viene, si no recuperar de sessionStorage.
+// Esto permite recargar la página sin perder el acceso.
+const _passFromUrl = new URLSearchParams(location.search).get('pass') || '';
+if(_passFromUrl) sessionStorage.setItem('adminPass', _passFromUrl);
+const _adminPass = _passFromUrl || sessionStorage.getItem('adminPass') || '';
+if(!_adminPass){ document.body.innerHTML='<div style="font-family:sans-serif;padding:40px;color:#f55;">Acceso denegado — abrí el panel con la URL correcta incluyendo la contraseña.</div>'; throw new Error('no pass'); }
+const _passQ = _adminPass ? '?pass=' + encodeURIComponent(_adminPass) : '';
 function _authHeaders(extra={}){ return _adminPass ? {'X-Admin-Pass':_adminPass, ...extra} : {...extra}; }
 async function fetchData(file){
   const r = await fetch('/admin/data/' + file, {headers:_authHeaders()});
