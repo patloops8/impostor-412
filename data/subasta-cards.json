@@ -4777,5 +4777,32 @@
     "rareza": "mediano",
     "media": 77,
     "troll": false
+  },
+  {
+    "id": "clement_lenglet",
+    "name": "Clément Lenglet",
+    "label": "Clément Lenglet (Benfica)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "jose_maria_gimenez",
+    "name": "José María Giménez",
+    "label": "José María Giménez (Atletico de Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "raul_asencio",
+    "name": "Raúl Asencio",
+    "label": "Raúl Asencio (Real Madrid)",
+    "position": "DFC",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
   }
 ]
