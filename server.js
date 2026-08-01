@@ -660,7 +660,7 @@ function startDuel(r,aId,bId){
   const s=r.subasta, b=s.bracket;
   const teamA=s.teams.get(aId), teamB=s.teams.get(bId);
   // Posiciones a comparar: las de la formación, en orden
-  const slots=FORMATIONS[s.formation];
+  const slots=slotCounts(s.formation);
   const positions=[];
   for(const pos of POSITION_ORDER){ const n=slots[pos]||0; for(let k=0;k<n;k++) positions.push({pos,idx:k}); }
   b.currentDuel={ aId, bId, positions, posIndex:0, votesA:0, votesB:0, posResults:[], votes:new Map() };
@@ -990,7 +990,7 @@ function sendResumeState(r, socket){
       break;
     }
     case 'subasta_formation':
-      socket.emit('sub:formation_vote',{formations:ALL_FORMATIONS,secondsLeft:r.subasta.formationSecondsLeft});
+      socket.emit('sub:formation_vote',{formations:allFormationNames(),formationsData:FORMATIONS_DATA,secondsLeft:r.subasta.formationSecondsLeft});
       break;
     case 'subasta_play': {
       const snap=subSnapshot(r); if(snap) socket.emit('sub:resync',snap);
@@ -1023,8 +1023,30 @@ function sendResumeState(r, socket){
   }
 }
 
+// Limpieza de salas huérfanas: salas sin jugadores conectados durante > 2h.
+// Cubre el caso donde el último jugador se desconecta sin que el handler lo elimine.
+setInterval(()=>{
+  for(const [code,r] of rooms.entries()){
+    if(connected(r).length===0){
+      clearSubTimer(r); clearLieTimer(r); rooms.delete(code);
+    }
+  }
+}, 2*60*60*1000); // cada 2 horas
+
 /* ===================== SOCKET.IO ===================== */
+// Throttle global: máximo 20 eventos por segundo por socket.
+// Protege contra clientes que disparan eventos a velocidad anormal.
+const RATE_WINDOW=1000, RATE_LIMIT=20;
+
 io.on('connection', socket => {
+  let _rl={count:0,windowStart:Date.now()};
+  socket.use(([_event],next)=>{
+    const now=Date.now();
+    if(now-_rl.windowStart>RATE_WINDOW){_rl.count=0;_rl.windowStart=now;}
+    _rl.count++;
+    if(_rl.count>RATE_LIMIT) return; // descartar silenciosamente
+    next();
+  });
 
   socket.on('tv:watch', ({ code }, cb) => {
     const r=rooms.get((code||'').toUpperCase());
@@ -1035,6 +1057,7 @@ io.on('connection', socket => {
   });
 
   socket.on('player:create_room', ({ name }, cb) => {
+    if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     const code=genCode();
@@ -1376,6 +1399,14 @@ io.on('connection', socket => {
 });
 
 /* ===================== EXPRESS ===================== */
+// Headers de seguridad básicos (sin dependencia externa)
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+  next();
+});
 app.use(express.static(path.join(__dirname,'public')));
 app.use(express.json({ limit: '10mb' }));
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
@@ -1435,7 +1466,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
       },
       mentiroso: {
         roundCount:    Math.min(20, Math.max(1, parseInt(s.mentiroso?.roundCount)||5)),
-        mode:          ['texto','numeros'].includes(s.mentiroso?.mode) ? s.mentiroso.mode : 'texto',
+        mode:          ['texto','voz'].includes(s.mentiroso?.mode) ? s.mentiroso.mode : 'texto',
         namingSeconds: Math.min(60, Math.max(5, parseInt(s.mentiroso?.namingSeconds)||15)),
       },
       frecuencia: { roundCount: Math.min(20, Math.max(1, parseInt(s.frecuencia?.roundCount)||5)) },
