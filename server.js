@@ -1035,17 +1035,34 @@ setInterval(()=>{
 
 /* ===================== SOCKET.IO ===================== */
 // Throttle global: máximo 20 eventos por segundo por socket.
-// Protege contra clientes que disparan eventos a velocidad anormal.
 const RATE_WINDOW=1000, RATE_LIMIT=20;
+// Límite de sockets por IP: máx 20 conexiones simultáneas (cubre grupos grandes en la misma red).
+const IP_CONN = new Map();
 
 io.on('connection', socket => {
+  // ── Rate limit de eventos ──────────────────────────────
   let _rl={count:0,windowStart:Date.now()};
   socket.use(([_event],next)=>{
     const now=Date.now();
     if(now-_rl.windowStart>RATE_WINDOW){_rl.count=0;_rl.windowStart=now;}
     _rl.count++;
-    if(_rl.count>RATE_LIMIT) return; // descartar silenciosamente
+    if(_rl.count>RATE_LIMIT) return;
     next();
+  });
+
+  // ── Límite de conexiones por IP ────────────────────────
+  const clientIp = (socket.handshake.headers['x-forwarded-for']||'').split(',')[0].trim()
+                   || socket.handshake.address;
+  const ipCount = (IP_CONN.get(clientIp)||0) + 1;
+  IP_CONN.set(clientIp, ipCount);
+  if(ipCount > 20){
+    socket.disconnect(true);
+    IP_CONN.set(clientIp, Math.max(0, ipCount-1));
+    return;
+  }
+  socket.on('disconnect', ()=>{
+    const c=(IP_CONN.get(clientIp)||1)-1;
+    if(c<=0) IP_CONN.delete(clientIp); else IP_CONN.set(clientIp,c);
   });
 
   socket.on('tv:watch', ({ code }, cb) => {
@@ -1407,8 +1424,12 @@ app.use((_req, res, next) => {
   res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
   next();
 });
+// Bloquear acceso directo a admin.html como archivo estático.
+// La única forma de llegar es vía /admin (que pasa por adminAuth).
+app.get('/admin.html', (_q, res) => res.status(404).end());
 app.use(express.static(path.join(__dirname,'public')));
-app.use(express.json({ limit: '10mb' }));
+// Límite pequeño para rutas normales; el upload tiene su propio parser.
+app.use(express.json({ limit: '200kb' }));
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
@@ -1427,13 +1448,19 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
   function adminAuth(req,res,next){
     const envPass = process.env.ADMIN_PASS;
-    // Sin env var: solo acceso local
     if(!envPass){
-      if(process.env.NODE_ENV==='production') return res.status(404).end();
+      // Sin contraseña configurada: solo permitir desde localhost.
+      // En Render (u otro host) la IP nunca será 127.0.0.1, así que queda bloqueado
+      // aunque NODE_ENV no esté seteado — no hay forma de olvidarse.
+      const raw = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+      const isLocal = raw==='127.0.0.1'||raw==='::1'||raw.endsWith('::ffff:127.0.0.1');
+      if(!isLocal) return res.status(404).end();
       return next();
     }
-    // Con env var: cualquier origen, pero necesita la contraseña
-    const provided = req.query.pass || req.headers['x-admin-pass'] || '';
+    // Con ADMIN_PASS: aceptar la contraseña solo por header (no query param — logs de servidor).
+    // El panel de admin ya manda X-Admin-Pass; el query param legacy solo sirve para la carga
+    // inicial de la página /admin?pass=... pero las APIs usan el header.
+    const provided = req.headers['x-admin-pass'] || req.query.pass || '';
     if(provided !== envPass) return res.status(401).json({error:'Contraseña incorrecta'});
     next();
   }
@@ -1589,7 +1616,8 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
   const pendingImages = new Set(); // cada entry: "public/images/reales/id.png"
 
   // Sube imagen de un jugador (base64 PNG) a reales/ o siluetas/
-  app.post('/admin/upload-image', adminAuth, (req,res)=>{
+  // Parser propio de 10mb solo para este endpoint; el global es 200kb.
+  app.post('/admin/upload-image', express.json({limit:'10mb'}), adminAuth, (req,res)=>{
     const { type, data } = req.body||{};
     const id = (req.body?.id||'').toLowerCase();
     if(!id||!data||(type!=='real'&&type!=='silueta')) return res.status(400).json({error:'Faltan campos id/type/data'});

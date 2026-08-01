@@ -619,7 +619,7 @@ let imgStatus = { reales: new Set(), siluetas: new Set() };
 
 async function loadImgStatus(){
   try{
-    const r = await fetch('/admin/image-status' + _passQ);
+    const r = await fetch('/admin/image-status', {headers:_authHeaders()});
     const d = await r.json();
     imgStatus = { reales: new Set(d.reales), siluetas: new Set(d.siluetas) };
   }catch(e){ console.warn('image-status error',e); }
@@ -648,13 +648,16 @@ function updateSaveBar(){
   }
 }
 const _adminPass = new URLSearchParams(location.search).get('pass') || '';
-const _passQ = _adminPass ? '?pass=' + encodeURIComponent(_adminPass) : '';
+// La contraseña viaja por header en todas las APIs (no en la URL — evita logs y historial).
+// El query param solo se usa en la carga inicial de la página /admin?pass=...
+const _passQ = _adminPass ? '?pass=' + encodeURIComponent(_adminPass) : ''; // solo para carga inicial
+function _authHeaders(extra={}){ return _adminPass ? {'X-Admin-Pass':_adminPass, ...extra} : {...extra}; }
 async function fetchData(file){
-  const r = await fetch('/admin/data/' + file + _passQ);
+  const r = await fetch('/admin/data/' + file, {headers:_authHeaders()});
   return r.json();
 }
 async function saveData(file, data){
-  const r = await fetch('/admin/save/' + file + _passQ, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  const r = await fetch('/admin/save/' + file, { method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(data) });
   return r.json();
 }
 
@@ -1053,8 +1056,8 @@ async function uploadImage(type, file){
     const origText = btn.childNodes[0].nodeValue;
     btn.childNodes[0].nodeValue = '⏳ Subiendo...';
     try{
-      const res = await fetch('/admin/upload-image'+_passQ, {
-        method:'POST', headers:{'Content-Type':'application/json'},
+      const res = await fetch('/admin/upload-image', {
+        method:'POST', headers:_authHeaders({'Content-Type':'application/json'}),
         body:JSON.stringify({id, type, data:e.target.result})
       });
       const json = await res.json();
@@ -1177,7 +1180,7 @@ function buildSettingsPayload(){
 
 async function loadConfig(){
   try{
-    const r = await fetch('/admin/data/settings'+_passQ);
+    const r = await fetch('/admin/data/settings', {headers:_authHeaders()});
     const s = await r.json();
     populateConfig(s);
   }catch(e){ console.warn('config load error',e); }
@@ -1191,8 +1194,8 @@ for(const r of RAREZA_ORDER){
 
 document.getElementById('btn-save-settings').addEventListener('click', async ()=>{
   try{
-    const res = await fetch('/admin/save-settings'+_passQ, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(buildSettingsPayload()),
+    const res = await fetch('/admin/save-settings', {
+      method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(buildSettingsPayload()),
     });
     const json = await res.json();
     if(json.ok) toast('✓ Configuración guardada (solo local)','ok');
@@ -1207,8 +1210,8 @@ document.getElementById('btn-publish-settings').addEventListener('click', async 
   btn.textContent = 'Publicando…';
   status.textContent = '';
   try{
-    const res = await fetch('/admin/publish-settings'+_passQ, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(buildSettingsPayload()),
+    const res = await fetch('/admin/publish-settings', {
+      method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(buildSettingsPayload()),
     });
     const json = await res.json();
     if(json.ok && json.published){
@@ -1312,7 +1315,7 @@ document.addEventListener('touchend', () => { fpeDrag = null; });
 
 async function fpeLoad(){
   try{
-    const r = await fetch('/admin/data/formations'+_passQ);
+    const r = await fetch('/admin/data/formations', {headers:_authHeaders()});
     fpeData = await r.json();
     fpeCurrent = Object.keys(fpeData)[0] || null;
     fpeRenderSelect();
@@ -1372,8 +1375,8 @@ async function fpePost(endpoint){
   btn.textContent = 'Guardando…';
   status.textContent = '';
   try{
-    const res = await fetch(`/admin/${endpoint}-formations`+_passQ, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fpeData),
+    const res = await fetch(`/admin/${endpoint}-formations`, {
+      method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify(fpeData),
     });
     const json = await res.json();
     if(json.ok && json.published){
@@ -1712,7 +1715,7 @@ const _pubBtn  = document.getElementById('btn-publish');
 
 async function refreshPendingImages(){
   try{
-    const r = await fetch('/admin/pending-images'+_passQ);
+    const r = await fetch('/admin/pending-images', {headers:_authHeaders()});
     const {count} = await r.json();
     document.getElementById('img-pending-info').style.display = count>0 ? '' : 'none';
     document.getElementById('img-pending-count').textContent = count;
@@ -1732,7 +1735,7 @@ _pubBtn.addEventListener('click', async ()=>{
   _pubBtn.disabled = true;
   _pubBtn.textContent = '⏳ Publicando...';
   try{
-    const r = await fetch('/admin/publish' + _passQ, { method:'POST' });
+    const r = await fetch('/admin/publish', { method:'POST', headers:_authHeaders() });
     const res = await r.json();
     if(res.ok){
       const imgMsg = res.publishedImages > 0 ? ` + ${res.publishedImages} imagen(es)` : '';
