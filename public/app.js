@@ -910,7 +910,7 @@ function _muRenderCards(mu){
     }
     if(p.card){
       const img=document.createElement('img');
-      img.loading='lazy'; img.className='mu-card-img'; img.src=`/images/reales/${p.card.id.toLowerCase()}.png`; img.alt=p.card.name;
+      img.loading='lazy'; img.className='mu-card-img'; img.src=`/images/reales/${p.card.cardId.toLowerCase()}.png`; img.alt=p.card.name;
       img.onerror=()=>{ const ph=document.createElement('div'); ph.className='mu-card-img'; ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:var(--soft)'; ph.textContent=mu.pos; img.replaceWith(ph); };
       div.appendChild(img);
     } else {
