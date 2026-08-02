@@ -5002,5 +5002,77 @@
     "rareza": "mediano",
     "media": 79,
     "troll": false
+  },
+  {
+    "id": "oleksandr_zinchenko",
+    "name": "Oleksandr Zinchenko",
+    "label": "Oleksandr Zinchenko (Nottingham Forest)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "jorrel_hato",
+    "name": "Jorrel Hato",
+    "label": "Jorrel Hato (Chelsea)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "matteo_ruggeri",
+    "name": "Matteo Ruggeri",
+    "label": "Matteo Ruggeri (Atlético de Madrid)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "ricardo_rodriguez",
+    "name": "Ricardo Rodriguez",
+    "label": "Ricardo Rodriguez (Betis)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 74,
+    "troll": false
+  },
+  {
+    "id": "jose_gaya",
+    "name": "José Gaya",
+    "label": "José Gaya (Valencia)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "johan_mojica",
+    "name": "Johan Mojica",
+    "label": "Johan Mojica (Mallorca)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "alejandro_grimaldo",
+    "name": "Alejandro Grimaldo",
+    "label": "Alejandro Grimaldo (Atlético de Madrid)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "marcos_alonso",
+    "name": "Marcos Alonso",
+    "label": "Marcos Alonso (Celta)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
   }
 ]
