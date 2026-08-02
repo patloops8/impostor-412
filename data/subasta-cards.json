@@ -4921,5 +4921,86 @@
     "rareza": "mediano",
     "media": 82,
     "troll": false
+  },
+  {
+    "id": "lucas_digne",
+    "name": "Lucas Digne",
+    "label": "Lucas Digne (Aston Villa)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "ian_maatsen_",
+    "name": "Ian Maatsen",
+    "label": "Ian Maatsen (Aston Villa)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "patrick_dorgu_",
+    "name": "Patrick Dorgu",
+    "label": "Patrick Dorgu (Mancheter United)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "antonee_robinson",
+    "name": "Antonee Robinson",
+    "label": "Antonee Robinson (Fulham)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "luke_shaw",
+    "name": "Luke Shaw",
+    "label": "Luke Shaw (Manchester United)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "rayan_aitnouri",
+    "name": "Rayan Aït-Nouri",
+    "label": "Rayan Aït-Nouri (Manchester City)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "lewis_hall",
+    "name": "Lewis Hall",
+    "label": "Lewis Hall (New Castle)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "milos_kerkez",
+    "name": "Milos Kerkez",
+    "label": "Milos Kerkez (Liverpool)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "destiny_udogie",
+    "name": "Destiny Udogie",
+    "label": "Destiny Udogie (Tottenham)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
   }
 ]
