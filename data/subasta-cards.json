@@ -5137,5 +5137,14 @@
     "rareza": "mediano",
     "media": 80,
     "troll": false
+  },
+  {
+    "id": "nuno_tavares",
+    "name": "Nuno Tavares",
+    "label": "Nuno Tavares (Lazio)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
   }
 ]
