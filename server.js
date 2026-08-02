@@ -175,6 +175,7 @@ function remapPlayerId(r, oldId, newId){
   swapKey(s.formationVotes);
   swapKey(s.playerState);
   swapKey(s.bids);
+  for(const rc of s.resolvedCards) if(rc.result.winnerId===oldId) rc.result.winnerId=newId;
   if (s.highestBid?.playerId===oldId) s.highestBid.playerId=newId;
   if (s.rps){
     s.rps.players = swapArr(s.rps.players);
