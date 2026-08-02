@@ -4161,7 +4161,7 @@
     "id": "pablo_maffeo",
     "name": "Pablo Maffeo",
     "label": "Pablo Maffeo (Olympiacos F. C.)",
-    "position": "DC",
+    "position": "LD",
     "rareza": "mediano",
     "media": 76,
     "troll": false
@@ -4260,7 +4260,7 @@
     "id": "matheus_nunes",
     "name": "Matheus Nunes",
     "label": "Matheus Nunes (Manchester City)",
-    "position": "DC",
+    "position": "LD",
     "rareza": "mediano",
     "media": 79,
     "troll": false
@@ -4323,7 +4323,7 @@
     "id": "julian_ryerson",
     "name": "Julian Ryerson",
     "label": "Julian Ryerson (B. Dortmund)",
-    "position": "DC",
+    "position": "LD",
     "rareza": "mediano",
     "media": 81,
     "troll": false
@@ -4404,7 +4404,7 @@
     "id": "timothy_weah",
     "name": "Timothy Weah",
     "label": "Timothy Weah (Olympique de Marsella)",
-    "position": "DC",
+    "position": "LD",
     "rareza": "mediano",
     "media": 76,
     "troll": false
@@ -4422,7 +4422,7 @@
     "id": "thomas_meunier",
     "name": "Thomas Meunier",
     "label": "Thomas Meunier (Sunderland)",
-    "position": "DC",
+    "position": "LD",
     "rareza": "mediano",
     "media": 75,
     "troll": false
@@ -4638,7 +4638,7 @@
     "id": "gianluca_mancini",
     "name": "Gianluca Mancini",
     "label": "Gianluca Mancini (Roma)",
-    "position": "DC",
+    "position": "DFC",
     "rareza": "mediano",
     "media": 83,
     "troll": false
@@ -4692,7 +4692,7 @@
     "id": "nikola_milenkovic",
     "name": "Nikola Milenković",
     "label": "Nikola Milenković (Nottingham Forest)",
-    "position": "DC",
+    "position": "DFC",
     "rareza": "mediano",
     "media": 81,
     "troll": false
