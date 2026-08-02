@@ -5074,5 +5074,68 @@
     "rareza": "mediano",
     "media": 78,
     "troll": false
+  },
+  {
+    "id": "fran_garcia",
+    "name": "Fran García",
+    "label": "Fran García (Real Madrid)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "pervis_estupinan",
+    "name": "Pervis Estupiñan",
+    "label": "Pervis Estupiñan (AC Milan)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "leonardo_spinazzola",
+    "name": "Leonardo Spinazzola",
+    "label": "Leonardo Spinazzola (Napoli)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false
+  },
+  {
+    "id": "carlos_augusto",
+    "name": "Carlos Augusto",
+    "label": "Carlos Augusto (Inter de Milan)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "andrea_cambiasso",
+    "name": "Andrea Cambiasso",
+    "label": "Andrea Cambiasso (Juventus)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "angelino",
+    "name": "Angeliño",
+    "label": "Angeliño (Roma)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "miguel_gutierrez",
+    "name": "Miguel Gutiérrez",
+    "label": "Miguel Gutiérrez (Napoli)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
   }
 ]
