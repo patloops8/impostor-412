@@ -5254,5 +5254,158 @@
     "rareza": "mediano",
     "media": 80,
     "troll": false
+  },
+  {
+    "id": "aurelien_tchoameni",
+    "name": "Aurelien Tchoameni",
+    "label": "Aurelien Tchoameni (Real Madrid)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "moises_caicedo",
+    "name": "Moisés Caicedo",
+    "label": "Moisés Caicedo (Chelsea)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "frenkie_de_jong",
+    "name": "Frenkie De Jong",
+    "label": "Frenkie De Jong (Barcelona)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "gravenberch_",
+    "name": "Gravenberch",
+    "label": "Gravenberch (Liverpool)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "bruno_guimaraes_",
+    "name": "Bruno Guimaraes",
+    "label": "Bruno Guimaraes (New Castle)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "sandro_tonali_",
+    "name": "Sandro Tonali",
+    "label": "Sandro Tonali (Tottenham)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "vitinha_",
+    "name": "Vitinha",
+    "label": "Vitinha (Paris Saint Germain)",
+    "position": "MCD",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
+  },
+  {
+    "id": "martin_zubimendi_",
+    "name": "Martín Zubimendi",
+    "label": "Martín Zubimendi (Arsenal)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "granit_xhaka",
+    "name": "Granit Xhaka",
+    "label": "Granit Xhaka (Sunderland)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "youri_tielemans",
+    "name": "Youri Tielemans",
+    "label": "Youri Tielemans (Manchester United)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "dounglas_luis",
+    "name": "Dounglas Luis",
+    "label": "Dounglas Luis (Aston Villa)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "amadou_onana_",
+    "name": "Amadou Onana",
+    "label": "Amadou Onana (Aston Villa)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "nico_gonzalez",
+    "name": "Nico González",
+    "label": "Nico González (Manchester City)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "eliot_anderson",
+    "name": "Eliot Anderson",
+    "label": "Eliot Anderson (Manchester City)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "kobbie_mainoo",
+    "name": "Kobbie Mainoo",
+    "label": "Kobbie Mainoo (Manchester United)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "manuel_ugarte",
+    "name": "Manuel Ugarte",
+    "label": "Manuel Ugarte (Manchester United)",
+    "position": "MCD",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "casemiro",
+    "name": "Casemiro",
+    "label": "Casemiro (Inter de Miami)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
   }
 ]
