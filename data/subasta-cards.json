@@ -5142,9 +5142,117 @@
     "id": "nuno_tavares",
     "name": "Nuno Tavares",
     "label": "Nuno Tavares (Lazio)",
-    "position": "DC",
+    "position": "LI",
     "rareza": "mediano",
     "media": 77,
+    "troll": false
+  },
+  {
+    "id": "david_raum",
+    "name": "David Raum",
+    "label": "David Raum (Leipzig)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "raphael_guerreiro",
+    "name": "Raphael Guerreiro",
+    "label": "Raphael Guerreiro (Bayern de Múnich)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "ramy_bensebaini",
+    "name": "Ramy Bensebaini",
+    "label": "Ramy Bensebaini (Borussia Dormunt) 78",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "mittelstadt",
+    "name": "Mittelstädt",
+    "label": "Mittelstädt (Stuttgart)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false
+  },
+  {
+    "id": "nicolas_tagliafico",
+    "name": "Nicolás Tagliafico",
+    "label": "Nicolás Tagliafico (Olympique de Lyon)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "matthieu_udol",
+    "name": "Matthieu Udol",
+    "label": "Matthieu Udol (Lens)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "lucas_hernandez",
+    "name": "Lucas Hernández",
+    "label": "Lucas Hernández (Paris Saint Germain)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "facundo_medina",
+    "name": "Facundo Medina",
+    "label": "Facundo Medina (Olympique de Marsella)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "theo_hernandez",
+    "name": "Theo Hernandez",
+    "label": "Theo Hernandez (Al Hilal)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "marcos_acuna",
+    "name": "Marcos Acuña",
+    "label": "Marcos Acuña (River Plate)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 76,
+    "troll": false
+  },
+  {
+    "id": "jesus_gallardo",
+    "name": "Jesús Gallardo",
+    "label": "Jesús Gallardo (Toluca)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 75,
+    "troll": false
+  },
+  {
+    "id": "mauro_junior",
+    "name": "Mauro Junior",
+    "label": "Mauro Junior (PSV)",
+    "position": "LI",
+    "rareza": "mediano",
+    "media": 80,
     "troll": false
   }
 ]
