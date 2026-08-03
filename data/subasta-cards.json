@@ -5257,8 +5257,8 @@
   },
   {
     "id": "aurelien_tchoameni",
-    "name": "Aurelien Tchoameni",
-    "label": "Aurelien Tchoameni (Real Madrid)",
+    "name": "Aurelien Tchouameni",
+    "label": "Aurelien Tchouameni (Real Madrid)",
     "position": "MCD",
     "rareza": "top",
     "media": 86,
@@ -5284,8 +5284,8 @@
   },
   {
     "id": "gravenberch_",
-    "name": "Gravenberch",
-    "label": "Gravenberch (Liverpool)",
+    "name": "Ryan Gravenberch",
+    "label": "Ryan Gravenberch (Liverpool)",
     "position": "MCD",
     "rareza": "top",
     "media": 86,
@@ -5347,8 +5347,8 @@
   },
   {
     "id": "dounglas_luis",
-    "name": "Dounglas Luis",
-    "label": "Dounglas Luis (Aston Villa)",
+    "name": "Douglas Luis",
+    "label": "Douglas Luis (Aston Villa)",
     "position": "MCD",
     "rareza": "mediano",
     "media": 80,
@@ -5378,7 +5378,7 @@
     "label": "Eliot Anderson (Manchester City)",
     "position": "MCD",
     "rareza": "mediano",
-    "media": 83,
+    "media": 84,
     "troll": false
   },
   {
