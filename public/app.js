@@ -379,6 +379,8 @@ function renderLobby(st){
     populateSelect('cfg-lie-rounds',  opts.lieRoundOptions,  st.mentirosoConfig?.roundCount);
     populateSelect('cfg-wave-rounds', opts.waveRoundOptions, st.waveConfig?.roundCount);
     populateSelect('cfg-who-rounds',  opts.whoRoundOptions,  st.whoConfig?.roundCount);
+    populateBudgetSelect('cfg-sub-budget', opts.subBudgetOptions, st.subastaConfig?.budget);
+    populateSelect('cfg-sub-skips',   opts.subSkipOptions,   st.subastaConfig?.skipLimit);
     if(st.gameType==='impostor') renderImpostorCfg(st.impostorConfig, opts);
     if(st.gameType==='who') renderWhoCfg(st.whoConfig);
     updateStartBtn(st.players.length);
@@ -415,6 +417,14 @@ function populateSelect(selId, options, currentVal){
   if(!sel||!options?.length) return;
   const prev = currentVal ?? Number(sel.value);
   sel.innerHTML = options.map(v=>`<option value="${v}">${v}</option>`).join('');
+  const best = options.includes(prev) ? prev : options.reduce((a,b)=>Math.abs(b-prev)<Math.abs(a-prev)?b:a);
+  sel.value = best;
+}
+function populateBudgetSelect(selId, options, currentVal){
+  const sel=$(selId);
+  if(!sel||!options?.length) return;
+  const prev = currentVal ?? Number(sel.value);
+  sel.innerHTML = options.map(v=>`<option value="${v}">$${v}M</option>`).join('');
   const best = options.includes(prev) ? prev : options.reduce((a,b)=>Math.abs(b-prev)<Math.abs(a-prev)?b:a);
   sel.value = best;
 }

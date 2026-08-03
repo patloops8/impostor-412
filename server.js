@@ -32,8 +32,8 @@ const DEFAULT_SETTINGS = {
   mentiroso: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
   frecuencia: { roundCount: 5 },
   quienSoy:   { roundCount: 1 },
-  subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5 } },
-  opciones:  { impMangaOptions:[1,3,5,7,10], lieRoundOptions:[3,5,8,10], waveRoundOptions:[3,5,8,10], whoRoundOptions:[1,2,3,5] },
+  subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5 }, defaultBudget: 1000, defaultSkipLimit: 5 },
+  opciones:  { impMangaOptions:[1,3,5,7,10], lieRoundOptions:[3,5,8,10], waveRoundOptions:[3,5,8,10], whoRoundOptions:[1,2,3,5], subBudgetOptions:[500,750,1000,1500,2000,3000,5000], subSkipOptions:[0,2,3,5,8,10] },
 };
 let SETTINGS = (() => {
   try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')); }
@@ -91,7 +91,7 @@ function newRoom(code, hostId) {
     votes: new Map(), roundNumber: 0,
     mentirosoConfig: { roundCount: SETTINGS.mentiroso?.roundCount??5, mode: SETTINGS.mentiroso?.mode??'texto', namingSeconds: SETTINGS.mentiroso?.namingSeconds??15 },
     lie: { roundNumber:0, turnStartIndex:0, category:null, turnOrder:[], currentTurnIndex:0, currentClaim:0, lastClaimerId:null, challenge:null },
-    subastaConfig: { budget: 1000, skipLimit: 5, winMode: 'ovr' }, // winMode: 'ovr' | 'votacion'
+    subastaConfig: { budget: SETTINGS.subasta?.defaultBudget??1000, skipLimit: SETTINGS.subasta?.defaultSkipLimit??5, winMode: 'ovr' }, // winMode: 'ovr' | 'votacion'
     subasta: {
       phase:'config', formation:null, formationVotes:new Map(),
       deck:[], currentCardIndex:-1, currentCard:null,
@@ -1499,6 +1499,14 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
       const v = Array.isArray(arr) ? arr.map(Number).filter(n=>n>0&&n<=100) : def;
       return v.length ? [...new Set(v)].sort((a,b)=>a-b) : def;
     };
+    const toBudgetOpts = (arr, def) => {
+      const v = Array.isArray(arr) ? arr.map(Number).filter(n=>Number.isInteger(n)&&n>=100&&n<=99999) : def;
+      return v.length ? [...new Set(v)].sort((a,b)=>a-b) : def;
+    };
+    const toSkipOpts = (arr, def) => {
+      const v = Array.isArray(arr) ? arr.map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<=20) : def;
+      return v.length ? [...new Set(v)].sort((a,b)=>a-b) : def;
+    };
     return {
       impostor: {
         impostorCount: Math.min(5, Math.max(1, parseInt(s.impostor?.impostorCount)||1)),
@@ -1518,12 +1526,16 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
           leyenda: Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.leyenda)||2),
           troll:   Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.troll)||1.5),
         },
+        defaultBudget:    Math.min(99999, Math.max(100, parseInt(s.subasta?.defaultBudget)||1000)),
+        defaultSkipLimit: Math.min(20, Math.max(0, parseInt(s.subasta?.defaultSkipLimit)||5)),
       },
       opciones: {
         impMangaOptions:  toOpts(s.opciones?.impMangaOptions,  [1,3,5,7,10]),
         lieRoundOptions:  toOpts(s.opciones?.lieRoundOptions,  [3,5,8,10]),
         waveRoundOptions: toOpts(s.opciones?.waveRoundOptions, [3,5,8,10]),
         whoRoundOptions:  toOpts(s.opciones?.whoRoundOptions,  [1,2,3,5]),
+        subBudgetOptions: toBudgetOpts(s.opciones?.subBudgetOptions, [500,750,1000,1500,2000,3000,5000]),
+        subSkipOptions:   toSkipOpts(s.opciones?.subSkipOptions,   [0,2,3,5,8,10]),
       },
     };
   }
