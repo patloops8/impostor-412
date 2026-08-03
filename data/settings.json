@@ -20,7 +20,9 @@
       "top": 6,
       "leyenda": 2,
       "troll": 1.5
-    }
+    },
+    "defaultBudget": 1000,
+    "defaultSkipLimit": 5
   },
   "opciones": {
     "impMangaOptions": [
@@ -50,6 +52,24 @@
       5,
       7,
       10
+    ],
+    "subBudgetOptions": [
+      500,
+      750,
+      1000,
+      1500,
+      2000,
+      3000,
+      5000
+    ],
+    "subSkipOptions": [
+      0,
+      2,
+      3,
+      5,
+      8,
+      10,
+      15
     ]
   }
 }
