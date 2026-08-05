@@ -372,7 +372,8 @@ function buildDeck(r){
   }
   const minP = SETTINGS.subasta?.minPrice ?? 10;
   const maxP = Math.max(minP, SETTINGS.subasta?.maxPrice ?? 150);
-  return deck.map(c=>({ ...c, startingPrice: minP + Math.floor(Math.random()*(maxP-minP+1)) }));
+  // Distribución triangular: suma de dos uniformes → pico en el centro, extremos menos probables
+  return deck.map(c=>({ ...c, startingPrice: Math.round(minP + ((Math.random()+Math.random())/2)*(maxP-minP)) }));
 }
 // ¿Algún jugador todavía necesita (y podría llegar a llenar) esta posición?
 function someoneNeedsPosition(r, pos){
