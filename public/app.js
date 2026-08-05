@@ -715,7 +715,7 @@ socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,starti
   stopSubClock();               // ...resetear cualquier reloj previo...
   setSubCount(secondsLeft);     // ...y arrancar el reloj local ya en pantalla
 });
-socket.on('sub:eligibility',({eligible,skipsLeft})=>{ subState.skipsLeft=skipsLeft; subEligible=eligible; updSubStats(); $('sub-ineligible').classList.toggle('hidden',eligible); });
+socket.on('sub:eligibility',({eligible,skipsLeft,budget})=>{ subState.skipsLeft=skipsLeft; if(typeof budget==='number') subState.budget=budget; subEligible=eligible; updSubStats(); $('sub-ineligible').classList.toggle('hidden',eligible); });
 socket.on('sub:tick',({phase,secondsLeft})=>{ setSubCount(secondsLeft); $('sub-phase-label').textContent=phase==='analysis'?'Analizando...':'¡Pujas abiertas!'; });
 socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
   sfx.announce();
@@ -807,8 +807,10 @@ socket.on('sub:rps_result',({choices,loserName,decided})=>{
   else { $('sub-rps-title').textContent='¡Empate! Otra vez'; $('sub-rps-sub').textContent='Se repite entre los empatados'; }
 });
 
-socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionLabel,cardTroll,result,winnerName,isLastCard})=>{
-  stopSubClock();
+let _subAutoIv=null;
+function _clearSubAutoTimer(){ if(_subAutoIv){clearInterval(_subAutoIv);_subAutoIv=null;} const el=$('sub-auto-label'); if(el)el.textContent=''; }
+socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionLabel,cardTroll,result,winnerName,isLastCard,autoAdvanceAt})=>{
+  stopSubClock(); _clearSubAutoTimer();
   subLast=isLastCard;
   const isW=result.winnerId===myId;
   if(isW){ subState.budget-=result.amount; subState.teamCount++; updSubStats(); sfx.win(); vib([50,30,80]); }
@@ -822,9 +824,17 @@ socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionL
   $('btn-sub-next').textContent=isLastCard?'Ver resultado final':'Siguiente carta';
   $('btn-sub-next').classList.toggle('hidden',!isHost);
   $('sub-result-wait').classList.toggle('hidden',isHost);
+  if(isHost && autoAdvanceAt){
+    const lbl=$('sub-auto-label');
+    _subAutoIv=setInterval(()=>{
+      const s=Math.max(0,Math.ceil((autoAdvanceAt-Date.now())/1000));
+      if(lbl) lbl.textContent=s>0?`(auto en ${s}s)`:'';
+      if(s<=0) _clearSubAutoTimer();
+    },250);
+  }
   show('s-sub-result');
 });
-$('btn-sub-next').addEventListener('click',()=>socket.emit('host:next_subasta_card',{code:roomCode}));
+$('btn-sub-next').addEventListener('click',()=>{ _clearSubAutoTimer(); socket.emit('host:next_subasta_card',{code:roomCode}); });
 // ===== TORNEO (modo votación) =====
 socket.on('sub:tournament_start',({teams})=>{
   stopSubClock();

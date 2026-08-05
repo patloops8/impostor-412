@@ -415,6 +415,8 @@
     <div class="cfg-row"><label>Opciones de presupuesto en lobby</label><input type="text" id="cfg-sub-budget-opts" value="500,750,1000,1500,2000,3000,5000" style="width:220px" placeholder="ej: 500,1000,2000"></div>
     <div class="cfg-row"><label>Skips por jugador (por defecto)</label><input type="number" id="cfg-sub-skip-def" min="0" max="20" step="1" value="5"></div>
     <div class="cfg-row"><label>Opciones de skips en lobby</label><input type="text" id="cfg-sub-skip-opts" value="0,2,3,5,8,10" style="width:220px" placeholder="ej: 0,3,5,8"></div>
+    <div class="cfg-row"><label>Precio mínimo de cartas</label><input type="number" id="cfg-sub-price-min" min="1" max="99999" step="1" value="10"></div>
+    <div class="cfg-row"><label>Precio máximo de cartas</label><input type="number" id="cfg-sub-price-max" min="1" max="99999" step="1" value="150"></div>
   </div>
 
   <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
@@ -1163,11 +1165,13 @@ function populateConfig(s){
     document.getElementById('cfg-rar-'+r+'-num').value = v;
   }
   updateProbBars();
-  // Subasta presupuesto y skips
+  // Subasta presupuesto, skips y precios
   document.getElementById('cfg-sub-budget-def').value  = s.subasta?.defaultBudget ?? 1000;
   document.getElementById('cfg-sub-budget-opts').value = (opts.subBudgetOptions || [500,750,1000,1500,2000,3000,5000]).join(',');
   document.getElementById('cfg-sub-skip-def').value    = s.subasta?.defaultSkipLimit ?? 5;
   document.getElementById('cfg-sub-skip-opts').value   = (opts.subSkipOptions || [0,2,3,5,8,10]).join(',');
+  document.getElementById('cfg-sub-price-min').value   = s.subasta?.minPrice ?? 10;
+  document.getElementById('cfg-sub-price-max').value   = s.subasta?.maxPrice ?? 150;
 }
 
 function parseOpts(str){ return str.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v)&&v>0); }
@@ -1192,6 +1196,8 @@ function buildSettingsPayload(){
       ),
       defaultBudget:    parseInt(document.getElementById('cfg-sub-budget-def').value)||1000,
       defaultSkipLimit: parseInt(document.getElementById('cfg-sub-skip-def').value)||5,
+      minPrice:         parseInt(document.getElementById('cfg-sub-price-min').value)||10,
+      maxPrice:         parseInt(document.getElementById('cfg-sub-price-max').value)||150,
     },
     opciones: {
       impMangaOptions:  parseOpts(document.getElementById('cfg-imp-manga-opts').value),
