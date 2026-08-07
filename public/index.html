@@ -19,16 +19,17 @@
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-<div id="conn-banner" class="conn-banner hidden">Conectando...</div>
-<button id="btn-mute" class="mute-btn" aria-label="Silenciar/activar sonidos">🔊</button>
-<button id="btn-rules" class="rules-btn" aria-label="Cómo se juega">?</button>
+<div id="conn-banner" class="conn-banner hidden" data-i18n="connecting">Conectando...</div>
+<button id="btn-mute" class="mute-btn" aria-label="Silenciar/activar sonidos" data-i18n-aria="muteAria">🔊</button>
+<button id="btn-rules" class="rules-btn" aria-label="Cómo se juega" data-i18n-aria="rulesAria">?</button>
+<button id="btn-lang" class="lang-btn" aria-label="Cambiar idioma / Change language">🌐 ES</button>
 
 <!-- Modal de reglas -->
 <div id="rules-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
   <div class="rules-box">
     <div class="rules-box-head">
-      <h2 class="rules-box-title" id="rules-title">Cómo se juega</h2>
-      <button class="rules-close" id="btn-rules-close" aria-label="Cerrar">✕</button>
+      <h2 class="rules-box-title" id="rules-title" data-i18n="rulesTitle">Cómo se juega</h2>
+      <button class="rules-close" id="btn-rules-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
     </div>
     <div class="rules-body" id="rules-body"></div>
   </div>
@@ -40,101 +41,101 @@
   <section id="s-home" class="center-flex">
     <div>
       <img src="/images/ui/logo.png" alt="412" class="app-logo" />
-      <p class="eyebrow" style="margin-top:10px;">Juegos de fútbol para jugar con amigos</p>
+      <p class="eyebrow" style="margin-top:10px;" data-i18n="appTagline">Juegos de fútbol para jugar con amigos</p>
     </div>
     <div class="card" style="width:100%;">
-      <input type="text" id="inp-name" placeholder="Tu nombre" maxlength="20" />
-      <button class="btn-primary" id="btn-create" style="width:100%;margin-top:12px;">Crear sala</button>
+      <input type="text" id="inp-name" placeholder="Tu nombre" maxlength="20" data-i18n-placeholder="yourName" />
+      <button class="btn-primary" id="btn-create" style="width:100%;margin-top:12px;" data-i18n="createRoom">Crear sala</button>
       <div class="divider"></div>
       <div class="row">
-        <input type="text" id="inp-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;flex:1;" />
-        <button class="btn-secondary" id="btn-join">Unirme</button>
+        <input type="text" id="inp-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;flex:1;" data-i18n-placeholder="code" />
+        <button class="btn-secondary" id="btn-join" data-i18n="join">Unirme</button>
       </div>
       <p class="error-text hidden" id="home-error" style="margin-top:10px;"></p>
     </div>
-    <a href="https://paypal.me/patricioversan" target="_blank" rel="noopener" class="donate-link">💚 Apoyar este proyecto</a>
-    <p class="legal-disclaimer">Proyecto de fans hecho para jugar entre amigos. No está afiliado, patrocinado ni avalado por ningún club, liga, federación o jugador. Los nombres e imágenes de jugadores se usan únicamente con fines de identificación dentro del juego; no reclamamos derechos de propiedad sobre ellos.</p>
+    <a href="https://paypal.me/patricioversan" target="_blank" rel="noopener" class="donate-link" data-i18n="supportProject">💚 Apoyar este proyecto</a>
+    <p class="legal-disclaimer" data-i18n="legalDisclaimer">Proyecto de fans hecho para jugar entre amigos. No está afiliado, patrocinado ni avalado por ningún club, liga, federación o jugador. Los nombres e imágenes de jugadores se usan únicamente con fines de identificación dentro del juego; no reclamamos derechos de propiedad sobre ellos.</p>
   </section>
 
   <!-- ===== LOBBY ===== -->
   <section id="s-lobby" class="hidden">
-    <p class="eyebrow">Comparte este código</p>
+    <p class="eyebrow" data-i18n="shareCode">Comparte este código</p>
     <div class="code-display" id="lobby-code">----</div>
-    <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;">📋 Copiar / compartir código</button>
-    <button class="link-btn" id="btn-leave-room" style="display:block;margin:8px auto 0;">Salir de esta sala</button>
+    <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;" data-i18n="shareCode">📋 Copiar / compartir código</button>
+    <button class="link-btn" id="btn-leave-room" style="display:block;margin:8px auto 0;" data-i18n="leaveRoom">Salir de esta sala</button>
 
     <div class="divider"></div>
     <div class="between lobby-players-head">
-      <h2 style="font-size:1.3rem;">Jugadores (<span id="player-count">0</span>)</h2>
-      <button type="button" class="pill pill-btn" id="tv-hint">📺 Vista TV</button>
+      <h2 style="font-size:1.3rem;"><span data-i18n="players">Jugadores</span> (<span id="player-count">0</span>)</h2>
+      <button type="button" class="pill pill-btn" id="tv-hint" data-i18n="tvView">📺 Vista TV</button>
     </div>
     <div class="player-grid" id="lobby-players" style="margin-top:12px;"></div>
 
     <!-- Solo el anfitrión ve esto -->
     <div id="host-controls" class="hidden">
       <div class="divider"></div>
-      <h2 style="font-size:1.3rem;margin-bottom:12px;">¿Qué van a jugar?</h2>
+      <h2 style="font-size:1.3rem;margin-bottom:12px;" data-i18n="whatToPlay">¿Qué van a jugar?</h2>
       <div class="game-pick-grid">
-        <button class="game-pick-card g-impostor" id="pick-impostor"><span class="game-pick-title">El Impostor</span><span class="game-pick-desc">Todos conocen al jugador... excepto uno.</span></button>
-        <button class="game-pick-card g-subasta" id="pick-subasta"><span class="game-pick-title">Subasta Futbolera</span><span class="game-pick-desc">Construye el mejor equipo con presupuesto limitado.</span></button>
-        <button class="game-pick-card g-mentiroso" id="pick-mentiroso"><span class="game-pick-title">Mentiroso Futbolero</span><span class="game-pick-desc">Convence a todos de que tu respuesta es real.</span></button>
-        <button class="game-pick-card g-wavelength" id="pick-wavelength"><span class="game-pick-title">La Frecuencia</span><span class="game-pick-desc">Sintoniza con el grupo en el debate futbolero.</span></button>
-        <button class="game-pick-card g-who" id="pick-who"><span class="game-pick-title">¿Quién Soy?</span><span class="game-pick-desc">Todos ven tu identidad menos tú.</span></button>
+        <button class="game-pick-card g-impostor" id="pick-impostor"><span class="game-pick-title" data-i18n="gameImpostorTitle">El Impostor</span><span class="game-pick-desc" data-i18n="gameImpostorDesc">Todos conocen al jugador... excepto uno.</span></button>
+        <button class="game-pick-card g-subasta" id="pick-subasta"><span class="game-pick-title" data-i18n="gameSubastaTitle">Subasta Futbolera</span><span class="game-pick-desc" data-i18n="gameSubastaDesc">Construye el mejor equipo con presupuesto limitado.</span></button>
+        <button class="game-pick-card g-mentiroso" id="pick-mentiroso"><span class="game-pick-title" data-i18n="gameMentirosoTitle">Mentiroso Futbolero</span><span class="game-pick-desc" data-i18n="gameMentirosoDesc">Convence a todos de que tu respuesta es real.</span></button>
+        <button class="game-pick-card g-wavelength" id="pick-wavelength"><span class="game-pick-title" data-i18n="gameWavelengthTitle">La Frecuencia</span><span class="game-pick-desc" data-i18n="gameWavelengthDesc">Sintoniza con el grupo en el debate futbolero.</span></button>
+        <button class="game-pick-card g-who" id="pick-who"><span class="game-pick-title" data-i18n="gameWhoTitle">¿Quién Soy?</span><span class="game-pick-desc" data-i18n="gameWhoDesc">Todos ven tu identidad menos tú.</span></button>
         <div class="game-pick-spacer"></div>
       </div>
 
       <!-- Config Impostor -->
       <div id="cfg-impostor" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Impostores</label><select id="cfg-imp-count"></select></div>
-        <div class="config-row"><label>Rondas</label><select id="cfg-imp-mangas"></select></div>
-        <div class="config-row" style="flex-direction:column;align-items:flex-start;"><label>Categorías</label><div class="category-checks" id="cfg-imp-cats"></div></div>
+        <div class="config-row"><label data-i18n="cfgImpostores">Impostores</label><select id="cfg-imp-count"></select></div>
+        <div class="config-row"><label data-i18n="cfgRondas">Rondas</label><select id="cfg-imp-mangas"></select></div>
+        <div class="config-row" style="flex-direction:column;align-items:flex-start;"><label data-i18n="cfgCategorias">Categorías</label><div class="category-checks" id="cfg-imp-cats"></div></div>
       </div>
       <!-- Config Mentiroso -->
       <div id="cfg-mentiroso" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Rondas</label><select id="cfg-lie-rounds"></select></div>
-        <div class="config-row"><label>Tiempo para nombrar</label><select id="cfg-lie-seconds"><option value="10">10s</option><option value="15" selected>15s</option><option value="20">20s</option><option value="25">25s</option><option value="30">30s</option></select></div>
+        <div class="config-row"><label data-i18n="cfgRondas">Rondas</label><select id="cfg-lie-rounds"></select></div>
+        <div class="config-row"><label data-i18n="cfgTiempoNombrar">Tiempo para nombrar</label><select id="cfg-lie-seconds"><option value="10">10s</option><option value="15" selected>15s</option><option value="20">20s</option><option value="25">25s</option><option value="30">30s</option></select></div>
         <div class="config-row" style="flex-direction:column;align-items:flex-start;">
-          <label>Modo de respuesta</label>
+          <label data-i18n="cfgModoRespuesta">Modo de respuesta</label>
           <div class="category-checks" style="margin-top:8px;">
-            <label class="category-chip checked" id="lie-mode-texto"><input type="radio" name="lm" value="texto" checked/> Texto</label>
-            <label class="category-chip" id="lie-mode-voz"><input type="radio" name="lm" value="voz"/> Voz</label>
+            <label class="category-chip checked" id="lie-mode-texto"><input type="radio" name="lm" value="texto" checked/> <span data-i18n="cfgTexto">Texto</span></label>
+            <label class="category-chip" id="lie-mode-voz"><input type="radio" name="lm" value="voz"/> <span data-i18n="cfgVoz">Voz</span></label>
           </div>
         </div>
       </div>
       <!-- Config Subasta -->
       <div id="cfg-subasta" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Presupuesto</label><select id="cfg-sub-budget"></select></div>
-        <div class="config-row"><label>Skips por jugador</label><select id="cfg-sub-skips"></select></div>
+        <div class="config-row"><label data-i18n="cfgPresupuesto">Presupuesto</label><select id="cfg-sub-budget"></select></div>
+        <div class="config-row"><label data-i18n="cfgSkipsPorJugador">Skips por jugador</label><select id="cfg-sub-skips"></select></div>
         <div class="config-row" style="flex-direction:column;align-items:flex-start;">
-          <label>Modo de victoria</label>
+          <label data-i18n="cfgModoVictoria">Modo de victoria</label>
           <div class="category-checks" style="margin-top:8px;">
-            <label class="category-chip checked" id="win-mode-ovr"><input type="radio" name="wm" value="ovr" checked/> OVR (estilo FIFA)</label>
-            <label class="category-chip" id="win-mode-votacion"><input type="radio" name="wm" value="votacion"/> Votación (debate)</label>
+            <label class="category-chip checked" id="win-mode-ovr"><input type="radio" name="wm" value="ovr" checked/> <span data-i18n="cfgOvrFifa">OVR (estilo FIFA)</span></label>
+            <label class="category-chip" id="win-mode-votacion"><input type="radio" name="wm" value="votacion"/> <span data-i18n="cfgVotacionDebate">Votación (debate)</span></label>
           </div>
-          <p style="font-size:0.74rem;margin-top:8px;" id="win-mode-desc">OVR: gana quien tenga el equipo con mayor media promedio.</p>
+          <p style="font-size:0.74rem;margin-top:8px;" id="win-mode-desc" data-i18n="winModeDescOvr">OVR: gana quien tenga el equipo con mayor media promedio.</p>
         </div>
-        <p style="font-size:0.78rem;margin-top:8px;">Análisis 8s + puja 10s por carta. Precio inicial al azar ($10M–$150M). Las medias se ocultan hasta el final.</p>
+        <p style="font-size:0.78rem;margin-top:8px;" data-i18n="subastaCfgInfo">Análisis 8s + puja 10s por carta. Precio inicial variable según lo configurado por el anfitrión. Las medias se ocultan hasta el final.</p>
       </div>
       <!-- Config La Frecuencia -->
       <div id="cfg-wavelength" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Rondas</label><select id="cfg-wave-rounds"></select></div>
-        <p style="font-size:0.78rem;margin-top:8px;">Cada ronda un jugador es el Psíquico: ve dónde cae la zona secreta y da una pista hablada. Los demás adivinan moviendo su propia aguja, a ciegas del resto, y bloquean su respuesta antes de que se acabe el tiempo.</p>
+        <div class="config-row"><label data-i18n="cfgRondas">Rondas</label><select id="cfg-wave-rounds"></select></div>
+        <p style="font-size:0.78rem;margin-top:8px;" data-i18n="wavelengthCfgInfo">Cada ronda un jugador es el Psíquico: ve dónde cae la zona secreta y da una pista hablada. Los demás adivinan moviendo su propia aguja, a ciegas del resto, y bloquean su respuesta antes de que se acabe el tiempo.</p>
       </div>
       <!-- Config ¿Quién Soy? -->
       <div id="cfg-who" class="hidden card" style="margin-top:14px;">
-        <div class="config-row"><label>Rondas</label><select id="cfg-who-rounds"></select></div>
+        <div class="config-row"><label data-i18n="cfgRondas">Rondas</label><select id="cfg-who-rounds"></select></div>
         <div class="config-row" style="flex-direction:column;align-items:flex-start;">
-          <label>Categorías</label>
+          <label data-i18n="cfgCategorias">Categorías</label>
           <div class="category-checks" id="cfg-who-cats" style="margin-top:10px;"></div>
         </div>
-        <p style="font-size:0.78rem;margin-top:8px;">Sin tiempo límite: por turnos, cada jugador hace una pregunta de Sí/No en voz alta (los demás contestan tocando el primer botón) o intenta adivinar quién es. Termina cuando todos adivinaron.</p>
+        <p style="font-size:0.78rem;margin-top:8px;" data-i18n="whoCfgInfo">Sin tiempo límite: por turnos, cada jugador hace una pregunta de Sí/No en voz alta (los demás contestan tocando el primer botón) o intenta adivinar quién es. Termina cuando todos adivinaron.</p>
       </div>
 
-      <button class="btn-primary hidden" id="btn-start" style="width:100%;margin-top:16px;">Iniciar partida</button>
-      <p id="start-hint" style="text-align:center;margin-top:10px;font-size:0.85rem;">Elige un juego</p>
+      <button class="btn-primary hidden" id="btn-start" style="width:100%;margin-top:16px;" data-i18n="startMatch">Iniciar partida</button>
+      <p id="start-hint" style="text-align:center;margin-top:10px;font-size:0.85rem;" data-i18n="hintChooseGame">Elige un juego</p>
     </div>
     <div id="guest-wait" class="hidden center-flex" style="margin-top:24px;">
-      <p>Esperando a que el anfitrión inicie la partida...</p>
+      <p data-i18n="waitingHostStart">Esperando a que el anfitrión inicie la partida...</p>
     </div>
   </section>
 
@@ -146,34 +147,34 @@
       <p class="concept" id="imp-role-concept">—</p>
     </div>
     <p id="imp-role-hint"></p>
-    <button class="btn-primary" id="btn-imp-role-ok">Entendido</button>
+    <button class="btn-primary" id="btn-imp-role-ok" data-i18n="impUnderstood">Entendido</button>
   </section>
 
   <section id="s-imp-clue" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow"><span id="imp-manga-label">Ronda 1/3</span> · Vuelta <span id="imp-round">1</span></p>
-      <h2>Vuelta de pistas</h2>
+      <p class="eyebrow"><span id="imp-manga-label">Ronda 1/3</span> · <span data-i18n="impClueRound">Vuelta de pistas</span> <span id="imp-round">1</span></p>
+      <h2 data-i18n="impClueRound">Vuelta de pistas</h2>
     </div>
     <div class="player-grid" id="imp-players" style="margin:14px 0;"></div>
     <div id="imp-my-turn" class="hidden card">
-      <h2 style="font-size:1.2rem;">🎤 ¡Tu turno!</h2>
-      <p style="margin:6px 0 12px;">Di una palabra relacionada (sin repetir).</p>
-      <input type="text" id="inp-clue" placeholder="Tu pista..." />
+      <h2 style="font-size:1.2rem;">🎤 <span data-i18n="impYourTurn">¡Tu turno!</span></h2>
+      <p style="margin:6px 0 12px;" data-i18n="impSayWord">Di una palabra relacionada (sin repetir).</p>
+      <input type="text" id="inp-clue" placeholder="Tu pista..." data-i18n-placeholder="impYourClue" />
       <p class="error-text hidden" id="clue-error" style="margin-top:8px;"></p>
-      <button class="btn-primary" id="btn-clue" style="width:100%;margin-top:10px;">Enviar pista</button>
+      <button class="btn-primary" id="btn-clue" style="width:100%;margin-top:10px;" data-i18n="impSendClue">Enviar pista</button>
     </div>
     <div id="imp-wait-turn" class="hidden turn-banner">
       <div class="turn-avatar" id="imp-turn-avatar">—</div>
-      <p class="eyebrow">Turno de</p><h2 id="imp-turn-name">—</h2>
+      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="imp-turn-name">—</h2>
     </div>
     <div class="divider"></div>
-    <h3 style="font-size:1rem;margin-bottom:8px;">Pistas</h3>
+    <h3 style="font-size:1rem;margin-bottom:8px;" data-i18n="impClues">Pistas</h3>
     <div class="clue-log" id="imp-clue-log"></div>
   </section>
 
   <section id="s-imp-vote" class="hidden">
-    <p class="eyebrow">Votación</p>
-    <h2 style="font-size:1.6rem;margin-bottom:16px;">¿Quién es el impostor?</h2>
+    <p class="eyebrow" data-i18n="impVoting">Votación</p>
+    <h2 style="font-size:1.6rem;margin-bottom:16px;" data-i18n="impWhoIsImpostor">¿Quién es el impostor?</h2>
     <div class="vote-grid" id="imp-vote-grid"></div>
     <p id="imp-vote-status" style="text-align:center;margin-top:14px;"></p>
   </section>
@@ -193,20 +194,20 @@
       <p id="imp-over-sub"></p>
     </div>
     <div class="divider"></div>
-    <h3 style="margin-bottom:8px;">Marcador</h3>
+    <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="imp-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-imp-next" style="width:100%;margin-top:18px;">Siguiente</button>
-    <p id="imp-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-imp-next" style="width:100%;margin-top:18px;" data-i18n="next">Siguiente</button>
+    <p id="imp-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <!-- ===== MENTIROSO ===== -->
   <section id="s-lie-claim" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">Ronda <span id="lie-round">1</span>/<span id="lie-round-count">5</span></p>
-      <h2>Mentiroso Futbolero</h2>
+      <p class="eyebrow"><span data-i18n="roundWord">Ronda</span> <span id="lie-round">1</span>/<span id="lie-round-count">5</span></p>
+      <h2 data-i18n="gameMentirosoTitle">Mentiroso Futbolero</h2>
     </div>
     <div class="category-card">
-      <p class="cat-label">Categoría</p>
+      <p class="cat-label" data-i18n="cfgCategorias">Categoría</p>
       <p class="cat-value" id="lie-category">—</p>
     </div>
     <div class="claim-counter">
@@ -214,31 +215,31 @@
       <p class="claim-value" id="lie-claim-amount">0</p>
     </div>
     <div id="lie-my-turn" class="hidden card" style="margin-top:14px;">
-      <h2 style="font-size:1.1rem;">🎲 ¡Tu turno!</h2>
-      <input type="number" inputmode="numeric" id="inp-claim" placeholder="Sube la apuesta..." style="margin-top:10px;" />
+      <h2 style="font-size:1.1rem;">🎲 <span data-i18n="impYourTurn">¡Tu turno!</span></h2>
+      <input type="number" inputmode="numeric" id="inp-claim" placeholder="Sube la apuesta..." style="margin-top:10px;" data-i18n-placeholder="raiseTheBet" />
       <p class="error-text hidden" id="claim-error" style="margin-top:8px;"></p>
-      <button class="btn-primary" id="btn-claim" style="width:100%;margin-top:10px;">Subir apuesta</button>
-      <button class="btn-secondary" id="btn-accuse" style="width:100%;margin-top:8px;">¡Mentiroso!</button>
+      <button class="btn-primary" id="btn-claim" style="width:100%;margin-top:10px;" data-i18n="raiseBet">Subir apuesta</button>
+      <button class="btn-secondary" id="btn-accuse" style="width:100%;margin-top:8px;" data-i18n="liarBtn">¡Mentiroso!</button>
     </div>
     <div id="lie-wait-turn" class="hidden turn-banner">
       <div class="turn-avatar" id="lie-turn-avatar">—</div>
-      <p class="eyebrow">Turno de</p><h2 id="lie-turn-name">—</h2>
+      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="lie-turn-name">—</h2>
     </div>
   </section>
 
   <section id="s-lie-naming" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">🚨 ¡Mentiroso!</p>
+      <p class="eyebrow" data-i18n="liarAlert">🚨 ¡Mentiroso!</p>
       <h2 id="lie-naming-heading">—</h2>
     </div>
     <div class="countdown-row"><div class="countdown-circle" id="lie-countdown">10</div>
       <p style="font-family:var(--mono);color:var(--lime);font-size:1.2rem;"><span id="lie-named-count">0</span> / <span id="lie-target">0</span></p></div>
-    <button class="btn-secondary hidden" id="btn-lie-pause" style="width:100%;margin-top:10px;">⏸ Pausar tiempo</button>
-    <p id="lie-pause-indicator" class="hidden" style="text-align:center;margin-top:8px;color:var(--gold);font-weight:700;">⏸ En pausa...</p>
-    <button class="big-tap-btn hidden" id="btn-mark" style="margin-top:18px;">Marcar respuesta ✓</button>
+    <button class="btn-secondary hidden" id="btn-lie-pause" style="width:100%;margin-top:10px;" data-i18n="pauseTime">⏸ Pausar tiempo</button>
+    <p id="lie-pause-indicator" class="hidden" style="text-align:center;margin-top:8px;color:var(--gold);font-weight:700;" data-i18n="pausedLabel">⏸ En pausa...</p>
+    <button class="big-tap-btn hidden" id="btn-mark" style="margin-top:18px;" data-i18n="markAnswer">Marcar respuesta ✓</button>
     <div id="lie-am-accused" class="hidden card" style="margin-top:14px;">
-      <input type="text" id="inp-name-item" placeholder="Escribe una respuesta..." />
-      <button class="btn-primary" id="btn-name-item" style="width:100%;margin-top:10px;">Enviar</button>
+      <input type="text" id="inp-name-item" placeholder="Escribe una respuesta..." data-i18n-placeholder="writeAnAnswer" />
+      <button class="btn-primary" id="btn-name-item" style="width:100%;margin-top:10px;" data-i18n="send">Enviar</button>
     </div>
     <p id="lie-naming-wait" class="hidden center-flex" style="margin-top:14px;"></p>
     <div class="clue-log" id="lie-named-log" style="margin-top:14px;"></div>
@@ -246,13 +247,13 @@
 
   <section id="s-lie-final" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">¿El grupo le cree?</p>
+      <p class="eyebrow" data-i18n="groupBelieve">¿El grupo le cree?</p>
       <h2 id="lie-final-title">—</h2>
     </div>
     <div class="clue-log" id="lie-final-list" style="margin-bottom:14px;"></div>
     <div id="lie-can-vote" class="hidden vote-grid">
-      <button class="vote-btn" id="btn-lie-valid">Válido ✓</button>
-      <button class="vote-btn" id="btn-lie-invalid">No válido ✗</button>
+      <button class="vote-btn" id="btn-lie-valid" data-i18n="validBtn">Válido ✓</button>
+      <button class="vote-btn" id="btn-lie-invalid" data-i18n="invalidBtn">No válido ✗</button>
     </div>
     <p id="lie-final-status" style="text-align:center;margin-top:14px;"></p>
   </section>
@@ -264,34 +265,34 @@
       <p id="lie-over-sub"></p>
     </div>
     <div class="divider"></div>
-    <h3 style="margin-bottom:8px;">Marcador</h3>
+    <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="lie-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-lie-next" style="width:100%;margin-top:18px;">Siguiente ronda</button>
-    <p id="lie-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-lie-next" style="width:100%;margin-top:18px;" data-i18n="nextRound">Siguiente ronda</button>
+    <p id="lie-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <!-- ===== SUBASTA ===== -->
   <section id="s-sub-formation" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">Subasta Futbolera</p>
-      <h2>Voten la formación</h2>
+      <p class="eyebrow" data-i18n="gameSubastaTitle">Subasta Futbolera</p>
+      <h2 data-i18n="voteFormation">Voten la formación</h2>
     </div>
     <div class="countdown-row" style="margin-bottom:14px;"><div class="countdown-circle" id="sub-form-countdown">45</div><p id="sub-form-votes">0 votos</p></div>
     <div id="sub-form-buttons" style="display:flex;flex-direction:column;gap:10px;"></div>
-    <p id="sub-form-voted" class="hidden" style="text-align:center;margin-top:14px;color:var(--lime);font-weight:700;">¡Voto enviado!</p>
+    <p id="sub-form-voted" class="hidden" style="text-align:center;margin-top:14px;color:var(--lime);font-weight:700;" data-i18n="voteSent">¡Voto enviado!</p>
   </section>
 
   <section id="s-sub-wait-deck" class="hidden center-flex">
     <h2 id="sub-formation-decided" style="font-size:1.5rem;">Formación: —</h2>
-    <p>Preparando las siluetas...</p>
+    <p data-i18n="preparingSilhouettes">Preparando las siluetas...</p>
   </section>
 
   <section id="s-sub-play" class="hidden">
     <div class="budget-bar">
-      <div class="sub-stat"><div class="val" id="sub-budget">$500M</div><div class="lbl">presupuesto</div></div>
-      <div class="sub-stat"><div class="val" id="sub-skips">5</div><div class="lbl">skips</div></div>
-      <div class="sub-stat"><div class="val" id="sub-team-count">0/11</div><div class="lbl">equipo</div></div>
-      <div class="sub-stat"><div class="val" id="sub-counter">1/30</div><div class="lbl">carta</div></div>
+      <div class="sub-stat"><div class="val" id="sub-budget">$500M</div><div class="lbl" data-i18n="budgetLabel">presupuesto</div></div>
+      <div class="sub-stat"><div class="val" id="sub-skips">5</div><div class="lbl" data-i18n="skipsLabel">skips</div></div>
+      <div class="sub-stat"><div class="val" id="sub-team-count">0/11</div><div class="lbl" data-i18n="teamLabel">equipo</div></div>
+      <div class="sub-stat"><div class="val" id="sub-counter">1/30</div><div class="lbl" data-i18n="cardLabel">carta</div></div>
     </div>
     <div class="silhouette-container">
       <img id="sub-img" class="silhouette-img" src="" alt="silueta" />
@@ -300,11 +301,11 @@
     <div style="text-align:center;margin-bottom:10px;">
       <span class="position-badge" id="sub-pos-badge">Portero</span>
       <p style="font-family:var(--mono);color:var(--lime);font-size:1.15rem;margin-top:8px;" id="sub-price">$—M precio base</p>
-      <p id="sub-highest" style="font-size:0.82rem;margin-top:4px;">Sin pujas aún</p>
+      <p id="sub-highest" style="font-size:0.82rem;margin-top:4px;" data-i18n="noBidsYet">Sin pujas aún</p>
     </div>
     <div class="countdown-row" style="justify-content:center;margin-bottom:12px;">
       <div class="countdown-circle" id="sub-countdown">15</div>
-      <p id="sub-phase-label" style="font-weight:700;">Analizando...</p>
+      <p id="sub-phase-label" style="font-weight:700;" data-i18n="analyzing">Analizando...</p>
     </div>
     <div id="sub-can-bid" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
       <p class="error-text hidden" id="bid-error"></p>
@@ -313,20 +314,20 @@
       <button class="bid-btn bid-10" id="btn-bid-10">+10M → $<span id="bp10">—</span>M</button>
       <button class="btn-secondary" id="btn-skip">Pasar (<span id="sub-skip-n">5</span> skips)</button>
     </div>
-    <div id="sub-bid-sent" class="hidden center-flex"><p style="color:var(--lime);font-weight:700;" id="sub-bid-sent-msg">Esperando...</p></div>
-    <div id="sub-ineligible" class="hidden center-flex"><p>Ya cubriste esta posición o no te alcanza el presupuesto.</p></div>
+    <div id="sub-bid-sent" class="hidden center-flex"><p style="color:var(--lime);font-weight:700;" id="sub-bid-sent-msg" data-i18n="waitingDots">Esperando...</p></div>
+    <div id="sub-ineligible" class="hidden center-flex"><p data-i18n="ineligibleMsg">Ya cubriste esta posición o no te alcanza el presupuesto.</p></div>
     <div class="divider"></div>
     <div class="clue-log" id="sub-bid-log" style="max-height:140px;"></div>
   </section>
 
   <section id="s-sub-rps" class="hidden center-flex">
-    <p class="eyebrow">Nadie quería esta carta</p>
-    <h2 style="font-size:1.5rem;" id="sub-rps-title">Piedra, papel o tijera</h2>
-    <p id="sub-rps-sub" style="margin-bottom:10px;">El que pierde se la queda 😈</p>
+    <p class="eyebrow" data-i18n="nobodyWantedCard">Nadie quería esta carta</p>
+    <h2 style="font-size:1.5rem;" id="sub-rps-title" data-i18n="rockPaperScissors">Piedra, papel o tijera</h2>
+    <p id="sub-rps-sub" style="margin-bottom:10px;" data-i18n="loserKeepsIt">El que pierde se la queda 😈</p>
     <div id="sub-rps-choose" class="hidden rps-choose-grid">
-      <button class="vote-btn rps-btn" id="rps-piedra"><img src="/images/ui/rps-piedra.png" alt="Piedra"/><span>Piedra</span></button>
-      <button class="vote-btn rps-btn" id="rps-papel"><img src="/images/ui/rps-papel.png" alt="Papel"/><span>Papel</span></button>
-      <button class="vote-btn rps-btn" id="rps-tijera"><img src="/images/ui/rps-tijera.png" alt="Tijera"/><span>Tijera</span></button>
+      <button class="vote-btn rps-btn" id="rps-piedra"><img src="/images/ui/rps-piedra.png" alt="Piedra"/><span data-i18n="rpsRock">Piedra</span></button>
+      <button class="vote-btn rps-btn" id="rps-papel"><img src="/images/ui/rps-papel.png" alt="Papel"/><span data-i18n="rpsPaper">Papel</span></button>
+      <button class="vote-btn rps-btn" id="rps-tijera"><img src="/images/ui/rps-tijera.png" alt="Tijera"/><span data-i18n="rpsScissors">Tijera</span></button>
     </div>
     <p id="sub-rps-status" style="margin-top:14px;"></p>
     <div class="clue-log" id="sub-rps-reveal" style="margin-top:12px;width:100%;"></div>
@@ -342,14 +343,14 @@
     <p id="sub-result-label" style="font-size:0.82rem;"></p>
     <p id="sub-result-troll" class="hidden" style="color:var(--red);font-weight:800;">🎭 ¡Carta TROLL!</p>
     <p id="sub-result-sub" style="margin-top:6px;"></p>
-    <button class="btn-primary hidden" id="btn-sub-next" style="width:100%;">Siguiente carta</button>
+    <button class="btn-primary hidden" id="btn-sub-next" style="width:100%;" data-i18n="nextCard">Siguiente carta</button>
     <span id="sub-auto-label" style="font-size:12px;color:var(--text-dim);margin-top:4px;display:block;text-align:center;"></span>
-    <p id="sub-result-wait" class="hidden">Esperando al anfitrión...</p>
+    <p id="sub-result-wait" class="hidden" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <!-- Torneo: anuncio de ronda/duelo -->
   <section id="s-sub-tournament" class="hidden center-flex">
-    <p class="eyebrow" id="sub-tour-eyebrow">Torneo de equipos</p>
+    <p class="eyebrow" id="sub-tour-eyebrow" data-i18n="teamTournament">Torneo de equipos</p>
     <h2 style="font-size:1.6rem;text-align:center;" id="sub-tour-title">—</h2>
     <p id="sub-tour-sub" style="text-align:center;"></p>
     <div class="clue-log" id="sub-tour-info" style="width:100%;margin-top:10px;"></div>
@@ -401,50 +402,50 @@
   </section>
 
   <section id="s-sub-over" class="hidden">
-    <p class="eyebrow">Resultado Final</p>
+    <p class="eyebrow" data-i18n="finalResultTitle">Resultado Final</p>
     <div class="between" style="margin-bottom:10px;">
-      <h2 style="font-size:1.4rem;" id="sub-pitch-title">Tu alineación</h2>
+      <h2 style="font-size:1.4rem;" id="sub-pitch-title" data-i18n="yourLineup">Tu alineación</h2>
       <span style="font-family:var(--mono);color:var(--lime);font-size:1.1rem;" id="sub-my-total">$0M</span>
     </div>
     <div id="sub-pitch" class="pitch"></div>
     <div class="divider"></div>
-    <h3 style="margin-bottom:2px;">Clasificación</h3>
-    <p style="font-size:0.76rem;margin-bottom:8px;">Tocá un jugador para ver su plantilla</p>
+    <h3 style="margin-bottom:2px;" data-i18n="scoreboard">Clasificación</h3>
+    <p style="font-size:0.76rem;margin-bottom:8px;" data-i18n="tapPlayerForLineup">Toca un jugador para ver su plantilla</p>
     <div class="card" id="sub-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-sub-new" style="width:100%;margin-top:18px;">Nueva partida</button>
-    <p id="sub-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-sub-new" style="width:100%;margin-top:18px;" data-i18n="newMatch">Nueva partida</button>
+    <p id="sub-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <!-- ===== LA FRECUENCIA ===== -->
   <section id="s-wave-psychic" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">Ronda <span id="wave-round">1</span>/<span id="wave-round-count">5</span> · La Frecuencia</p>
-      <h2>El Psíquico está pensando...</h2>
+      <p class="eyebrow"><span data-i18n="roundWord">Ronda</span> <span id="wave-round">1</span>/<span id="wave-round-count">5</span> · <span data-i18n="gameWavelengthTitle">La Frecuencia</span></p>
+      <h2 data-i18n="psychicThinking">El Psíquico está pensando...</h2>
     </div>
     <div class="wave-dial-wrap"><div class="wave-dial" id="wave-dial-psychic"></div></div>
     <div id="wave-psychic-controls" class="hidden card" style="margin-top:14px;text-align:center;">
-      <h2 style="font-size:1.1rem;">🔮 ¡Eres el Psíquico!</h2>
-      <p style="margin:6px 0 12px;">Mira dónde cayó la zona y da una pista al grupo (por voz o por texto).</p>
-      <button class="btn-secondary" id="btn-wave-peek" style="width:100%;">👁 Ver la zona</button>
+      <h2 style="font-size:1.1rem;">🔮 <span data-i18n="youArePsychic">¡Eres el Psíquico!</span></h2>
+      <p style="margin:6px 0 12px;" data-i18n="psychicInstructions">Mira dónde cayó la zona y da una pista al grupo (por voz o por texto).</p>
+      <button class="btn-secondary" id="btn-wave-peek" style="width:100%;" data-i18n="seeZone">👁 Ver la zona</button>
       <div style="display:flex;gap:8px;margin-top:10px;">
-        <input type="text" id="inp-wave-clue" placeholder="Escribe tu pista (opcional)..." style="flex:1;" maxlength="200" />
-        <button class="btn-secondary" id="btn-wave-clue" style="white-space:nowrap;">Enviar</button>
+        <input type="text" id="inp-wave-clue" placeholder="Escribe tu pista (opcional)..." style="flex:1;" maxlength="200" data-i18n-placeholder="writeClueOptional" />
+        <button class="btn-secondary" id="btn-wave-clue" style="white-space:nowrap;" data-i18n="send">Enviar</button>
       </div>
-      <button class="btn-primary" id="btn-wave-ready" style="width:100%;margin-top:10px;">Ya di mi pista, ¡que adivinen!</button>
+      <button class="btn-primary" id="btn-wave-ready" style="width:100%;margin-top:10px;" data-i18n="clueGivenLetGuess">Ya di mi pista, ¡que adivinen!</button>
     </div>
     <div id="wave-psychic-wait" class="hidden turn-banner">
       <div class="turn-avatar" id="wave-psychic-avatar">—</div>
-      <p class="eyebrow">Pensando su pista</p><h2 id="wave-psychic-name">—</h2>
+      <p class="eyebrow" data-i18n="thinkingClue">Pensando su pista</p><h2 id="wave-psychic-name">—</h2>
     </div>
   </section>
 
   <section id="s-wave-guess" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">Ronda <span id="wave-round-2">1</span>/<span id="wave-round-count-2">5</span> · La Frecuencia</p>
-      <h2>¿Dónde cae la pista?</h2>
+      <p class="eyebrow"><span data-i18n="roundWord">Ronda</span> <span id="wave-round-2">1</span>/<span id="wave-round-count-2">5</span> · <span data-i18n="gameWavelengthTitle">La Frecuencia</span></p>
+      <h2 data-i18n="whereDoesFallLabel">¿Dónde cae la pista?</h2>
     </div>
     <div id="wave-clue-display" class="hidden category-card" style="margin-bottom:10px;">
-      <p class="cat-label">Pista del Psíquico</p>
+      <p class="cat-label" data-i18n="psychicClueLabel">Pista del Psíquico</p>
       <p class="cat-value" id="wave-clue-text">—</p>
     </div>
     <div class="wave-dial-wrap"><div class="wave-dial" id="wave-dial-guess"></div></div>
@@ -452,118 +453,118 @@
       <div class="countdown-circle" id="wave-countdown">45</div>
     </div>
     <div id="wave-guess-controls" class="hidden">
-      <button class="btn-primary" id="btn-wave-lock" style="width:100%;">Bloquear respuesta</button>
+      <button class="btn-primary" id="btn-wave-lock" style="width:100%;" data-i18n="lockAnswer">Bloquear respuesta</button>
     </div>
     <div id="wave-guess-wait" class="hidden center-flex" style="margin-top:10px;">
-      <p id="wave-lock-status">Esperando a que todos bloqueen su respuesta...</p>
+      <p id="wave-lock-status" data-i18n="waitingEveryoneLock">Esperando a que todos bloqueen su respuesta...</p>
     </div>
   </section>
 
   <section id="s-wave-reveal" class="hidden">
     <div class="screen-head">
       <p class="eyebrow" id="wave-reveal-eyebrow">Ronda 1/5</p>
-      <h2>¡Zona revelada!</h2>
+      <h2 data-i18n="zoneRevealed">¡Zona revelada!</h2>
     </div>
     <div class="wave-dial-wrap"><div class="wave-dial" id="wave-dial-reveal"></div></div>
     <div class="clue-log" id="wave-reveal-list" style="margin-top:14px;"></div>
     <div class="divider"></div>
-    <h3 style="margin-bottom:8px;">Marcador</h3>
+    <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="wave-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-wave-next" style="width:100%;margin-top:18px;">Siguiente ronda</button>
-    <p id="wave-over-wait" class="hidden" style="text-align:center;margin-top:14px;">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-wave-next" style="width:100%;margin-top:18px;" data-i18n="nextRound">Siguiente ronda</button>
+    <p id="wave-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <!-- ===== ¿QUIÉN SOY? ===== -->
   <section id="s-who-board" class="hidden">
     <div class="screen-head">
-      <p class="eyebrow">¿Quién Soy?</p>
-      <h2>Tablero</h2>
+      <p class="eyebrow" data-i18n="gameWhoTitle">¿Quién Soy?</p>
+      <h2 data-i18n="board">Tablero</h2>
     </div>
     <div class="who-grid" id="who-grid"></div>
     <div id="who-my-turn" class="hidden card" style="margin-top:14px;">
-      <h2 style="font-size:1.1rem;">🎙️ ¡Tu turno!</h2>
-      <p style="margin:6px 0 10px;">Haz una pregunta de Sí/No (por voz o texto), o intenta adivinar quién eres.</p>
+      <h2 style="font-size:1.1rem;">🎙️ <span data-i18n="impYourTurn">¡Tu turno!</span></h2>
+      <p style="margin:6px 0 10px;" data-i18n="whoInstructions">Haz una pregunta de Sí/No (por voz o texto), o intenta adivinar quién eres.</p>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" id="inp-who-question" placeholder="Escribe tu pregunta..." style="flex:1;" maxlength="200" />
-        <button class="btn-secondary" id="btn-who-question" style="white-space:nowrap;">Enviar</button>
+        <input type="text" id="inp-who-question" placeholder="Escribe tu pregunta..." style="flex:1;" maxlength="200" data-i18n-placeholder="writeYourQuestion" />
+        <button class="btn-secondary" id="btn-who-question" style="white-space:nowrap;" data-i18n="send">Enviar</button>
       </div>
-      <input type="text" id="inp-who-guess" placeholder="¿Quién crees que eres?" />
-      <button class="btn-primary" id="btn-who-guess" style="width:100%;margin-top:10px;">¡Ya sé quién soy!</button>
+      <input type="text" id="inp-who-guess" placeholder="¿Quién crees que eres?" data-i18n-placeholder="whoDoYouThinkYouAre" />
+      <button class="btn-primary" id="btn-who-guess" style="width:100%;margin-top:10px;" data-i18n="iKnowWhoIAm">¡Ya sé quién soy!</button>
     </div>
     <div id="who-others-turn" class="hidden" style="margin-top:14px;">
       <div class="turn-banner" style="padding:10px 14px 18px;">
         <div class="turn-avatar" id="who-turn-avatar">—</div>
-        <p class="eyebrow">Turno de</p><h2 id="who-turn-name">—</h2>
+        <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="who-turn-name">—</h2>
       </div>
       <div id="who-answer-section">
         <div id="who-answer-mine" class="hidden" style="margin-top:4px;">
-          <p style="text-align:center;font-size:0.85rem;color:var(--lime);font-weight:700;margin-bottom:8px;">¡Te toca responder!</p>
+          <p style="text-align:center;font-size:0.85rem;color:var(--lime);font-weight:700;margin-bottom:8px;" data-i18n="yourTurnToAnswer">¡Te toca responder!</p>
           <div class="who-answer-grid">
-            <button class="vote-btn who-answer-si" id="btn-who-si">Sí</button>
-            <button class="vote-btn who-answer-no" id="btn-who-no">No</button>
-            <button class="vote-btn who-answer-talvez" id="btn-who-talvez">Tal vez</button>
+            <button class="vote-btn who-answer-si" id="btn-who-si" data-i18n="yes">Sí</button>
+            <button class="vote-btn who-answer-no" id="btn-who-no" data-i18n="no">No</button>
+            <button class="vote-btn who-answer-talvez" id="btn-who-talvez" data-i18n="maybe">Tal vez</button>
           </div>
         </div>
-        <p id="who-answer-wait" class="hidden" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:8px;">Esperando respuesta...</p>
+        <p id="who-answer-wait" class="hidden" style="text-align:center;color:var(--text-dim);font-size:0.85rem;margin-top:8px;" data-i18n="waitingAnswer">Esperando respuesta...</p>
       </div>
     </div>
     <div class="divider"></div>
-    <h3 style="font-size:1rem;margin-bottom:8px;">Preguntas</h3>
+    <h3 style="font-size:1rem;margin-bottom:8px;" data-i18n="questions">Preguntas</h3>
     <div class="clue-log" id="who-log"></div>
   </section>
 
   <section id="s-who-guess-pending" class="hidden center-flex">
-    <p class="eyebrow">¿Acertó?</p>
+    <p class="eyebrow" data-i18n="didTheyGetIt">¿Acertó?</p>
     <h2 style="font-size:1.3rem;text-align:center;" id="who-guess-heading">—</h2>
     <p style="font-size:1.15rem;text-align:center;color:var(--neon);font-weight:700;" id="who-guess-text">—</p>
     <div id="who-host-validate" class="hidden vote-grid" style="margin-top:14px;width:100%;">
-      <button class="vote-btn" id="btn-who-correct">Correcto ✓</button>
-      <button class="vote-btn" id="btn-who-incorrect">Incorrecto ✗</button>
+      <button class="vote-btn" id="btn-who-correct" data-i18n="correctBtn">Correcto ✓</button>
+      <button class="vote-btn" id="btn-who-incorrect" data-i18n="incorrectBtn">Incorrecto ✗</button>
     </div>
-    <p id="who-validate-wait" class="hidden" style="margin-top:14px;">Esperando al anfitrión...</p>
+    <p id="who-validate-wait" class="hidden" style="margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <section id="s-who-round-over" class="hidden center-flex">
     <p class="eyebrow" id="who-round-label">Ronda 1 de 3</p>
-    <h1 style="font-size:1.6rem;">Marcador</h1>
+    <h1 style="font-size:1.6rem;" data-i18n="scoreboard">Marcador</h1>
     <div class="card" style="width:100%;" id="who-round-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-who-next-round" style="width:100%;margin-top:16px;">Siguiente ronda ▶</button>
-    <p id="who-round-wait" class="hidden" style="margin-top:14px;">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-who-next-round" style="width:100%;margin-top:16px;" data-i18n="nextRoundArrow">Siguiente ronda ▶</button>
+    <p id="who-round-wait" class="hidden" style="margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <section id="s-who-reveal" class="hidden center-flex">
-    <p class="eyebrow">¿Quién era cada uno?</p>
-    <h2 style="font-size:1.2rem;margin-bottom:16px;font-family:var(--display);">Identidades reveladas</h2>
+    <p class="eyebrow" data-i18n="whoWasEachOne">¿Quién era cada uno?</p>
+    <h2 style="font-size:1.2rem;margin-bottom:16px;font-family:var(--display);" data-i18n="identitiesRevealed">Identidades reveladas</h2>
     <div class="who-grid" id="who-reveal-grid" style="width:100%;"></div>
   </section>
 
   <section id="s-who-over" class="hidden center-flex">
-    <p class="eyebrow">¡Todos se descubrieron!</p>
-    <h1 style="font-size:1.8rem;">Resultado Final</h1>
+    <p class="eyebrow" data-i18n="everyoneRevealed">¡Todos se descubrieron!</p>
+    <h1 style="font-size:1.8rem;" data-i18n="finalResultTitle">Resultado Final</h1>
     <div class="card" style="width:100%;" id="who-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-who-new" style="width:100%;">Nueva partida</button>
-    <p id="who-over-wait" class="hidden">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-who-new" style="width:100%;" data-i18n="newMatch">Nueva partida</button>
+    <p id="who-over-wait" class="hidden" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
   <section id="s-force-over" class="hidden center-flex">
-    <p class="eyebrow">Partida terminada</p>
-    <h1 style="font-size:1.8rem;">Resultado Final</h1>
+    <p class="eyebrow" data-i18n="matchEnded">Partida terminada</p>
+    <h1 style="font-size:1.8rem;" data-i18n="finalResultTitle">Resultado Final</h1>
     <div class="card" style="width:100%;" id="force-over-scoreboard"></div>
-    <button class="btn-primary hidden" id="btn-force-over-new" style="width:100%;">Nueva partida</button>
-    <p id="force-over-wait" class="hidden">Esperando al anfitrión...</p>
+    <button class="btn-primary hidden" id="btn-force-over-new" style="width:100%;" data-i18n="newMatch">Nueva partida</button>
+    <p id="force-over-wait" class="hidden" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
 
 </div>
 
 <!-- Score overlay: botón flotante + panel -->
-<button id="btn-scores-float" class="scores-float-btn hidden" aria-label="Ver puntajes">📊</button>
-<button id="btn-force-end" class="force-end-btn hidden" aria-label="Terminar partida">⏹</button>
+<button id="btn-scores-float" class="scores-float-btn hidden" aria-label="Ver puntajes" data-i18n-aria="scoresAria">📊</button>
+<button id="btn-force-end" class="force-end-btn hidden" aria-label="Terminar partida" data-i18n-aria="endMatchAria">⏹</button>
 
 <!-- Winner overlay -->
 <div id="winner-overlay" class="hidden">
   <div id="winner-confetti-container"></div>
   <div class="winner-content">
-    <p class="winner-eyebrow-text">🏆 ¡Ganador!</p>
+    <p class="winner-eyebrow-text" data-i18n="winnerLabel">🏆 ¡Ganador!</p>
     <h1 id="winner-name"></h1>
     <p id="winner-score-label"></p>
   </div>
@@ -571,13 +572,14 @@
 <div id="scores-overlay" class="scores-overlay hidden" role="dialog" aria-label="Puntajes">
   <div class="scores-overlay-panel">
     <div class="scores-overlay-head">
-      <h3>Puntajes</h3>
+      <h3 data-i18n="scoresTitle">Puntajes</h3>
       <button id="btn-scores-close" class="scores-close-btn">✕</button>
     </div>
     <div id="scores-overlay-body"></div>
   </div>
 </div>
 
+<script src="/i18n.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/app.js"></script>
 </body>

@@ -117,7 +117,7 @@ function applyRoomCode(code){
   roomCode=code;
   $('lobby-code').textContent=roomCode;
   tvLink = location.origin+'/tv?c='+roomCode;
-  $('tv-hint').textContent='📺 Vista TV';
+  $('tv-hint').textContent=t('tvView');
 }
 
 socket.on('connect', () => {
@@ -138,7 +138,7 @@ socket.on('connect', () => {
     });
   }
 });
-socket.on('disconnect', () => { connBanner.textContent='Se perdió la conexión, reconectando...'; connBanner.className='conn-banner error'; });
+socket.on('disconnect', () => { connBanner.textContent=t('reconnecting'); connBanner.className='conn-banner error'; });
 socket.io.on('reconnect', () => { connBanner.classList.add('hidden'); });
 
 /* ===== Helpers ===== */
@@ -175,17 +175,24 @@ let players = [];
   }
 }
 
+/* ===== Botón de idioma ===== */
+$('btn-lang').addEventListener('click', () => {
+  setLang(currentLang === 'es' ? 'en' : 'es');
+  impCfgRendered=false; whoCfgRendered=false;
+  if(renderLobby.lastState) renderLobby(renderLobby.lastState);
+});
+
 /* ===== HOME ===== */
 $('btn-create').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
-  if(!name){ showHomeError('Ingresa tu nombre.'); return; }
+  if(!name){ showHomeError(t('enterYourName')); return; }
   socket.emit('player:create_room', { name }, onJoined);
 });
 $('btn-join').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
   const code = $('inp-code').value.trim().toUpperCase();
-  if(!name){ showHomeError('Ingresa tu nombre.'); return; }
-  if(!code){ showHomeError('Ingresa el código.'); return; }
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  if(!code){ showHomeError(t('enterCode')); return; }
   socket.emit('player:join_room', { code, name }, onJoined);
 });
 $('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')$('btn-join').click(); });
@@ -202,14 +209,14 @@ function onJoined(res){
 /* ===== Compartir código (link directo con ?code=) ===== */
 $('btn-share').addEventListener('click', async () => {
   const url  = `${location.origin}/?code=${roomCode}`;
-  const text = `¡Únete a mi partida de 412! Entra en: ${url}`;
+  const text = t('shareInviteText', {url});
   if(navigator.share){ try{ await navigator.share({title:'412',text,url}); }catch(e){} }
-  else { try{ await navigator.clipboard.writeText(url); $('btn-share').textContent='✓ Copiado'; setTimeout(()=>$('btn-share').textContent='📋 Copiar / compartir código',2000);}catch(e){} }
+  else { try{ await navigator.clipboard.writeText(url); $('btn-share').textContent='✓ '+t('copied'); setTimeout(()=>$('btn-share').textContent=t('shareCode'),2000);}catch(e){} }
 });
 
 $('tv-hint').addEventListener('click', async () => {
   if(!tvLink) return;
-  try{ await navigator.clipboard.writeText(tvLink); $('tv-hint').textContent='✓ Link copiado'; setTimeout(()=>$('tv-hint').textContent='📺 Vista TV',2000); }
+  try{ await navigator.clipboard.writeText(tvLink); $('tv-hint').textContent='✓ '+t('linkCopied'); setTimeout(()=>$('tv-hint').textContent=t('tvView'),2000); }
   catch(e){}
 });
 
@@ -217,124 +224,44 @@ $('tv-hint').addEventListener('click', async () => {
 // (sesion guardada de otra partida) y la persona quiere volver al inicio
 // para crear/unirse a otra. Limpiamos la sesion guardada y recargamos.
 $('btn-leave-room').addEventListener('click', () => {
-  if(!confirm('¿Salir de esta sala?')) return;
+  if(!confirm(t('leaveRoomConfirm'))) return;
   clearSession();
   location.reload();
 });
 
 socket.on('room:kicked', () => {
   clearSession();
-  alert('El anfitrión te expulsó de la sala.');
+  alert(t('kickedAlert'));
   location.reload();
 });
 
 /* ===== REGLAS ===== */
-const RULES = {
-  impostor: {
-    title: 'El Impostor',
-    html: `
-      <h3>Objetivo</h3>
-      <p>Todos reciben el mismo concepto futbolero en secreto — excepto uno: el Impostor, que recibe uno diferente (o ninguno).</p>
-      <h3>Cómo se juega</h3>
-      <ul>
-        <li>Por turnos, cada jugador da <strong>una pista</strong> sobre el concepto sin decirlo directamente.</li>
-        <li>El Impostor improvisa sin saber el concepto real.</li>
-        <li>Al final de la vuelta, todos votan quién creen que es el Impostor.</li>
-      </ul>
-      <h3>Puntos</h3>
-      <ul>
-        <li>Si el Impostor <strong>es descubierto</strong>: el grupo gana puntos.</li>
-        <li>Si el Impostor <strong>no es descubierto</strong>: el Impostor gana 3 puntos.</li>
-        <li>Si votas al Impostor correcto: +1 punto extra.</li>
-      </ul>`
-  },
-  mentiroso: {
-    title: 'Mentiroso Futbolero',
-    html: `
-      <h3>Objetivo</h3>
-      <p>Un jugador hace una afirmación ("Puedo nombrar 5 delanteros de la Champions 2022"). Otro puede acusarlo de mentiroso. Si te acusan, tenés que demostrarlo.</p>
-      <h3>Cómo se juega</h3>
-      <ul>
-        <li>En tu turno, puedes <strong>subir la apuesta</strong> ("Puedo nombrar 6...") o <strong>acusar de mentiroso</strong> al jugador anterior.</li>
-        <li>Si nadie te acusa, la ronda pasa al siguiente jugador.</li>
-        <li>Si te acusan, debés nombrar lo que dijiste en el tiempo límite.</li>
-      </ul>
-      <h3>Puntos</h3>
-      <ul>
-        <li>Si el acusado <strong>lo logra</strong>: el acusador pierde 1 punto.</li>
-        <li>Si el acusado <strong>falla</strong>: el acusador gana 1 punto.</li>
-      </ul>`
-  },
-  subasta: {
-    title: 'Subasta Futbolera',
-    html: `
-      <h3>Objetivo</h3>
-      <p>Construí el mejor equipo comprando jugadores reales en subasta.</p>
-      <h3>Cómo se juega</h3>
-      <ul>
-        <li>Cada carta muestra la <strong>silueta</strong> de un jugador — sin nombre ni media.</li>
-        <li>Fase de análisis (8s): todos estudian la silueta.</li>
-        <li>Fase de puja (10s): pujan dinero. La puja más alta se lleva al jugador.</li>
-        <li>Podés usar <strong>skips</strong> para no pujar por una carta.</li>
-      </ul>
-      <h3>Modos de victoria</h3>
-      <ul>
-        <li><strong>OVR:</strong> gana quien tenga mayor media posición por posición.</li>
-        <li><strong>Votación:</strong> al final, el grupo debate y vota al mejor equipo.</li>
-      </ul>`
-  },
-  wavelength: {
-    title: 'La Frecuencia',
-    html: `
-      <h3>Objetivo</h3>
-      <p>El Psíquico sabe dónde cae una zona secreta en una escala entre dos conceptos futboleros. Los demás deben adivinar.</p>
-      <h3>Cómo se juega</h3>
-      <ul>
-        <li>El Psíquico ve la zona secreta y da <strong>una sola pista hablada</strong>.</li>
-        <li>Los demás mueven su aguja individualmente (a ciegas del resto) y la bloquean antes de que se acabe el tiempo.</li>
-        <li>El Psíquico puede ver la zona para calibrar mejor su pista.</li>
-      </ul>
-      <h3>Puntos</h3>
-      <ul>
-        <li>Cuanto más cerca caigas de la zona, más puntos.</li>
-        <li>El Psíquico gana puntos según cuántos adivinen bien.</li>
-      </ul>`
-  },
-  who: {
-    title: '¿Quién Soy?',
-    html: `
-      <h3>Objetivo</h3>
-      <p>A cada jugador se le asigna un futbolista o DT en secreto — visible para todos menos para él mismo.</p>
-      <h3>Cómo se juega</h3>
-      <ul>
-        <li>Por turnos, el jugador activo hace <strong>preguntas de Sí/No</strong> en voz alta.</li>
-        <li>El <strong>primero</strong> en tocar un botón responde — esa es la respuesta oficial.</li>
-        <li>Cuando creés saber quién sos, escribe tu intento. Solo el anfitrión valida si es correcto.</li>
-      </ul>
-      <h3>Puntos</h3>
-      <ul>
-        <li><strong>+3 puntos</strong> si adivinás correctamente.</li>
-        <li>El juego termina cuando todos adivinaron su identidad.</li>
-      </ul>`
-  },
+const RULES_KEYS = {
+  impostor:   { titleKey:'rulesImpTitle',        htmlKey:'rulesImpHtml' },
+  mentiroso:  { titleKey:'rulesMentirosoTitle',  htmlKey:'rulesMentirosoHtml' },
+  subasta:    { titleKey:'rulesSubastaTitle',    htmlKey:'rulesSubastaHtml' },
+  wavelength: { titleKey:'rulesWavelengthTitle', htmlKey:'rulesWavelengthHtml' },
+  who:        { titleKey:'rulesWhoTitle',        htmlKey:'rulesWhoHtml' },
 };
 
 let _lobbyGameType = null;
 
 function openRules(){
   const game = currentGame || _lobbyGameType;
-  const r = RULES[game];
-  $('rules-title').textContent = r ? `Cómo se juega: ${r.title}` : 'Cómo se juega';
-  $('rules-body').innerHTML = r ? r.html : Object.values(RULES).map(g=>`<h3>${g.title}</h3>${g.html}`).join('');
+  const r = RULES_KEYS[game];
+  $('rules-title').textContent = r ? t('howToPlayGame',{title:t(r.titleKey)}) : t('rulesTitle');
+  $('rules-body').innerHTML = r ? t(r.htmlKey) : Object.values(RULES_KEYS).map(g=>`<h3>${t(g.titleKey)}</h3>${t(g.htmlKey)}`).join('');
   $('rules-overlay').classList.remove('hidden');
 }
+document.addEventListener('langchange', ()=>{ if(!$('rules-overlay').classList.contains('hidden')) openRules(); });
 $('btn-rules').addEventListener('click', openRules);
 $('btn-rules-close').addEventListener('click', ()=>$('rules-overlay').classList.add('hidden'));
 $('rules-overlay').addEventListener('click', e=>{ if(e.target===$('rules-overlay'))$('rules-overlay').classList.add('hidden'); });
 
 /* ===== LOBBY ===== */
 let ALL_CATEGORIES=[], ALL_FORMATIONS=[], maxImpostors=1, minPlayers=3;
-const CAT_LABELS={futbolista:'Futbolistas',equipo:'Equipos','selección':'Selecciones',dt:'DTs'};
+const CAT_KEYS={futbolista:'catFutbolistas',equipo:'catEquipos','selección':'catSelecciones',dt:'catDts'};
+const CAT_LABELS=new Proxy({},{get:(_,cat)=>t(CAT_KEYS[cat])||cat});
 
 socket.on('room:update', (st) => {
   players = st.players;
@@ -358,11 +285,12 @@ socket.on('room:update', (st) => {
 function currentVisibleSection(){ return SECTIONS.find(s=>!$(s).classList.contains('hidden')); }
 
 function renderLobby(st){
+  renderLobby.lastState = st;
   const grid=$('lobby-players'); grid.innerHTML='';
   st.players.forEach(p=>{
     const c=document.createElement('div'); c.className='player-chip'+(p.id===myId?' me':'');
-    const kickHtml = isHost&&p.id!==myId ? `<button class="kick-btn" data-id="${esc(p.id)}" title="Expulsar">✕</button>` : '';
-    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div>${kickHtml}</div><div class="meta">${p.isHost?'★ anfitrión':(p.connected?'conectado':'...')}</div>`;
+    const kickHtml = isHost&&p.id!==myId ? `<button class="kick-btn" data-id="${esc(p.id)}" title="${t('kickAria')}">✕</button>` : '';
+    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div>${kickHtml}</div><div class="meta">${p.isHost?t('host'):(p.connected?t('connected'):'...')}</div>`;
     grid.appendChild(c);
   });
   grid.querySelectorAll('.kick-btn').forEach(btn=>{
@@ -403,7 +331,7 @@ function updateStartBtn(n){
   const can=n>=minPlayers&&currentGame;
   $('btn-start').classList.toggle('hidden',!currentGame);
   $('btn-start').disabled=!can;
-  $('start-hint').textContent=!currentGame?'Elige un juego':(n<minPlayers?`Faltan jugadores (mín. ${minPlayers})`:'¡Listos!');
+  $('start-hint').textContent=!currentGame?t('hintChooseGame'):(n<minPlayers?t('hintMissingPlayers',{min:minPlayers}):t('hintReady'));
 }
 
 $('pick-impostor').addEventListener('click',()=>socket.emit('host:select_game',{code:roomCode,gameType:'impostor'}));
@@ -467,7 +395,7 @@ document.querySelectorAll('input[name=wm]').forEach(r=>r.addEventListener('chang
   const ovr=document.querySelector('input[name=wm][value=ovr]').checked;
   $('win-mode-ovr').classList.toggle('checked',ovr);
   $('win-mode-votacion').classList.toggle('checked',!ovr);
-  $('win-mode-desc').textContent=ovr?'OVR: gana quien tenga el equipo con mayor media promedio.':'Votación: al final se debate posición por posición y el grupo vota. Torneo de eliminación.';
+  $('win-mode-desc').textContent=ovr?t('winModeDescOvr'):t('winModeDescVotacion');
   sendSubCfg();
 }));
 
@@ -499,8 +427,8 @@ socket.on('imp:manga_started',({mangaNumber,mangaCount})=>{ impManga={n:mangaNum
 socket.on('imp:role',({isImpostor,impostorCount,category,concept})=>{
   acquireWakeLock();
   const card=$('imp-role-card');
-  if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent='Eres el impostor'; $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=`Categoría: ${category||'?'}. ${impostorCount>1?`Hay ${impostorCount} impostores. Disimula.`:'Disimula.'}`; }
-  else { card.className='role-card innocent'; $('imp-role-icon').textContent='⚽'; $('imp-role-label').textContent='Concepto ('+category+')'; $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?`Hay ${impostorCount} impostores. Da una pista relacionada.`:'Da una pista relacionada, sin decirlo directo.'; }
+  if(isImpostor){ card.className='role-card impostor'; $('imp-role-icon').textContent='🕵️'; $('imp-role-label').textContent=t('impYouAreImpostor'); $('imp-role-concept').textContent='???'; $('imp-role-hint').textContent=t('impHintImpostor',{cat:category||'?',extra:impostorCount>1?t('impHintImpostorMulti',{n:impostorCount}):t('impHintImpostorSingle')}); }
+  else { card.className='role-card innocent'; $('imp-role-icon').textContent='⚽'; $('imp-role-label').textContent=t('impConceptLabel',{cat:category}); $('imp-role-concept').textContent=concept; $('imp-role-hint').textContent=impostorCount>1?t('impHintInnocentMulti',{n:impostorCount}):t('impHintInnocentSingle'); }
   sfx.turn(); vib(100);
   show('s-imp-role');
 });
@@ -508,7 +436,7 @@ $('btn-imp-role-ok').addEventListener('click',()=>{ renderClue(); show('s-imp-cl
 socket.on('imp:round',({roundNumber,currentTurnPlayerId})=>{ $('imp-round').textContent=roundNumber; impTurn=currentTurnPlayerId; $('imp-clue-log').innerHTML=''; if(currentVisibleSection()!=='s-imp-role'){renderClue();show('s-imp-clue');} });
 socket.on('imp:turn',({currentTurnPlayerId})=>{ impTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-imp-clue')renderClue(); });
 function renderClue(){
-  $('imp-manga-label').textContent=`Ronda ${impManga.n}/${impManga.c}`;
+  $('imp-manga-label').textContent=t('impRoundLabel',{n:impManga.n,c:impManga.c});
   const grid=$('imp-players'); grid.innerHTML='';
   players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div>`; grid.appendChild(c); });
   const mine=impTurn===myId;
@@ -527,22 +455,22 @@ $('btn-clue').addEventListener('click',()=>{ const w=$('inp-clue').value.trim();
 $('inp-clue').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-clue').click(); });
 socket.on('imp:clue_rejected',({reason})=>{ $('clue-error').textContent=reason; $('clue-error').classList.remove('hidden'); });
 socket.on('imp:clue',({name,word})=>{ const log=$('imp-clue-log'); const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(word)}</span><span class="who">${esc(name)}</span>`; log.prepend(it); });
-socket.on('imp:clue_phase_ending',()=>{ $('imp-my-turn').classList.add('hidden'); $('imp-wait-turn').classList.remove('hidden'); $('imp-turn-name').textContent='Votación...'; const av=$('imp-turn-avatar'); av.style.background='var(--bg2)'; av.style.color='var(--neon)'; av.textContent='⏳'; });
+socket.on('imp:clue_phase_ending',()=>{ $('imp-my-turn').classList.add('hidden'); $('imp-wait-turn').classList.remove('hidden'); $('imp-turn-name').textContent=t('impVotingLabel'); const av=$('imp-turn-avatar'); av.style.background='var(--bg2)'; av.style.color='var(--neon)'; av.textContent='⏳'; });
 let impVoted=false;
 socket.on('imp:voting',({candidates})=>{ sfx.announce(); impVoted=false; const g=$('imp-vote-grid'); g.innerHTML=''; candidates.filter(c=>c.id!==myId).forEach(c=>{ const b=document.createElement('button'); b.className='vote-btn'; b.textContent=c.name; b.addEventListener('click',()=>castVote(c.id,b)); g.appendChild(b); }); $('imp-vote-status').textContent=''; show('s-imp-vote'); });
-function castVote(id,btn){ if(impVoted)return; impVoted=true; document.querySelectorAll('#imp-vote-grid .vote-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); $('imp-vote-status').textContent='Voto enviado, esperando...'; socket.emit('player:submit_vote',{code:roomCode,targetId:id}); }
-socket.on('imp:vote_count',({votesIn,votesNeeded})=>{ if(impVoted)$('imp-vote-status').textContent=`Voto enviado (${votesIn}/${votesNeeded})`; });
-socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ wasImpostor?sfx.win():sfx.wrong(); $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=(wasImpostor?'🎯 ¡Atrapado!':'❌ Era inocente...'); $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?'Era impostor.':'La partida sigue...'; show('s-imp-reveal'); });
-socket.on('imp:tie',({tiedPlayers})=>{ $('imp-reveal-banner').className='reveal-banner escaped'; $('imp-reveal-eyebrow').textContent='Empate'; $('imp-reveal-title').textContent='Nadie sale'; $('imp-reveal-sub').textContent=(tiedPlayers||[]).join(' vs '); show('s-imp-reveal'); });
+function castVote(id,btn){ if(impVoted)return; impVoted=true; document.querySelectorAll('#imp-vote-grid .vote-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); $('imp-vote-status').textContent=t('impVoteSent'); socket.emit('player:submit_vote',{code:roomCode,targetId:id}); }
+socket.on('imp:vote_count',({votesIn,votesNeeded})=>{ if(impVoted)$('imp-vote-status').textContent=t('impVoteSentCount',{in:votesIn,needed:votesNeeded}); });
+socket.on('imp:elimination',({eliminatedName,wasImpostor})=>{ wasImpostor?sfx.win():sfx.wrong(); $('imp-reveal-banner').className='reveal-banner '+(wasImpostor?'caught':'escaped'); $('imp-reveal-eyebrow').textContent=(wasImpostor?t('impCaught'):t('impEscaped')); $('imp-reveal-title').textContent=eliminatedName; $('imp-reveal-sub').textContent=wasImpostor?t('impWasImpostor'):t('impMatchContinues'); show('s-imp-reveal'); });
+socket.on('imp:tie',({tiedPlayers})=>{ $('imp-reveal-banner').className='reveal-banner escaped'; $('imp-reveal-eyebrow').textContent=t('impTie'); $('imp-reveal-title').textContent=t('impNobodyOut'); $('imp-reveal-sub').textContent=(tiedPlayers||[]).join(' vs '); show('s-imp-reveal'); });
 let impLastFinal=false;
 socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount,isLastManga,scores})=>{
   impLastFinal=isLastManga;
   $('imp-over-banner').className='reveal-banner '+(result==='impostors_caught'?'caught':'escaped');
-  $('imp-over-eyebrow').textContent=(result==='impostors_caught'?'Impostores atrapados':'Ganaron los impostores')+` · Ronda ${mangaNumber}/${mangaCount}`;
-  $('imp-over-title').textContent=(impostorNames.length>1?impostorNames.join(', ')+' eran':impostorNames.join(', ')+' era')+' impostor';
-  $('imp-over-sub').textContent='Concepto: '+concept.name+' ('+concept.category+')';
+  $('imp-over-eyebrow').textContent=(result==='impostors_caught'?t('impostorsCaught'):t('impostorsWon'))+' · '+t('roundOf',{n:mangaNumber,c:mangaCount});
+  $('imp-over-title').textContent=t('impWereImpostor',{names:impostorNames.join(', '),verb:impostorNames.length>1?t('impWereVerb'):t('impWasVerb')});
+  $('imp-over-sub').textContent=t('impConceptSummary',{name:concept.name,cat:concept.category});
   renderScores('imp-scoreboard',scores);
-  $('btn-imp-next').textContent=isLastManga?'Volver al inicio':'Siguiente ronda';
+  $('btn-imp-next').textContent=isLastManga?t('backToStart'):t('nextRound');
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
   if(isLastManga){ sfx.fanfare(); show('s-imp-over'); showWinnerThen(scores,()=>show('s-imp-over'),2.5); }
@@ -553,14 +481,14 @@ function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forE
 
 /* ===================== MENTIROSO ===================== */
 let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false, liePaused=false;
-function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); let wasUrgent=false; function t(){const r=Math.max(0,Math.ceil((deadline-Date.now())/1000));el.textContent=r;const urgent=r<=3&&r>0;el.classList.toggle('urgent',urgent);if(urgent&&!wasUrgent){sfx.urgent();vib(30);}wasUrgent=urgent;if(r<=0)stopLieCd();} t(); lieCd=setInterval(t,250); }
+function startLieCd(deadline){ stopLieCd(); const el=$('lie-countdown'); let wasUrgent=false; function tick(){const r=Math.max(0,Math.ceil((deadline-Date.now())/1000));el.textContent=r;const urgent=r<=3&&r>0;el.classList.toggle('urgent',urgent);if(urgent&&!wasUrgent){sfx.urgent();vib(30);}wasUrgent=urgent;if(r<=0)stopLieCd();} tick(); lieCd=setInterval(tick,250); }
 function stopLieCd(){ if(lieCd){clearInterval(lieCd);lieCd=null;} }
 // El que acuso puede frenar el reloj para verificar en vivo una respuesta
 // dudosa antes de que se acabe el tiempo. Solo el/la acusador ve el boton;
 // los demas ven un aviso de que esta en pausa.
 function setLiePauseUI(paused, remainingMs){
   liePaused=paused;
-  $('btn-lie-pause').textContent = paused ? '▶ Reanudar tiempo' : '⏸ Pausar tiempo';
+  $('btn-lie-pause').textContent = paused ? t('resumeTime') : t('pauseTime');
   $('lie-pause-indicator').classList.toggle('hidden', !paused || amAccuser);
   if(paused){ stopLieCd(); if(typeof remainingMs==='number') $('lie-countdown').textContent=Math.ceil(remainingMs/1000); }
 }
@@ -572,52 +500,52 @@ socket.on('lie:pause_state',({paused,deadlineAt,remainingMs})=>{
 socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; acquireWakeLock(); renderLieClaim(); show('s-lie-claim'); });
 socket.on('lie:turn',({currentTurnPlayerId})=>{ lieTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-lie-claim')renderLieClaim(); });
 socket.on('lie:claim',({amount})=>{ lieClaim=amount; const el=$('lie-claim-amount'); el.textContent=amount; bump(el); });
-function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0; sfx.turn(); vib(80);}else{const t=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=t?t.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(t?t.name:'?').trim().charAt(0).toUpperCase()||'?';} }
-$('btn-claim').addEventListener('click',()=>{ const v=Number($('inp-claim').value); if(!Number.isInteger(v)||v<=lieClaim){$('claim-error').textContent=`Debe ser mayor a ${lieClaim}.`;$('claim-error').classList.remove('hidden');return;} socket.emit('player:make_claim',{code:roomCode,amount:v}); });
+function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0; sfx.turn(); vib(80);}else{const pl=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=pl?pl.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(pl?pl.name:'?').trim().charAt(0).toUpperCase()||'?';} }
+$('btn-claim').addEventListener('click',()=>{ const v=Number($('inp-claim').value); if(!Number.isInteger(v)||v<=lieClaim){$('claim-error').textContent=t('mustBeGreaterThan',{n:lieClaim});$('claim-error').classList.remove('hidden');return;} socket.emit('player:make_claim',{code:roomCode,amount:v}); });
 $('btn-accuse').addEventListener('click',()=>socket.emit('player:accuse_liar',{code:roomCode}));
 socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason; $('claim-error').classList.remove('hidden'); });
 socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,category,mode,deadlineAt,paused,remainingMs})=>{
   amAccused=accusedId===myId; amAccuser=accuserId===myId; lieMode=mode;
   if(amAccused) sfx.turn();
   $('lie-target').textContent=target; $('lie-named-count').textContent='0'; $('lie-named-log').innerHTML='';
-  $('lie-naming-heading').textContent=amAccused?`${accuserName} no te creyó. Nombra ${target} de: ${category}`:`${accuserName} acusó a ${accusedName}. Categoría: ${category}`;
+  $('lie-naming-heading').textContent=amAccused?t('didntBelieveYou',{accuser:accuserName,target,cat:category}):t('accusedOf',{accuser:accuserName,accused:accusedName,cat:category});
   $('btn-mark').classList.add('hidden'); $('lie-am-accused').classList.add('hidden'); $('lie-naming-wait').classList.add('hidden');
-  if(mode==='voz'){ if(amAccuser){$('btn-mark').classList.remove('hidden');}else if(amAccused){$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent='Di tus respuestas en voz alta.';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent='Escucha y juzga al final.';} }
-  else { if(amAccused){$('lie-am-accused').classList.remove('hidden');$('inp-name-item').value='';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=`${accusedName} está escribiendo...`;} }
+  if(mode==='voz'){ if(amAccuser){$('btn-mark').classList.remove('hidden');}else if(amAccused){$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('sayAnswersAloud');}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('listenAndJudge');} }
+  else { if(amAccused){$('lie-am-accused').classList.remove('hidden');$('inp-name-item').value='';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('isTyping',{name:accusedName});} }
   $('btn-lie-pause').classList.toggle('hidden', !amAccuser);
   setLiePauseUI(!!paused, remainingMs);
   if(!paused) startLieCd(deadlineAt);
   show('s-lie-naming');
 });
 $('btn-mark').addEventListener('click',()=>socket.emit('player:mark_answer',{code:roomCode}));
-socket.on('lie:answer_marked',({count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>Respuesta ${count}</span><span class="who">✓</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
+socket.on('lie:answer_marked',({count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(t('answerNumber',{n:count}))}</span><span class="who">✓</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
 $('btn-name-item').addEventListener('click',sendNameItem); $('inp-name-item').addEventListener('keydown',e=>{if(e.key==='Enter')sendNameItem();});
-function sendNameItem(){ const t=$('inp-name-item').value.trim(); if(!t)return; $('inp-name-item').value=''; socket.emit('player:name_item',{code:roomCode,text:t}); }
+function sendNameItem(){ const val=$('inp-name-item').value.trim(); if(!val)return; $('inp-name-item').value=''; socket.emit('player:name_item',{code:roomCode,text:val}); }
 socket.on('lie:item',({text,count,deadlineAt})=>{ $('lie-named-count').textContent=count; bump($('lie-named-count')); const log=$('lie-named-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(text)}</span><span class="who">#${count}</span>`;log.prepend(it); if(deadlineAt)startLieCd(deadlineAt);else stopLieCd(); });
 let lieEligible=false;
 socket.on('lie:final_vote',({target,mode,namedSoFar,eligibleVoterIds})=>{
   stopLieCd(); lieEligible=eligibleVoterIds.includes(myId);
-  $('lie-final-title').textContent=`¿Las ${target} respuestas fueron válidas?`;
+  $('lie-final-title').textContent=t('answersValid',{n:target});
   const list=$('lie-final-list'); list.innerHTML='';
-  if(mode==='texto'&&namedSoFar)namedSoFar.forEach(t=>{const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(t)}</span>`;list.appendChild(it);});
-  else { const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span>Se dijeron en voz alta. ¿Las aceptan?</span>';list.appendChild(it); }
+  if(mode==='texto'&&namedSoFar)namedSoFar.forEach(txt=>{const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(txt)}</span>`;list.appendChild(it);});
+  else { const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span>${esc(t('saidAloudAccept'))}</span>`;list.appendChild(it); }
   $('lie-can-vote').classList.toggle('hidden',!lieEligible);
-  $('lie-final-status').textContent=lieEligible?'Vota:':(amAccused?'El grupo está votando...':'Esperando votos...');
+  $('lie-final-status').textContent=lieEligible?t('voteColon'):(amAccused?t('groupVoting'):t('waitingVotes'));
   show('s-lie-final');
 });
 $('btn-lie-valid').addEventListener('click',()=>castLieVote(true)); $('btn-lie-invalid').addEventListener('click',()=>castLieVote(false));
-function castLieVote(v){ $('lie-can-vote').classList.add('hidden'); $('lie-final-status').textContent='Voto enviado...'; socket.emit('player:vote_final',{code:roomCode,valid:v}); }
-socket.on('lie:final_progress',({votesIn,votesNeeded})=>{ if($('lie-can-vote').classList.contains('hidden'))$('lie-final-status').textContent=`${votesIn}/${votesNeeded} votos`; });
+function castLieVote(v){ $('lie-can-vote').classList.add('hidden'); $('lie-final-status').textContent=t('voteSentDots'); socket.emit('player:vote_final',{code:roomCode,valid:v}); }
+socket.on('lie:final_progress',({votesIn,votesNeeded})=>{ if($('lie-can-vote').classList.contains('hidden'))$('lie-final-status').textContent=t('votesCount',{in:votesIn,needed:votesNeeded}); });
 let lieLastFinal=false;
 socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,roundCount,isLastRound,scores})=>{
   stopLieCd(); lieLastFinal=isLastRound;
   success ? sfx.win() : sfx.wrong();
   $('lie-over-banner').className='reveal-banner '+(success?'caught':'escaped');
-  $('lie-over-eyebrow').textContent=isLastRound?'¡Resultado Final!':'Ronda '+roundNumber+'/'+roundCount;
-  $('lie-over-title').textContent=success?`✅ ${accusedName} sí pudo`:(reason==='timeout'?`⏱ ${accusedName} se quedó sin tiempo`:`❌ ${accusedName} no convenció`);
-  $('lie-over-sub').textContent=success?`${accuserName} pierde 1 punto.`:`${accuserName} gana 1 punto.`;
+  $('lie-over-eyebrow').textContent=isLastRound?t('finalResult'):t('roundOf',{n:roundNumber,c:roundCount});
+  $('lie-over-title').textContent=success?t('liarSucceeded',{name:accusedName}):(reason==='timeout'?t('liarTimeout',{name:accusedName}):t('liarFailed',{name:accusedName}));
+  $('lie-over-sub').textContent=success?t('accuserLosesPoint',{name:accuserName}):t('accuserGainsPoint',{name:accuserName});
   renderScores('lie-scoreboard', scores);
-  $('btn-lie-next').textContent=isLastRound?'Volver al inicio':'Siguiente ronda';
+  $('btn-lie-next').textContent=isLastRound?t('backToStart'):t('nextRound');
   $('btn-lie-next').classList.toggle('hidden',!isHost);
   $('lie-over-wait').classList.toggle('hidden',isHost);
   if(isLastRound){ show('s-lie-over'); showWinnerThen(scores,()=>show('s-lie-over'),2.5); }
@@ -684,7 +612,7 @@ function tickSubClockLocal(){
   }
 }
 function stopSubClock(){ subClockActive=false; if(subClockIv){clearInterval(subClockIv);subClockIv=null;} subClockLastShown=-1; }
-function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-skip-n').textContent=subState.skipsLeft; $('sub-team-count').textContent=`${subState.teamCount}/11`; bump($('sub-budget')); bump($('sub-skips')); }
+function updSubStats(){ $('sub-budget').textContent=`$${subState.budget}M`; $('sub-skips').textContent=subState.skipsLeft; $('sub-team-count').textContent=`${subState.teamCount}/11`; bump($('sub-budget')); bump($('sub-skips')); const skipBtn=$('btn-skip'); if(skipBtn) skipBtn.textContent=t('passSkips',{n:subState.skipsLeft}); }
 function updBidBtns(){ const base=Math.max(subHighest,subStart); $('bp1').textContent=base+1; $('bp5').textContent=base+5; $('bp10').textContent=base+10; }
 
 socket.on('sub:formation_vote',({formations,formationsData:fd,secondsLeft})=>{
@@ -695,18 +623,18 @@ socket.on('sub:formation_vote',({formations,formationsData:fd,secondsLeft})=>{
   show('s-sub-formation');
 });
 socket.on('sub:formation_tick',({secondsLeft})=>{ const el=$('sub-form-countdown'); if(el){el.textContent=secondsLeft;el.classList.toggle('urgent',secondsLeft<=5);} });
-socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=`${votesIn}/${totalPlayers} votos`; });
-socket.on('sub:formation_decided',({formation,formationSlots})=>{ currentFormation=formation; currentFormationSlots=formationSlots||(formationsData[formation]||[]); subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent='Formación: '+formation; show('s-sub-wait-deck'); });
+socket.on('sub:formation_vote_cast',({votesIn,totalPlayers})=>{ $('sub-form-votes').textContent=t('votesN',{n:`${votesIn}/${totalPlayers}`}); });
+socket.on('sub:formation_decided',({formation,formationSlots})=>{ currentFormation=formation; currentFormationSlots=formationSlots||(formationsData[formation]||[]); subState.teamCount=0; updSubStats(); $('sub-formation-decided').textContent=t('formationLabel',{f:formation}); show('s-sub-wait-deck'); });
 
 socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,startingPrice,secondsLeft})=>{
   sfx.card();
   subHighest=0; subStart=startingPrice; subEligible=false; iSkipped=false;
   $('sub-counter').textContent=`${cardIndex+1}/${totalCards}`;
   const badge=$('sub-pos-badge'); badge.textContent=positionLabel; badge.className='position-badge '+posGroup(position);
-  $('sub-price').textContent=`$${startingPrice}M precio base`;
-  $('sub-highest').textContent='Sin pujas aún';
+  $('sub-price').textContent=t('basePriceLabel',{p:startingPrice});
+  $('sub-highest').textContent=t('noBidsYet');
   $('sub-bid-log').innerHTML='';
-  $('sub-phase-label').textContent='Analizando...';
+  $('sub-phase-label').textContent=t('analyzing');
   $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.add('hidden'); $('sub-ineligible').classList.add('hidden');
   updBidBtns();
   loadSil($('sub-img'),$('sub-img-placeholder'),$('sub-img-pos'),cardId,positionLabel,false);
@@ -716,10 +644,10 @@ socket.on('sub:card',({cardIndex,totalCards,cardId,position,positionLabel,starti
   setSubCount(secondsLeft);     // ...y arrancar el reloj local ya en pantalla
 });
 socket.on('sub:eligibility',({eligible,skipsLeft,budget})=>{ subState.skipsLeft=skipsLeft; if(typeof budget==='number') subState.budget=budget; subEligible=eligible; updSubStats(); $('sub-ineligible').classList.toggle('hidden',eligible); });
-socket.on('sub:tick',({phase,secondsLeft})=>{ setSubCount(secondsLeft); $('sub-phase-label').textContent=phase==='analysis'?'Analizando...':'¡Pujas abiertas!'; });
+socket.on('sub:tick',({phase,secondsLeft})=>{ setSubCount(secondsLeft); $('sub-phase-label').textContent=phase==='analysis'?t('analyzing'):t('biddingOpen'); });
 socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
   sfx.announce();
-  $('sub-phase-label').textContent='¡Pujas abiertas!';
+  $('sub-phase-label').textContent=t('biddingOpen');
   // La elegibilidad viene en el propio evento: fuente de verdad confiable.
   if(typeof eligible==='boolean') subEligible=eligible;
   if(typeof skipsLeft==='number'){ subState.skipsLeft=skipsLeft; updSubStats(); }
@@ -737,7 +665,7 @@ socket.on('sub:bidding_open',({eligible,skipsLeft})=>{
 socket.on('sub:bid_public',({name,amount,highestBid})=>{ sfx.bid();
   subHighest=highestBid.amount;
   const iAmHighest = highestBid.playerId === myId;
-  $('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;
+  $('sub-highest').textContent=t('bestBid',{amount:highestBid.amount,name:esc(highestBid.name)});
   bump($('sub-highest'));
   updBidBtns();
   // Registrar en el log de pujas
@@ -748,7 +676,7 @@ socket.on('sub:bid_public',({name,amount,highestBid})=>{ sfx.bid();
       // Voy ganando: ocultar botones, mostrar mensaje
       $('sub-can-bid').classList.add('hidden');
       $('sub-bid-sent').classList.remove('hidden');
-      $('sub-bid-sent-msg').textContent=`Vas ganando con $${amount}M`;
+      $('sub-bid-sent-msg').textContent=t('winningWith',{amount});
     } else {
       // Otro me superó: vuelvo a poder pujar
       $('sub-bid-sent').classList.add('hidden');
@@ -760,12 +688,12 @@ socket.on('sub:bid_public',({name,amount,highestBid})=>{ sfx.bid();
 });
 socket.on('sub:skip_public',({name})=>{ const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML=`<span style="color:var(--text-dim);">skip</span><span class="who">${esc(name)}</span>`;log.prepend(it); });
 socket.on('sub:timer_extended',({secondsLeft})=>{ sfx.tick(); setSubCount(secondsLeft); const log=$('sub-bid-log');const it=document.createElement('div');it.className='clue-item';it.innerHTML='<span style="color:var(--red);">⏱ +5s</span>';log.prepend(it); });
-function sendBid(inc){ const base=Math.max(subHighest,subStart); $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=`Pujando $${base+inc}M...`; socket.emit('player:submit_bid',{code:roomCode,amount:base+inc}); }
+function sendBid(inc){ const base=Math.max(subHighest,subStart); $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=t('biddingAmount',{amount:base+inc}); socket.emit('player:submit_bid',{code:roomCode,amount:base+inc}); }
 $('btn-bid-1').addEventListener('click',()=>sendBid(1)); $('btn-bid-5').addEventListener('click',()=>sendBid(5)); $('btn-bid-10').addEventListener('click',()=>sendBid(10));
-$('btn-skip').addEventListener('click',()=>{ iSkipped=true; $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent='Pasaste esta carta.'; socket.emit('player:skip_card',{code:roomCode}); });
+$('btn-skip').addEventListener('click',()=>{ iSkipped=true; $('sub-can-bid').classList.add('hidden'); $('sub-bid-sent').classList.remove('hidden'); $('sub-bid-sent-msg').textContent=t('youPassedCard'); socket.emit('player:skip_card',{code:roomCode}); });
 socket.on('sub:bid_rejected',({reason})=>{ $('bid-error').textContent=reason; $('bid-error').classList.remove('hidden'); if(!iSkipped){$('sub-can-bid').classList.remove('hidden'); $('sub-bid-sent').classList.add('hidden');} updBidBtns(); setTimeout(()=>$('bid-error').classList.add('hidden'),3000); });
 socket.on('sub:skip_confirmed',({skipsLeft})=>{ subState.skipsLeft=skipsLeft; updSubStats(); });
-socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHighest=highestBid.amount;$('sub-highest').textContent=`Mejor: $${highestBid.amount}M — ${esc(highestBid.name)}`;} setSubCount(secondsLeft); updBidBtns(); if(phase==='bidding'&&subEligible)$('sub-can-bid').classList.remove('hidden'); });
+socket.on('sub:resync',({phase,secondsLeft,highestBid})=>{ if(highestBid){subHighest=highestBid.amount;$('sub-highest').textContent=t('bestBid',{amount:highestBid.amount,name:esc(highestBid.name)});} setSubCount(secondsLeft); updBidBtns(); if(phase==='bidding'&&subEligible)$('sub-can-bid').classList.remove('hidden'); });
 let subLast=false;
 // ===== Piedra-papel-tijera (cuando nadie quiere la carta) =====
 let rpsAmIn=false;
@@ -773,18 +701,18 @@ socket.on('sub:rps_start',({playerIds,playerNames,positionLabel})=>{
   sfx.rps();
   stopSubClock();
   rpsAmIn=playerIds.includes(myId);
-  $('sub-rps-title').textContent='Piedra, papel o tijera';
-  $('sub-rps-sub').textContent=`Jugador misterioso de ${positionLabel} — el que pierde se lo queda 😈`;
+  $('sub-rps-title').textContent=t('rockPaperScissors');
+  $('sub-rps-sub').textContent=t('mysteryPlayerOf',{pos:positionLabel});
   $('sub-rps-reveal').innerHTML='';
   $('sub-rps-status').textContent='';
   if(rpsAmIn){
     $('sub-rps-choose').classList.remove('hidden');
     $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=false;
     ['rps-piedra','rps-papel','rps-tijera'].forEach(id=>$(id).classList.remove('selected'));
-    $('sub-rps-status').textContent='Elige tu jugada';
+    $('sub-rps-status').textContent=t('chooseYourMove');
   } else {
     $('sub-rps-choose').classList.add('hidden');
-    $('sub-rps-status').textContent='Esperando a: '+playerNames.join(', ');
+    $('sub-rps-status').textContent=t('waitingFor',{names:playerNames.join(', ')});
   }
   show('s-sub-rps');
 });
@@ -792,19 +720,19 @@ function rpsChoose(c){
   $('rps-piedra').disabled=$('rps-papel').disabled=$('rps-tijera').disabled=true;
   ['rps-piedra','rps-papel','rps-tijera'].forEach(id=>$(id).classList.remove('selected'));
   $('rps-'+c).classList.add('selected');
-  $('sub-rps-status').textContent='Elegiste. Esperando al rival...';
+  $('sub-rps-status').textContent=t('chosenWaitingRival');
   socket.emit('player:rps_choice',{code:roomCode,choice:c});
 }
 $('rps-piedra').addEventListener('click',()=>rpsChoose('piedra'));
 $('rps-papel').addEventListener('click',()=>rpsChoose('papel'));
 $('rps-tijera').addEventListener('click',()=>rpsChoose('tijera'));
-socket.on('sub:rps_progress',({chosen,total})=>{ if(!rpsAmIn)$('sub-rps-status').textContent=`${chosen}/${total} ya eligieron...`; });
-const RPS_LABEL={piedra:'Piedra',papel:'Papel',tijera:'Tijera'};
+socket.on('sub:rps_progress',({chosen,total})=>{ if(!rpsAmIn)$('sub-rps-status').textContent=t('alreadyChose',{chosen,total}); });
+function rpsLabel(ch){ return {piedra:t('rpsRock'),papel:t('rpsPaper'),tijera:t('rpsScissors')}[ch]||ch; }
 socket.on('sub:rps_result',({choices,loserName,decided})=>{
   const box=$('sub-rps-reveal'); box.innerHTML='';
-  for(const [name,ch] of Object.entries(choices)){ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span><img class="rps-choice-icon" src="/images/ui/rps-${ch}.png" alt="${esc(RPS_LABEL[ch]||ch)}"/>${esc(RPS_LABEL[ch]||ch)}</span><span class="who">${esc(name)}</span>`; box.appendChild(it); }
-  if(decided){ $('sub-rps-title').textContent='¡'+loserName+' se la queda!'; $('sub-rps-sub').textContent='Perdió el piedra-papel-tijera'; $('sub-rps-choose').classList.add('hidden'); $('sub-rps-status').textContent=''; }
-  else { $('sub-rps-title').textContent='¡Empate! Otra vez'; $('sub-rps-sub').textContent='Se repite entre los empatados'; }
+  for(const [name,ch] of Object.entries(choices)){ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span><img class="rps-choice-icon" src="/images/ui/rps-${ch}.png" alt="${esc(rpsLabel(ch))}"/>${esc(rpsLabel(ch))}</span><span class="who">${esc(name)}</span>`; box.appendChild(it); }
+  if(decided){ $('sub-rps-title').textContent=t('keepsIt',{name:loserName}); $('sub-rps-sub').textContent=t('lostRps'); $('sub-rps-choose').classList.add('hidden'); $('sub-rps-status').textContent=''; }
+  else { $('sub-rps-title').textContent=t('tieAgain'); $('sub-rps-sub').textContent=t('repeatsBetweenTied'); }
 });
 
 let _subAutoIv=null;
@@ -818,17 +746,17 @@ socket.on('sub:card_resolved',({cardId,cardName,cardLabel,cardPosition,positionL
   loadSil($('sub-result-img'),$('sub-result-placeholder'),null,cardId,positionLabel,true);
   $('sub-result-name').textContent=cardName; $('sub-result-label').textContent=cardLabel;
   $('sub-result-troll').classList.toggle('hidden',!cardTroll);
-  if(result.type==='discard'){ $('sub-result-eyebrow').textContent='Descartada'; $('sub-result-sub').textContent='Nadie se la llevó.'; }
-  else if(isW){ $('sub-result-eyebrow').textContent=`¡La conseguiste por $${result.amount}M!`; $('sub-result-sub').textContent=''; }
-  else { $('sub-result-eyebrow').textContent=result.type==='lottery'?'Ruleta':'Vendida'; $('sub-result-sub').textContent=winnerName?`${winnerName} la ganó por $${result.amount}M`:''; }
-  $('btn-sub-next').textContent=isLastCard?'Ver resultado final':'Siguiente carta';
+  if(result.type==='discard'){ $('sub-result-eyebrow').textContent=t('discarded'); $('sub-result-sub').textContent=t('nobodyTookIt'); }
+  else if(isW){ $('sub-result-eyebrow').textContent=t('gotItFor',{amount:result.amount}); $('sub-result-sub').textContent=''; }
+  else { $('sub-result-eyebrow').textContent=result.type==='lottery'?t('lottery'):t('sold'); $('sub-result-sub').textContent=winnerName?t('wonItFor',{name:winnerName,amount:result.amount}):''; }
+  $('btn-sub-next').textContent=isLastCard?t('seeFinalResult'):t('nextCard');
   $('btn-sub-next').classList.toggle('hidden',!isHost);
   $('sub-result-wait').classList.toggle('hidden',isHost);
   if(isHost && autoAdvanceAt){
     const lbl=$('sub-auto-label');
     _subAutoIv=setInterval(()=>{
       const s=Math.max(0,Math.ceil((autoAdvanceAt-Date.now())/1000));
-      if(lbl) lbl.textContent=s>0?`(auto en ${s}s)`:'';
+      if(lbl) lbl.textContent=s>0?t('autoInSeconds',{s}):'';
       if(s<=0) _clearSubAutoTimer();
     },250);
   }
@@ -838,17 +766,17 @@ $('btn-sub-next').addEventListener('click',()=>{ _clearSubAutoTimer(); socket.em
 // ===== TORNEO (modo votación) =====
 socket.on('sub:tournament_start',({teams})=>{
   stopSubClock();
-  $('sub-tour-eyebrow').textContent='Torneo de equipos';
-  $('sub-tour-title').textContent='¡Empieza el debate!';
-  $('sub-tour-sub').textContent='Se enfrentarán posición por posición. Votan los que no juegan el duelo.';
+  $('sub-tour-eyebrow').textContent=t('teamTournament');
+  $('sub-tour-title').textContent=t('debateBegins');
+  $('sub-tour-sub').textContent=t('tournamentDesc');
   const info=$('sub-tour-info'); info.innerHTML='';
-  teams.slice().sort((a,b)=>b.ovr-a.ovr).forEach(t=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(t.name)}</span><span class="who">OVR oculto</span>`; info.appendChild(it); });
+  teams.slice().sort((a,b)=>b.ovr-a.ovr).forEach(tm=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(tm.name)}</span><span class="who">${esc(t('ovrHidden'))}</span>`; info.appendChild(it); });
   show('s-sub-tournament');
 });
-socket.on('sub:tournament_bye',({name,round})=>{ $('sub-tour-title').textContent=`${name} pasa directo`; $('sub-tour-sub').textContent=`Mejor equipo de la ronda ${round} — espera rival`; show('s-sub-tournament'); });
-socket.on('sub:tournament_round',({round,remaining})=>{ $('sub-tour-title').textContent=`Ronda ${round}`; $('sub-tour-sub').textContent='Siguen: '+remaining.join(', '); show('s-sub-tournament'); });
+socket.on('sub:tournament_bye',({name,round})=>{ $('sub-tour-title').textContent=t('advancesDirectly',{name}); $('sub-tour-sub').textContent=t('bestTeamOfRound',{round}); show('s-sub-tournament'); });
+socket.on('sub:tournament_round',({round,remaining})=>{ $('sub-tour-title').textContent=t('roundN',{n:round}); $('sub-tour-sub').textContent=t('remaining',{names:remaining.join(', ')}); show('s-sub-tournament'); });
 socket.on('sub:duel_start',({aName,bName,round,totalPositions})=>{
-  $('sub-duel-round').textContent=`Ronda ${round}`;
+  $('sub-duel-round').textContent=t('roundN',{n:round});
   $('sub-duel-a-name').textContent=aName; $('sub-duel-b-name').textContent=bName;
   $('sub-duel-a-score').textContent='0'; $('sub-duel-b-score').textContent='0';
   $('sub-duel-progress').textContent=`Pos 0/${totalPositions}`;
@@ -858,8 +786,8 @@ let duelAmInvolved=false;
 socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,totalPositions,voterIds})=>{
   $('sub-duel-pos').textContent=positionLabel; $('sub-duel-pos').className='position-badge '+posGroup(position);
   $('sub-duel-progress').textContent=`Pos ${posIndex}/${totalPositions}`;
-  $('sub-duel-a-player').textContent=aCard?aCard.name:'(sin jugador)';
-  $('sub-duel-b-player').textContent=bCard?bCard.name:'(sin jugador)';
+  $('sub-duel-a-player').textContent=aCard?aCard.name:t('noPlayerParens');
+  $('sub-duel-b-player').textContent=bCard?bCard.name:t('noPlayerParens');
   $('sub-duel-a-media').style.display='none'; $('sub-duel-b-media').style.display='none';
   $('sub-duel-a-side').classList.remove('winner'); $('sub-duel-b-side').classList.remove('winner');
   loadSil($('sub-duel-a-img'),$('sub-duel-a-ph'),null,aCard?aCard.cardId:null,positionLabel,true);
@@ -867,23 +795,23 @@ socket.on('sub:duel_position',({position,positionLabel,aCard,bCard,posIndex,tota
   const canVote=voterIds.includes(myId);
   duelAmInvolved=!canVote;
   $('sub-duel-can-vote').classList.toggle('hidden',!canVote);
-  $('sub-duel-status').textContent=canVote?'¿Quién es mejor?':'Tú juegas este duelo. Esperando votos...';
+  $('sub-duel-status').textContent=canVote?t('whoIsBetter'):t('youPlayThisDuel');
 });
 $('sub-duel-vote-a').addEventListener('click',()=>castDuelVote('A'));
 $('sub-duel-vote-b').addEventListener('click',()=>castDuelVote('B'));
-function castDuelVote(c){ $('sub-duel-can-vote').classList.add('hidden'); $('sub-duel-status').textContent='Voto enviado...'; socket.emit('player:vote_duel',{code:roomCode,choice:c}); }
-socket.on('sub:duel_vote_progress',({votesIn,votesNeeded})=>{ if($('sub-duel-can-vote').classList.contains('hidden'))$('sub-duel-status').textContent=`${votesIn}/${votesNeeded} votos`; });
+function castDuelVote(c){ $('sub-duel-can-vote').classList.add('hidden'); $('sub-duel-status').textContent=t('voteSentDots'); socket.emit('player:vote_duel',{code:roomCode,choice:c}); }
+socket.on('sub:duel_vote_progress',({votesIn,votesNeeded})=>{ if($('sub-duel-can-vote').classList.contains('hidden'))$('sub-duel-status').textContent=t('votesCount',{in:votesIn,needed:votesNeeded}); });
 socket.on('sub:duel_position_result',({winner,mediaA,mediaB,scoreA,scoreB})=>{
-  if(mediaA!==null){ $('sub-duel-a-media').style.display='block'; $('sub-duel-a-media').textContent='Media '+mediaA; }
-  if(mediaB!==null){ $('sub-duel-b-media').style.display='block'; $('sub-duel-b-media').textContent='Media '+mediaB; }
+  if(mediaA!==null){ $('sub-duel-a-media').style.display='block'; $('sub-duel-a-media').textContent=t('mediaValue',{v:mediaA}); }
+  if(mediaB!==null){ $('sub-duel-b-media').style.display='block'; $('sub-duel-b-media').textContent=t('mediaValue',{v:mediaB}); }
   $('sub-duel-a-score').textContent=scoreA; $('sub-duel-b-score').textContent=scoreB;
   $('sub-duel-a-side').classList.toggle('winner',winner==='A'); $('sub-duel-b-side').classList.toggle('winner',winner==='B');
-  $('sub-duel-status').textContent=winner==='A'?'◄ Gana esta posición':'Gana esta posición ►';
+  $('sub-duel-status').textContent=winner==='A'?t('winsThisPositionLeft'):t('winsThisPositionRight');
 });
 socket.on('sub:duel_result',({winnerName,loserName,scoreA,scoreB})=>{
-  $('sub-tour-eyebrow').textContent='Resultado del duelo';
-  $('sub-tour-title').textContent=`${winnerName} avanza`;
-  $('sub-tour-sub').textContent=`${winnerName} venció a ${loserName} (${scoreA}–${scoreB})`;
+  $('sub-tour-eyebrow').textContent=t('duelResult');
+  $('sub-tour-title').textContent=t('advances',{name:winnerName});
+  $('sub-tour-sub').textContent=t('beatOpponent',{winner:winnerName,loser:loserName,a:scoreA,b:scoreB});
   $('sub-tour-info').innerHTML='';
   show('s-sub-tournament');
 });
@@ -895,9 +823,9 @@ function showSubPitchFor(pid, isMine){
   const idx=subOverScores.indexOf(s);
   const row=document.querySelectorAll('#sub-scoreboard .score-row')[idx];
   if(row)row.classList.add('selected');
-  $('sub-pitch-title').textContent = isMine ? 'Tu alineación' : `Alineación de ${s.name}`;
-  if(subOverMode==='votacion'){ $('sub-my-total').textContent = subOverChampionName===s.name ? '🏆 Campeón' : ''; }
-  else { $('sub-my-total').textContent = `${s.points??'?'} pts`; }
+  $('sub-pitch-title').textContent = isMine ? t('yourLineup') : t('lineupOf',{name:s.name});
+  if(subOverMode==='votacion'){ $('sub-my-total').textContent = subOverChampionName===s.name ? t('champion') : ''; }
+  else { $('sub-my-total').textContent = t('ptsValue',{p:s.points??'?'}); }
   drawPitch($('sub-pitch'), currentFormationSlots.length?currentFormationSlots:(formationsData[currentFormation]||[]), s.cards||[]);
 }
 
@@ -938,10 +866,10 @@ function _muRenderCards(mu){
       ph.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--soft)';
       ph.textContent='—'; div.appendChild(ph);
     }
-    const nm=document.createElement('div'); nm.className='mu-card-name'; nm.textContent=p.card?p.card.name:'Sin carta'; div.appendChild(nm);
-    const pl=document.createElement('div'); pl.className='mu-card-player'; pl.textContent=p.name+(p.id===myId?' (tú)':''); div.appendChild(pl);
+    const nm=document.createElement('div'); nm.className='mu-card-name'; nm.textContent=p.card?p.card.name:t('noCard'); div.appendChild(nm);
+    const pl=document.createElement('div'); pl.className='mu-card-player'; pl.textContent=p.name+(p.id===myId?t('youSuffix'):''); div.appendChild(pl);
     const med=document.createElement('div'); med.className='mu-card-media'; med.textContent=p.card?p.card.media:'—'; div.appendChild(med);
-    if(p.card?.troll){ const t=document.createElement('div'); t.style.cssText='font-size:10px;color:var(--red,#f55);font-weight:700'; t.textContent='TROLL'; div.appendChild(t); }
+    if(p.card?.troll){ const trollTag=document.createElement('div'); trollTag.style.cssText='font-size:10px;color:var(--red,#f55);font-weight:700'; trollTag.textContent='TROLL'; div.appendChild(trollTag); }
     el.appendChild(div);
   });
 }
@@ -960,7 +888,7 @@ function _muStep(){
     if(winners.length===1&&winners[0].id===myId) sfx.match();
     setTimeout(()=>{
       const lbl=$('mu-winner-label');
-      if(lbl) lbl.textContent=winners.length===1?`${winners[0].name} gana este duelo`:'Empate';
+      if(lbl) lbl.textContent=winners.length===1?t('winsThisDuel',{name:winners[0].name}):t('tie');
     }, 700);
   }
   _muIdx++;
@@ -985,8 +913,8 @@ socket.on('sub:game_over',({mode,scores,matchups,formation,formationSlots,champi
   const sb=$('sub-scoreboard'); sb.innerHTML='';
   scores.forEach((s,i)=>{
     const r=document.createElement('div'); r.className='score-row sub-score-clickable'+(s.id===myId?' me':'');
-    const detail=mode==='votacion'?(i===0?'🏆 Campeón':''):(`${s.points??'?'} pts`);
-    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?' (tú)':''}</span><span class="points">${detail}</span>`;
+    const detail=mode==='votacion'?(i===0?t('champion'):''):t('ptsValue',{p:s.points??'?'});
+    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?esc(t('youSuffix')):''}</span><span class="points">${detail}</span>`;
     r.addEventListener('click', ()=>showSubPitchFor(s.id, s.id===myId));
     sb.appendChild(r);
   });
@@ -1158,7 +1086,7 @@ socket.on('wave:round', ({roundNumber,roundCount,left,right,psychicId,psychicNam
   renderWaveDial('wave-dial-psychic', {leftLabel:left, rightLabel:right});
   $('wave-psychic-controls').classList.toggle('hidden', !waveIsPsychic);
   $('wave-psychic-wait').classList.toggle('hidden', waveIsPsychic);
-  $('btn-wave-peek').textContent='👁 Ver la zona';
+  $('btn-wave-peek').textContent=t('seeZone');
   if(!waveIsPsychic){
     $('wave-psychic-name').textContent = psychicName || '—';
     const av=$('wave-psychic-avatar'); const c=avatarFor(psychicId||'?');
@@ -1169,13 +1097,13 @@ socket.on('wave:round', ({roundNumber,roundCount,left,right,psychicId,psychicNam
   $('wave-clue-display').classList.add('hidden');
   $('wave-clue-text').textContent='—';
   $('inp-wave-clue').value='';
-  $('btn-wave-clue').textContent='Enviar'; $('btn-wave-clue').disabled=false;
+  $('btn-wave-clue').textContent=t('send'); $('btn-wave-clue').disabled=false;
   show('s-wave-psychic');
 });
 $('btn-wave-clue').addEventListener('click', ()=>{
-  const t=$('inp-wave-clue').value.trim(); if(!t)return;
-  socket.emit('player:wave_clue',{code:roomCode,text:t});
-  $('btn-wave-clue').textContent='✓ Enviada'; $('btn-wave-clue').disabled=true;
+  const txt=$('inp-wave-clue').value.trim(); if(!txt)return;
+  socket.emit('player:wave_clue',{code:roomCode,text:txt});
+  $('btn-wave-clue').textContent=t('sentCheck'); $('btn-wave-clue').disabled=true;
 });
 $('inp-wave-clue').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-wave-clue').click(); });
 socket.on('wave:clue_shared',({clue,psychicName})=>{
@@ -1186,12 +1114,12 @@ socket.on('wave:clue_shared',({clue,psychicName})=>{
 $('btn-wave-peek').addEventListener('click', ()=>{
   if(wavePeekTarget==null){ socket.emit('player:wave_peek',{code:roomCode}); return; }
   wavePeeking=!wavePeeking;
-  $('btn-wave-peek').textContent = wavePeeking ? '🙈 Ocultar' : '👁 Ver la zona';
+  $('btn-wave-peek').textContent = wavePeeking ? t('hideZone') : t('seeZone');
   renderWaveDial('wave-dial-psychic', {leftLabel:waveLeft, rightLabel:waveRight, target: wavePeeking?wavePeekTarget:null});
 });
 socket.on('wave:target', ({target})=>{
   wavePeekTarget=target; wavePeeking=true;
-  $('btn-wave-peek').textContent='🙈 Ocultar';
+  $('btn-wave-peek').textContent=t('hideZone');
   renderWaveDial('wave-dial-psychic', {leftLabel:waveLeft, rightLabel:waveRight, target});
 });
 $('btn-wave-ready').addEventListener('click', ()=>socket.emit('player:wave_ready',{code:roomCode}));
@@ -1201,7 +1129,7 @@ socket.on('wave:guessing_start', ({secondsLeft,left,right})=>{
   renderWaveDial('wave-dial-guess', {leftLabel:left, rightLabel:right, interactive:!waveIsPsychic, value:50, onChange:v=>{waveMyValue=v;}});
   $('wave-guess-controls').classList.toggle('hidden', waveIsPsychic);
   $('wave-guess-wait').classList.toggle('hidden', !waveIsPsychic);
-  $('wave-lock-status').textContent = waveIsPsychic ? 'Esperando a que adivinen...' : 'Mueve tu aguja y bloquea cuando estés list@.';
+  $('wave-lock-status').textContent = waveIsPsychic ? t('waitingGuesses') : t('moveYourNeedle');
   setWaveCount(secondsLeft);
   show('s-wave-guess');
 });
@@ -1212,11 +1140,11 @@ $('btn-wave-lock').addEventListener('click', ()=>{
   if(waveLocked||waveIsPsychic)return; waveLocked=true;
   $('wave-guess-controls').classList.add('hidden');
   $('wave-guess-wait').classList.remove('hidden');
-  $('wave-lock-status').textContent='Respuesta bloqueada. Esperando a los demás...';
+  $('wave-lock-status').textContent=t('answerLockedWaiting');
   socket.emit('player:wave_lock',{code:roomCode, value:waveMyValue});
 });
 socket.on('wave:lock_progress', ({lockedIn,needed})=>{
-  if(waveLocked||waveIsPsychic) $('wave-lock-status').textContent = `${lockedIn}/${needed} ya bloquearon...`;
+  if(waveLocked||waveIsPsychic) $('wave-lock-status').textContent = t('alreadyLocked',{in:lockedIn,needed});
 });
 
 socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,roundNumber,roundCount,isLastRound,scores})=>{
@@ -1225,15 +1153,15 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   if(myScore >= 2) sfx.win();
   const needles = guesses.map(g=>({ value:g.value, color:avatarFor(g.id).bg, label:g.name }));
   renderWaveDial('wave-dial-reveal', {leftLabel:left, rightLabel:right, target, needles});
-  $('wave-reveal-eyebrow').textContent = `Ronda ${roundNumber}/${roundCount}`;
+  $('wave-reveal-eyebrow').textContent = t('roundOf',{n:roundNumber,c:roundCount});
   const list=$('wave-reveal-list'); list.innerHTML='';
   const psyRow=document.createElement('div'); psyRow.className='clue-item';
-  psyRow.innerHTML=`<span>🔮 ${esc(psychicName)} (Psíquico)</span><span class="who">+${psychicScore} pts</span>`;
+  psyRow.innerHTML=`<span>${esc(t('psychicSuffix',{name:psychicName}))}</span><span class="who">${esc(t('ptsPlus',{p:psychicScore}))}</span>`;
   list.appendChild(psyRow);
-  guesses.forEach(g=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(g.name)}</span><span class="who">+${g.score} pts</span>`; list.appendChild(it); });
+  guesses.forEach(g=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(g.name)}</span><span class="who">${esc(t('ptsPlus',{p:g.score}))}</span>`; list.appendChild(it); });
   renderScores('wave-scoreboard', scores);
   waveLastRound=isLastRound;
-  $('btn-wave-next').textContent = isLastRound ? 'Volver al inicio' : 'Siguiente ronda';
+  $('btn-wave-next').textContent = isLastRound ? t('backToStart') : t('nextRound');
   $('btn-wave-next').classList.toggle('hidden', !isHost);
   $('wave-over-wait').classList.toggle('hidden', isHost);
   if(isLastRound){ show('s-wave-reveal'); showWinnerThen(scores,()=>show('s-wave-reveal'),2.5); }
@@ -1242,7 +1170,8 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
 $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });
 
 /* ===================== ¿QUIÉN SOY? ===================== */
-const WHO_CAT_LABELS={futbolista:'Futbolista',dt:'DT',equipo:'Equipo','selección':'Selección'};
+const WHO_CAT_KEYS={futbolista:'catFutbolista',dt:'catDt',equipo:'catEquipo','selección':'catSeleccion'};
+const WHO_CAT_LABELS=new Proxy({},{get:(_,cat)=>t(WHO_CAT_KEYS[cat])||cat});
 let whoTurnToken=0, whoIsMyTurn=false, _whoRevealUntil=0;
 
 function renderWhoGrid(cards, activeId){
@@ -1252,9 +1181,9 @@ function renderWhoGrid(cards, activeId){
     const div=document.createElement('div');
     div.className='who-card'+(c.id===activeId?' active':'')+(mine?' mine':'')+(!c.hidden&&mine?' revealed':'')+(c.failed?' failed':'');
     if(c.hidden){
-      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (tú)':''}</div><div class="who-hidden-glyph">?</div>`;
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?esc(t('youSuffix')):''}</div><div class="who-hidden-glyph">?</div>`;
     } else {
-      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?' (tú)':''}</div><div class="who-identity">${esc(c.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[c.category]||c.category)}</div>`;
+      div.innerHTML=`<div class="who-owner">${esc(c.name)}${mine?esc(t('youSuffix')):''}</div><div class="who-identity">${esc(c.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[c.category]||c.category)}</div>`;
     }
     grid.appendChild(div);
   });
@@ -1292,7 +1221,7 @@ socket.on('who:question', ({playerName, text})=>{
 });
 socket.on('who:answer', ({answererName,answer,activePlayerName})=>{
   sfx.tick();
-  const label={si:'Sí ✓',no:'No ✗',talvez:'Tal vez ~'}[answer]||answer;
+  const label={si:t('yes')+' ✓',no:t('no')+' ✗',talvez:t('maybe')+' ~'}[answer]||answer;
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
   it.innerHTML=`<span>${esc(label)}</span><span class="who">${esc(answererName)}</span>`;
   log.prepend(it);
@@ -1308,26 +1237,26 @@ $('btn-who-si').addEventListener('click',()=>whoSendAnswer('si','btn-who-si'));
 $('btn-who-no').addEventListener('click',()=>whoSendAnswer('no','btn-who-no'));
 $('btn-who-talvez').addEventListener('click',()=>whoSendAnswer('talvez','btn-who-talvez'));
 $('btn-who-question').addEventListener('click',()=>{
-  const t=$('inp-who-question').value.trim(); if(!t)return;
-  socket.emit('player:who_question',{code:roomCode,text:t});
+  const txt=$('inp-who-question').value.trim(); if(!txt)return;
+  socket.emit('player:who_question',{code:roomCode,text:txt});
   $('inp-who-question').value='';
 });
 $('inp-who-question').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-who-question').click(); });
 $('btn-who-guess').addEventListener('click',()=>{
-  const t=$('inp-who-guess').value.trim(); if(!t)return;
-  socket.emit('player:who_guess',{code:roomCode,text:t});
+  const txt=$('inp-who-guess').value.trim(); if(!txt)return;
+  socket.emit('player:who_guess',{code:roomCode,text:txt});
 });
 $('inp-who-guess').addEventListener('keydown',e=>{ if(e.key==='Enter')$('btn-who-guess').click(); });
 
 socket.on('who:guess_submitted', ({playerId,playerName,text,guesserIsHost})=>{
-  $('who-guess-heading').textContent=`${playerName} dice que es...`;
+  $('who-guess-heading').textContent=t('saysTheyAre',{name:playerName});
   $('who-guess-text').textContent=text;
   const amGuesser=playerId===myId;
   // Puede validar: el host (si no es el que adivina), o cualquier no-adivinador si el host adivinó (1v1)
   const canValidate = !amGuesser && (isHost || guesserIsHost);
   $('who-host-validate').classList.toggle('hidden', !canValidate);
   $('who-validate-wait').classList.toggle('hidden', canValidate);
-  $('who-validate-wait').textContent = amGuesser ? 'Esperando confirmación...' : 'Esperando al anfitrión...';
+  $('who-validate-wait').textContent = amGuesser ? t('waitingConfirmation') : t('waitingHost');
   show('s-who-guess-pending');
 });
 $('btn-who-correct').addEventListener('click',()=>socket.emit('host:who_validate',{code:roomCode,correct:true}));
@@ -1335,14 +1264,14 @@ $('btn-who-incorrect').addEventListener('click',()=>socket.emit('host:who_valida
 socket.on('who:guess_result', ({playerId,playerName,correct,identity,points,eliminated})=>{
   if(correct){ sfx.correct(); vib([50,30,80]); } else { sfx.wrong(); vib(120); }
   const log=$('who-log'); const it=document.createElement('div'); it.className='clue-item';
-  if(correct) it.innerHTML=`<span>🎉 ${esc(playerName)} adivinó: ${esc(identity)}</span><span class="who">+${points} pts</span>`;
-  else if(eliminated) it.innerHTML=`<span>💀 ${esc(playerName)} fue eliminado</span><span class="who">✗</span>`;
-  else it.innerHTML=`<span>${esc(playerName)} intentó adivinar</span><span class="who">✗</span>`;
+  if(correct) it.innerHTML=`<span>${esc(t('guessedIt',{name:playerName,identity}))}</span><span class="who">${esc(t('ptsPlus',{p:points}))}</span>`;
+  else if(eliminated) it.innerHTML=`<span>${esc(t('wasEliminated',{name:playerName}))}</span><span class="who">✗</span>`;
+  else it.innerHTML=`<span>${esc(t('triedToGuess',{name:playerName}))}</span><span class="who">✗</span>`;
   log.prepend(it);
   // Si YO fui eliminado, mostrar mi identidad durante 3.5 s antes de volver al tablero
   if(eliminated && playerId===myId){
-    $('who-guess-heading').textContent='💀 ¡Fallaste!';
-    $('who-guess-text').textContent=`Eras: ${identity||'?'}`;
+    $('who-guess-heading').textContent=t('youFailed');
+    $('who-guess-text').textContent=t('youWere',{identity:identity||'?'});
     $('who-host-validate').classList.add('hidden');
     $('who-validate-wait').classList.add('hidden');
     show('s-who-guess-pending');
@@ -1353,7 +1282,7 @@ socket.on('who:guess_result', ({playerId,playerName,correct,identity,points,elim
 socket.on('who:round_over', ({roundNumber,roundCount,scores,assigns})=>{
   _storeScores(scores);
   renderScores('who-round-scoreboard', scores);
-  $('who-round-label').textContent=`Ronda ${roundNumber} de ${roundCount}`;
+  $('who-round-label').textContent=t('roundOfN',{n:roundNumber,c:roundCount});
   $('btn-who-next-round').classList.toggle('hidden', !isHost);
   $('who-round-wait').classList.toggle('hidden', isHost);
   const grid=$('who-reveal-grid'); grid.innerHTML='';
@@ -1376,7 +1305,7 @@ socket.on('who:game_over', ({scores,assigns})=>{
   (assigns||[]).forEach(a=>{
     const div=document.createElement('div');
     div.className='who-card'+(a.id===myId?' mine':'');
-    div.innerHTML=`<div class="who-owner">${esc(a.name)}${a.id===myId?' (tú)':''}</div><div class="who-identity">${esc(a.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[a.category]||a.category)}</div>`;
+    div.innerHTML=`<div class="who-owner">${esc(a.name)}${a.id===myId?esc(t('youSuffix')):''}</div><div class="who-identity">${esc(a.identity)}</div><div class="who-category">${esc(WHO_CAT_LABELS[a.category]||a.category)}</div>`;
     grid.appendChild(div);
   });
   show('s-who-reveal');
@@ -1423,7 +1352,7 @@ function showWinnerThen(scores, cb, delaySec) {
 
 /* ===== Force-end button (host only) ===== */
 function _refreshForceBtn(){ const show=isHost&&_currentSection&&SCORE_SECTIONS.has(_currentSection); $('btn-force-end').classList.toggle('hidden',!show); }
-$('btn-force-end').addEventListener('click',()=>{ if(confirm('¿Terminar la partida ahora?')) socket.emit('host:force_end',{code:roomCode}); });
+$('btn-force-end').addEventListener('click',()=>{ if(confirm(t('endMatchConfirm'))) socket.emit('host:force_end',{code:roomCode}); });
 socket.on('game:force_over',({scores})=>{
   renderScores('force-over-scoreboard', scores);
   $('btn-force-over-new').classList.toggle('hidden',!isHost);
