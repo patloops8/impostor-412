@@ -245,6 +245,8 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .donate-link{display:inline-flex;align-items:center;gap:6px;margin:18px auto 0;color:var(--ink-soft);font-family:var(--body);font-size:0.85rem;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line2);transition:border-color .15s,color .15s,background .15s;}
 .donate-link:hover{color:var(--neon);border-color:var(--neon-dim);background:rgba(182,255,46,0.06);}
 
+.legal-disclaimer{margin:14px auto 0;max-width:420px;color:var(--text-dim);font-family:var(--body);font-size:0.72rem;line-height:1.5;text-align:center;opacity:0.75;}
+
 /* Mentiroso: monto de la apuesta actual, tipo marcador de estadio */
 .category-card{background:linear-gradient(160deg,var(--card2) 0%,var(--card) 100%);border:1px solid var(--line2);border-radius:var(--radius);padding:16px 18px;text-align:center;}
 .category-card .cat-label{font-family:var(--display);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.16em;color:var(--ink-soft);}
