@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,6 +19,12 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET','POST'] },
 });
 const PORT = process.env.PORT || 3000;
+
+// Respaldo final: si algo se escapa de los try/catch de los handlers de
+// socket (ej. un error async no atrapado), lo logueamos y seguimos vivos
+// en vez de tumbar el proceso entero y desconectar a todas las salas activas.
+process.on('uncaughtException', (err) => { console.error('[uncaughtException]', err); });
+process.on('unhandledRejection', (err) => { console.error('[unhandledRejection]', err); });
 
 /* ===================== DATOS ===================== */
 const CONCEPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'concepts.json'), 'utf-8'));
@@ -1033,15 +1040,16 @@ function sendResumeState(r, socket){
   }
 }
 
-// Limpieza de salas huérfanas: salas sin jugadores conectados durante > 2h.
-// Cubre el caso donde el último jugador se desconecta sin que el handler lo elimine.
+// Limpieza de salas huérfanas: salas sin jugadores conectados.
+// Cubre el caso donde el último jugador se desconecta a mitad de partida
+// (el handler de disconnect solo marca connected=false, no borra la sala).
 setInterval(()=>{
   for(const [code,r] of rooms.entries()){
     if(connected(r).length===0){
       clearSubTimer(r); clearLieTimer(r); rooms.delete(code);
     }
   }
-}, 2*60*60*1000); // cada 2 horas
+}, 15*60*1000); // cada 15 minutos
 
 /* ===================== SOCKET.IO ===================== */
 // Throttle global: máximo 20 eventos por segundo por socket.
@@ -1070,6 +1078,19 @@ io.on('connection', socket => {
     IP_CONN.set(clientIp, Math.max(0, ipCount-1));
     return;
   }
+  // ── Blindaje contra payloads malformados ───────────────
+  // Todos los handlers de abajo destructuran el payload directamente
+  // (ej: ({code,name})=>{...}). Si un cliente manda el evento sin datos
+  // o con un tipo inesperado, destructurar undefined tira un TypeError
+  // sincrónico que -sin este wrapper- podía tumbar el proceso entero
+  // (afectando TODAS las salas activas, no solo ese socket).
+  const _origOn = socket.on.bind(socket);
+  socket.on = (event, handler) => _origOn(event, (...args) => {
+    if(args.length && (args[0]===null || typeof args[0]!=='object')) args[0] = {};
+    try{ handler(...args); }
+    catch(err){ console.error(`[socket:${event}] error:`, err); }
+  });
+
   socket.on('disconnect', ()=>{
     const c=(IP_CONN.get(clientIp)||1)-1;
     if(c<=0) IP_CONN.delete(clientIp); else IP_CONN.set(clientIp,c);
@@ -1173,7 +1194,7 @@ io.on('connection', socket => {
   socket.on('host:next_manga', ({code}) => { const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.gameType!=='impostor')return; if(r.mangaNumber>=r.impostorConfig.mangaCount)return; r.mangaNumber++; startManga(r); });
   socket.on('player:submit_clue', ({code,word}) => {
     const r=rooms.get(code); if(!r||r.status!=='imp_clue'||r.clueOrder[r.clueTurnIndex]!==socket.id)return;
-    const clean=(word||'').trim(); if(!clean)return; const n=norm(clean);
+    const clean=(word||'').trim().slice(0,60); if(!clean)return; const n=norm(clean);
     if(r.usedClues.includes(n)){socket.emit('imp:clue_rejected',{reason:'Esa palabra ya se usó.'});return;}
     r.usedClues.push(n); const pl=r.players.get(socket.id);
     io.to(r.code).emit('imp:clue',{name:pl.name,word:clean});
@@ -1219,7 +1240,7 @@ io.on('connection', socket => {
   socket.on('player:name_item', ({code,text}) => {
     const r=rooms.get(code); if(!r||r.status!=='lie_naming'||r.mentirosoConfig.mode!=='texto')return;
     const ch=r.lie.challenge; if(!ch||socket.id!==ch.accusedId)return;
-    const clean=(text||'').trim(); if(!clean)return;
+    const clean=(text||'').trim().slice(0,60); if(!clean)return;
     ch.namedSoFar.push(clean); ch.count++;
     if(ch.count>=ch.target){io.to(r.code).emit('lie:item',{text:clean,count:ch.count,target:ch.target,deadlineAt:null});toFinalVote(r);return;}
     const dl=restartLieTimer(r); io.to(r.code).emit('lie:item',{text:clean,count:ch.count,target:ch.target,deadlineAt:dl});
@@ -1347,7 +1368,7 @@ io.on('connection', socket => {
   socket.on('player:who_guess', ({code,text}) => {
     const r=rooms.get(code); if(!r||r.status!=='who_turn')return;
     const activeId=whoActiveId(r); if(socket.id!==activeId)return;
-    const clean=(text||'').trim(); if(!clean)return;
+    const clean=(text||'').trim().slice(0,80); if(!clean)return;
     r.who.pendingGuess={ playerId:socket.id, text:clean };
     r.status='who_guess_pending';
     io.to(r.code).emit('who:guess_submitted',{ playerId:socket.id, playerName:r.players.get(socket.id)?.name, text:clean, guesserIsHost:socket.id===r.hostId });
@@ -1485,8 +1506,15 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     // El panel de admin ya manda X-Admin-Pass; el query param legacy solo sirve para la carga
     // inicial de la página /admin?pass=... pero las APIs usan el header.
     const provided = req.headers['x-admin-pass'] || req.query.pass || '';
-    if(provided !== envPass) return res.status(401).json({error:'Contraseña incorrecta'});
+    if(!safeEqual(provided, envPass)) return res.status(401).json({error:'Contraseña incorrecta'});
     next();
+  }
+  // Comparación a tiempo constante: evita filtrar la contraseña por diferencias
+  // de tiempo en la comparación ('a!==b' corta apenas encuentra el primer byte distinto).
+  function safeEqual(a, b){
+    const bufA = Buffer.from(String(a)), bufB = Buffer.from(String(b));
+    if(bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
   }
 
   app.get('/admin', adminAuth, (_q,res)=>res.sendFile(path.join(__dirname,'public','admin.html')));
