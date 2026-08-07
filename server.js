@@ -1,9 +1,11 @@
+require('dotenv').config(); // no-op silencioso si no hay .env (ej. en Render, que usa env vars reales)
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const store = require('./store');
 
 const app = express();
 const server = http.createServer(app);
@@ -47,13 +49,11 @@ let SETTINGS = (() => {
   catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
 })();
 
-/* ===================== FEEDBACK (buzón de contacto) ===================== */
-const FEEDBACK_PATH = path.join(__dirname, 'data', 'feedback.json');
-let FEEDBACK = (() => {
-  try { return JSON.parse(fs.readFileSync(FEEDBACK_PATH, 'utf-8')); }
-  catch { return []; }
-})();
-function saveFeedback(){ fs.writeFileSync(FEEDBACK_PATH, JSON.stringify(FEEDBACK, null, 2), 'utf-8'); }
+/* ===================== FEEDBACK + ANALYTICS ===================== */
+// La persistencia real vive en store.js (Postgres si hay DATABASE_URL,
+// archivos locales si no) — acá solo queda el rate-limit, que es en
+// memoria por diseño (no tiene sentido persistirlo entre reinicios).
+const trackEvent = store.trackEvent;
 // Anti-spam simple: máx 5 mensajes cada 10 min por IP.
 const FEEDBACK_IP_LOG = new Map();
 function feedbackRateOk(ip){
@@ -63,24 +63,6 @@ function feedbackRateOk(ip){
   arr.push(now); FEEDBACK_IP_LOG.set(ip,arr);
   return true;
 }
-
-/* ===================== ANALYTICS (contadores básicos, sin servicios externos) ===================== */
-const ANALYTICS_PATH = path.join(__dirname, 'data', 'analytics.json');
-let ANALYTICS = (() => {
-  try { return JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8')); }
-  catch { return { roomsCreated:0, playersJoined:0, gamesCompleted:{impostor:0,mentiroso:0,subasta:0,wavelength:0,who:0}, daily:{} }; }
-})();
-let _analyticsDirty=false;
-function trackEvent(type, gameType){
-  const today=new Date().toISOString().slice(0,10);
-  ANALYTICS.daily[today]=ANALYTICS.daily[today]||{roomsCreated:0,playersJoined:0,gamesCompleted:0};
-  if(type==='room_created'){ ANALYTICS.roomsCreated++; ANALYTICS.daily[today].roomsCreated++; }
-  else if(type==='player_joined'){ ANALYTICS.playersJoined++; ANALYTICS.daily[today].playersJoined++; }
-  else if(type==='game_completed'){ ANALYTICS.gamesCompleted[gameType]=(ANALYTICS.gamesCompleted[gameType]||0)+1; ANALYTICS.daily[today].gamesCompleted++; }
-  _analyticsDirty=true;
-}
-// Flush a disco cada 30s en vez de por evento: evita I/O innecesario en picos de tráfico.
-setInterval(()=>{ if(_analyticsDirty){ _analyticsDirty=false; fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(ANALYTICS,null,2), 'utf-8'); } }, 30000);
 
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
@@ -1524,7 +1506,7 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
 // Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin
 // autenticación (es público), pero con límite de tamaño y rate-limit por IP.
-app.post('/api/feedback', express.json({limit:'20kb'}), (req,res)=>{
+app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
   if(!feedbackRateOk(ip)) return res.status(429).json({error:'Demasiados mensajes, esperá unos minutos.'});
   const b=req.body||{};
@@ -1534,10 +1516,13 @@ app.post('/api/feedback', express.json({limit:'20kb'}), (req,res)=>{
   const roomCode=(b.roomCode||'').trim().slice(0,4).toUpperCase();
   const gameType=(b.gameType||'').trim().slice(0,20);
   const type=['bug','suggestion','other'].includes(b.type)?b.type:'other';
-  FEEDBACK.unshift({ id: Date.now()+'-'+Math.random().toString(36).slice(2,8), message, contact, roomCode, gameType, type, read:false, createdAt: new Date().toISOString() });
-  if(FEEDBACK.length>500) FEEDBACK.length=500; // cap de retención: no crecer sin límite
-  saveFeedback();
-  res.json({ok:true});
+  try{
+    await store.addFeedback({ id: Date.now()+'-'+Math.random().toString(36).slice(2,8), message, contact, roomCode, gameType, type, read:false, createdAt: new Date().toISOString() });
+    res.json({ok:true});
+  }catch(e){
+    console.error('[api/feedback] error:', e.message);
+    res.status(500).json({error:'No se pudo guardar el mensaje.'});
+  }
 });
 
 /* ---- PANEL ADMIN (solo en desarrollo, invisible en produccion) ---- */
@@ -1587,24 +1572,31 @@ app.post('/api/feedback', express.json({limit:'20kb'}), (req,res)=>{
   });
 
   // Buzón de contacto (bandeja de feedback)
-  app.get('/admin/feedback', adminAuth, (_q,res)=>res.json(FEEDBACK));
-  app.post('/admin/feedback/:id/read', adminAuth, express.json({limit:'2kb'}), (req,res)=>{
-    const item=FEEDBACK.find(f=>f.id===req.params.id);
-    if(!item)return res.status(404).json({error:'not found'});
-    item.read = req.body?.read !== false;
-    saveFeedback();
-    res.json({ok:true});
+  app.get('/admin/feedback', adminAuth, async (_q,res)=>{
+    try{ res.json(await store.getFeedback()); }
+    catch(e){ res.status(500).json({error:e.message}); }
   });
-  app.delete('/admin/feedback/:id', adminAuth, (req,res)=>{
-    const idx=FEEDBACK.findIndex(f=>f.id===req.params.id);
-    if(idx===-1)return res.status(404).json({error:'not found'});
-    FEEDBACK.splice(idx,1);
-    saveFeedback();
-    res.json({ok:true});
+  app.post('/admin/feedback/:id/read', adminAuth, express.json({limit:'2kb'}), async (req,res)=>{
+    try{
+      const ok = await store.markFeedbackRead(req.params.id, req.body?.read !== false);
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.delete('/admin/feedback/:id', adminAuth, async (req,res)=>{
+    try{
+      const ok = await store.deleteFeedback(req.params.id);
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
   });
 
   // Analytics básico (sin servicios externos)
-  app.get('/admin/analytics', adminAuth, (_q,res)=>res.json(ANALYTICS));
+  app.get('/admin/analytics', adminAuth, async (_q,res)=>{
+    try{ res.json(await store.getAnalytics()); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.get('/admin/store-status', adminAuth, (_q,res)=>res.json({usingDb: store.usingDb}));
 
   app.post('/admin/save/:file', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const f=DATA_FILES[req.params.file];
@@ -1888,4 +1880,9 @@ app.post('/api/feedback', express.json({limit:'20kb'}), (req,res)=>{
 }
 
 app.get('/',(_q,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
-server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));
+
+store.initStore()
+  .catch(err => console.error('[store] Error inicializando la base de datos, se sigue con archivos locales:', err.message))
+  .finally(() => {
+    server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));
+  });

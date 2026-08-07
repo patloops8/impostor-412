@@ -1881,11 +1881,18 @@ async function loadAnalytics(){
   const body = document.getElementById('analytics-body');
   body.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
   try{
-    const r = await fetch('/admin/analytics', {headers:_authHeaders()});
+    const [r, rs] = await Promise.all([
+      fetch('/admin/analytics', {headers:_authHeaders()}),
+      fetch('/admin/store-status', {headers:_authHeaders()}),
+    ]);
     const a = await r.json();
+    const status = await rs.json().catch(()=>({usingDb:false}));
     const totalGames = Object.values(a.gamesCompleted||{}).reduce((s,n)=>s+n,0);
     const days = Object.keys(a.daily||{}).sort().slice(-14);
-    body.innerHTML = `
+    const statusBanner = status.usingDb
+      ? `<p style="color:var(--lime,#8f8);font-size:13px;margin-bottom:14px">🟢 Conectado a Postgres — estos datos sobreviven redeploys.</p>`
+      : `<p style="color:var(--gold,#e9b949);font-size:13px;margin-bottom:14px">🟡 Sin DATABASE_URL configurada — usando archivos locales, se pierden en cada redeploy.</p>`;
+    body.innerHTML = statusBanner + `
       <div class="cfg-section" style="display:flex;gap:32px;flex-wrap:wrap">
         <div><div style="font-size:32px;font-weight:800">${a.roomsCreated||0}</div><div style="color:var(--soft);font-size:13px">Salas creadas</div></div>
         <div><div style="font-size:32px;font-weight:800">${a.playersJoined||0}</div><div style="color:var(--soft);font-size:13px">Jugadores (uniones totales)</div></div>
