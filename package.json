@@ -4,7 +4,8 @@
   "description": "Prototipo de El Impostor - app interactiva de 412",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "smoke": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -12,5 +13,8 @@
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
   }
 }

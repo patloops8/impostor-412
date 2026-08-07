@@ -93,6 +93,18 @@ const timers = new Map(); // code -> intervalId (reloj único por sala)
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2, who: 2 };
+// Extraído de host:start_match para poder reusarlo desde host:rematch
+// ("jugar de nuevo" con el mismo juego, sin pasar por el lobby).
+function startCurrentGame(r){
+  if(!r.gameType) return false;
+  if(r.players.size<MIN_PLAYERS[r.gameType]) return false;
+  if(r.gameType==='impostor'){r.mangaNumber=1;startManga(r);}
+  else if(r.gameType==='mentiroso'){startLieSession(r);}
+  else if(r.gameType==='subasta'){startFormationVote(r);}
+  else if(r.gameType==='wavelength'){startWaveSession(r);}
+  else if(r.gameType==='who'){startWhoSession(r);}
+  return true;
+}
 
 function genCode() {
   let c;
@@ -1235,12 +1247,7 @@ io.on('connection', socket => {
 
   socket.on('host:start_match', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||!r.gameType)return;
-    if(r.players.size<MIN_PLAYERS[r.gameType])return;
-    if(r.gameType==='impostor'){r.mangaNumber=1;startManga(r);}
-    else if(r.gameType==='mentiroso'){startLieSession(r);}
-    else if(r.gameType==='subasta'){startFormationVote(r);}
-    else if(r.gameType==='wavelength'){startWaveSession(r);}
-    else if(r.gameType==='who'){startWhoSession(r);}
+    startCurrentGame(r);
   });
 
   // El Impostor
@@ -1453,13 +1460,12 @@ io.on('connection', socket => {
     io.to(r.code).emit('game:force_over',{ scores });
   });
 
-  socket.on('host:new_session', ({code}) => {
-    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+  function resetRoomToLobby(r, code){
     clearLieTimer(r); clearSubTimer(r); clearHostTimer(code);
     if(r.subasta.nextCardTimer){ clearTimeout(r.subasta.nextCardTimer); r.subasta.nextCardTimer=null; }
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
-    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null};
+    r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null,nextCardTimer:null};
     r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
     r.who={roundNumber:0,order:[],turnIndex:0,turnToken:0,assignments:new Map(),revealed:new Set(),failed:new Set(),pendingGuess:null};
     // Limpiar fantasmas: jugadores que se desconectaron durante la partida anterior
@@ -1467,7 +1473,25 @@ io.on('connection', socket => {
     for(const [id,p] of [...r.players.entries()]) if(!p.connected && id!==r.hostId) r.players.delete(id);
     reassignHostIfNeeded(r);
     for(const p of r.players.values()){p.alive=true;p.score=0;}
+  }
+
+  socket.on('host:new_session', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    resetRoomToLobby(r, code);
     emitRoom(r);
+  });
+
+  // "Jugar de nuevo": vuelve al lobby y arranca directo el mismo juego con
+  // la misma config (que resetRoomToLobby no toca), sin que nadie tenga que
+  // volver a elegir nada. Si por algún motivo ya no alcanzan los jugadores
+  // mínimos, se queda en el lobby normal en vez de forzar el inicio.
+  socket.on('host:rematch', ({code}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    const prevGameType = r.gameType;
+    resetRoomToLobby(r, code);
+    if(prevGameType){ r.gameType = prevGameType; }
+    emitRoom(r);
+    if(prevGameType) startCurrentGame(r);
   });
 
   socket.on('player:rejoin', ({code,playerId}, cb) => {

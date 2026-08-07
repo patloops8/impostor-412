@@ -42,7 +42,7 @@
       </div>
       <textarea id="inp-contact-message" rows="4" maxlength="2000" style="width:100%;resize:vertical;background:var(--panel,#0d141d);color:var(--ink,#eef4ee);border:1px solid var(--line2);border-radius:10px;padding:10px;font-family:var(--body);" placeholder="Cuéntanos qué pasó..." data-i18n-placeholder="contactPlaceholder"></textarea>
       <input type="text" id="inp-contact-contact" placeholder="Tu email o usuario (opcional)" maxlength="100" style="margin-top:8px;" data-i18n-placeholder="contactOptional"/>
-      <p class="error-text hidden" id="contact-error" style="margin-top:8px;"></p>
+      <p class="error-text hidden" id="contact-error" style="margin-top:8px;" aria-live="assertive"></p>
       <p class="hidden" id="contact-success" style="margin-top:8px;color:var(--lime);font-weight:700;"></p>
       <button class="btn-primary" id="btn-contact-send" style="width:100%;margin-top:12px;" data-i18n="contactSend">Enviar</button>
     </div>
@@ -76,7 +76,7 @@
         <input type="text" id="inp-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;flex:1;" data-i18n-placeholder="code" />
         <button class="btn-secondary" id="btn-join" data-i18n="join">Unirme</button>
       </div>
-      <p class="error-text hidden" id="home-error" style="margin-top:10px;"></p>
+      <p class="error-text hidden" id="home-error" style="margin-top:10px;" aria-live="assertive"></p>
     </div>
     <a href="https://paypal.me/patricioversan" target="_blank" rel="noopener" class="donate-link" data-i18n="supportProject">💚 Apoyar este proyecto</a>
     <p class="legal-disclaimer" data-i18n="legalDisclaimer">Proyecto de fans hecho para jugar entre amigos. No está afiliado, patrocinado ni avalado por ningún club, liga, federación o jugador. Los nombres e imágenes de jugadores se usan únicamente con fines de identificación dentro del juego; no reclamamos derechos de propiedad sobre ellos.</p>
@@ -190,12 +190,12 @@
       <h2 style="font-size:1.2rem;">🎤 <span data-i18n="impYourTurn">¡Tu turno!</span></h2>
       <p style="margin:6px 0 12px;" data-i18n="impSayWord">Di una palabra relacionada (sin repetir).</p>
       <input type="text" id="inp-clue" placeholder="Tu pista..." data-i18n-placeholder="impYourClue" />
-      <p class="error-text hidden" id="clue-error" style="margin-top:8px;"></p>
+      <p class="error-text hidden" id="clue-error" style="margin-top:8px;" aria-live="assertive"></p>
       <button class="btn-primary" id="btn-clue" style="width:100%;margin-top:10px;" data-i18n="impSendClue">Enviar pista</button>
     </div>
     <div id="imp-wait-turn" class="hidden turn-banner">
       <div class="turn-avatar" id="imp-turn-avatar">—</div>
-      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="imp-turn-name">—</h2>
+      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="imp-turn-name" aria-live="polite">—</h2>
     </div>
     <div class="divider"></div>
     <h3 style="font-size:1rem;margin-bottom:8px;" data-i18n="impClues">Pistas</h3>
@@ -210,7 +210,7 @@
   </section>
 
   <section id="s-imp-reveal" class="hidden center-flex">
-    <div class="reveal-banner" id="imp-reveal-banner" style="width:100%;">
+    <div class="reveal-banner" id="imp-reveal-banner" style="width:100%;" aria-live="polite" aria-atomic="true">
       <p class="eyebrow" id="imp-reveal-eyebrow">—</p>
       <h1 style="font-size:2rem;" id="imp-reveal-title">—</h1>
       <p id="imp-reveal-sub"></p>
@@ -218,7 +218,7 @@
   </section>
 
   <section id="s-imp-over" class="hidden">
-    <div class="reveal-banner" id="imp-over-banner" style="width:100%;">
+    <div class="reveal-banner" id="imp-over-banner" style="width:100%;" aria-live="polite" aria-atomic="true">
       <p class="eyebrow" id="imp-over-eyebrow">—</p>
       <h1 style="font-size:1.8rem;" id="imp-over-title">—</h1>
       <p id="imp-over-sub"></p>
@@ -227,6 +227,7 @@
     <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="imp-scoreboard"></div>
     <button class="btn-secondary hidden" id="btn-share-imp" style="width:100%;margin-top:14px;" data-i18n="shareResult">📤 Compartir resultado</button>
+    <button class="btn-primary hidden" id="btn-rematch-imp" style="width:100%;margin-top:10px;" data-i18n="playAgain">🔁 Jugar de nuevo</button>
     <button class="btn-primary hidden" id="btn-imp-next" style="width:100%;margin-top:10px;" data-i18n="next">Siguiente</button>
     <p id="imp-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
@@ -248,13 +249,13 @@
     <div id="lie-my-turn" class="hidden card" style="margin-top:14px;">
       <h2 style="font-size:1.1rem;">🎲 <span data-i18n="impYourTurn">¡Tu turno!</span></h2>
       <input type="number" inputmode="numeric" id="inp-claim" placeholder="Sube la apuesta..." style="margin-top:10px;" data-i18n-placeholder="raiseTheBet" />
-      <p class="error-text hidden" id="claim-error" style="margin-top:8px;"></p>
+      <p class="error-text hidden" id="claim-error" style="margin-top:8px;" aria-live="assertive"></p>
       <button class="btn-primary" id="btn-claim" style="width:100%;margin-top:10px;" data-i18n="raiseBet">Subir apuesta</button>
       <button class="btn-secondary" id="btn-accuse" style="width:100%;margin-top:8px;" data-i18n="liarBtn">¡Mentiroso!</button>
     </div>
     <div id="lie-wait-turn" class="hidden turn-banner">
       <div class="turn-avatar" id="lie-turn-avatar">—</div>
-      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="lie-turn-name">—</h2>
+      <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="lie-turn-name" aria-live="polite">—</h2>
     </div>
   </section>
 
@@ -290,7 +291,7 @@
   </section>
 
   <section id="s-lie-over" class="hidden center-flex">
-    <div class="reveal-banner" id="lie-over-banner" style="width:100%;">
+    <div class="reveal-banner" id="lie-over-banner" style="width:100%;" aria-live="polite" aria-atomic="true">
       <p class="eyebrow" id="lie-over-eyebrow">—</p>
       <h1 style="font-size:1.7rem;" id="lie-over-title">—</h1>
       <p id="lie-over-sub"></p>
@@ -299,6 +300,7 @@
     <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="lie-scoreboard"></div>
     <button class="btn-secondary hidden" id="btn-share-lie" style="width:100%;margin-top:14px;" data-i18n="shareResult">📤 Compartir resultado</button>
+    <button class="btn-primary hidden" id="btn-rematch-lie" style="width:100%;margin-top:10px;" data-i18n="playAgain">🔁 Jugar de nuevo</button>
     <button class="btn-primary hidden" id="btn-lie-next" style="width:100%;margin-top:10px;" data-i18n="nextRound">Siguiente ronda</button>
     <p id="lie-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
@@ -337,10 +339,10 @@
     </div>
     <div class="countdown-row" style="justify-content:center;margin-bottom:12px;">
       <div class="countdown-circle" id="sub-countdown">15</div>
-      <p id="sub-phase-label" style="font-weight:700;" data-i18n="analyzing">Analizando...</p>
+      <p id="sub-phase-label" style="font-weight:700;" data-i18n="analyzing" aria-live="polite">Analizando...</p>
     </div>
     <div id="sub-can-bid" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
-      <p class="error-text hidden" id="bid-error"></p>
+      <p class="error-text hidden" id="bid-error" aria-live="assertive"></p>
       <button class="bid-btn bid-1" id="btn-bid-1">+1M → $<span id="bp1">—</span>M</button>
       <button class="bid-btn bid-5" id="btn-bid-5">+5M → $<span id="bp5">—</span>M</button>
       <button class="bid-btn bid-10" id="btn-bid-10">+10M → $<span id="bp10">—</span>M</button>
@@ -370,7 +372,7 @@
       <img id="sub-result-img" class="silhouette-img revealed" src="" alt="" />
       <div id="sub-result-placeholder" class="silhouette-placeholder hidden"><span>?</span></div>
     </div>
-    <p class="eyebrow" id="sub-result-eyebrow">—</p>
+    <p class="eyebrow" id="sub-result-eyebrow" aria-live="polite" aria-atomic="true">—</p>
     <h2 style="font-size:1.4rem;" id="sub-result-name">—</h2>
     <p id="sub-result-label" style="font-size:0.82rem;"></p>
     <p id="sub-result-troll" class="hidden" style="color:var(--red);font-weight:800;">🎭 ¡Carta TROLL!</p>
@@ -445,6 +447,7 @@
     <p style="font-size:0.76rem;margin-bottom:8px;" data-i18n="tapPlayerForLineup">Toca un jugador para ver su plantilla</p>
     <div class="card" id="sub-scoreboard"></div>
     <button class="btn-secondary" id="btn-share-sub" style="width:100%;margin-top:14px;" data-i18n="shareResult">📤 Compartir resultado</button>
+    <button class="btn-primary hidden" id="btn-rematch-sub" style="width:100%;margin-top:10px;" data-i18n="playAgain">🔁 Jugar de nuevo</button>
     <button class="btn-primary hidden" id="btn-sub-new" style="width:100%;margin-top:10px;" data-i18n="newMatch">Nueva partida</button>
     <p id="sub-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
@@ -468,7 +471,7 @@
     </div>
     <div id="wave-psychic-wait" class="hidden turn-banner">
       <div class="turn-avatar" id="wave-psychic-avatar">—</div>
-      <p class="eyebrow" data-i18n="thinkingClue">Pensando su pista</p><h2 id="wave-psychic-name">—</h2>
+      <p class="eyebrow" data-i18n="thinkingClue">Pensando su pista</p><h2 id="wave-psychic-name" aria-live="polite">—</h2>
     </div>
   </section>
 
@@ -504,6 +507,7 @@
     <h3 style="margin-bottom:8px;" data-i18n="scoreboard">Marcador</h3>
     <div class="card" id="wave-scoreboard"></div>
     <button class="btn-secondary hidden" id="btn-share-wave" style="width:100%;margin-top:14px;" data-i18n="shareResult">📤 Compartir resultado</button>
+    <button class="btn-primary hidden" id="btn-rematch-wave" style="width:100%;margin-top:10px;" data-i18n="playAgain">🔁 Jugar de nuevo</button>
     <button class="btn-primary hidden" id="btn-wave-next" style="width:100%;margin-top:10px;" data-i18n="nextRound">Siguiente ronda</button>
     <p id="wave-over-wait" class="hidden" style="text-align:center;margin-top:14px;" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
@@ -528,7 +532,7 @@
     <div id="who-others-turn" class="hidden" style="margin-top:14px;">
       <div class="turn-banner" style="padding:10px 14px 18px;">
         <div class="turn-avatar" id="who-turn-avatar">—</div>
-        <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="who-turn-name">—</h2>
+        <p class="eyebrow" data-i18n="impTurnOf">Turno de</p><h2 id="who-turn-name" aria-live="polite">—</h2>
       </div>
       <div id="who-answer-section">
         <div id="who-answer-mine" class="hidden" style="margin-top:4px;">
@@ -549,7 +553,7 @@
 
   <section id="s-who-guess-pending" class="hidden center-flex">
     <p class="eyebrow" data-i18n="didTheyGetIt">¿Acertó?</p>
-    <h2 style="font-size:1.3rem;text-align:center;" id="who-guess-heading">—</h2>
+    <h2 style="font-size:1.3rem;text-align:center;" id="who-guess-heading" aria-live="polite">—</h2>
     <p style="font-size:1.15rem;text-align:center;color:var(--neon);font-weight:700;" id="who-guess-text">—</p>
     <div id="who-host-validate" class="hidden vote-grid" style="margin-top:14px;width:100%;">
       <button class="vote-btn" id="btn-who-correct" data-i18n="correctBtn">Correcto ✓</button>
@@ -577,6 +581,7 @@
     <h1 style="font-size:1.8rem;" data-i18n="finalResultTitle">Resultado Final</h1>
     <div class="card" style="width:100%;" id="who-scoreboard"></div>
     <button class="btn-secondary" id="btn-share-who" style="width:100%;margin-top:14px;" data-i18n="shareResult">📤 Compartir resultado</button>
+    <button class="btn-primary hidden" id="btn-rematch-who" style="width:100%;margin-top:10px;" data-i18n="playAgain">🔁 Jugar de nuevo</button>
     <button class="btn-primary hidden" id="btn-who-new" style="width:100%;margin-top:10px;" data-i18n="newMatch">Nueva partida</button>
     <p id="who-over-wait" class="hidden" data-i18n="waitingHost">Esperando al anfitrión...</p>
   </section>
