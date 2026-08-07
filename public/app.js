@@ -132,8 +132,11 @@ socket.on('connect', () => {
         applyRoomCode(res.code);
         saveSession();
       } else {
-        // La sala ya no existe o el jugador no está: no insistir, volver a home limpio.
+        // La sala ya no existe o el jugador no está: volver a home y avisar,
+        // en vez de dejar a la persona congelada en una pantalla muerta.
         clearSession(); roomCode=null; myStoredId=null;
+        show('s-home');
+        showHomeError(t('roomGoneMsg'));
       }
     });
   }
@@ -255,6 +258,45 @@ function openRules(){
 }
 document.addEventListener('langchange', ()=>{ if(!$('rules-overlay').classList.contains('hidden')) openRules(); });
 $('btn-rules').addEventListener('click', openRules);
+
+/* ===== Contacto / feedback ===== */
+$('btn-contact').addEventListener('click', () => {
+  $('inp-contact-message').value=''; $('inp-contact-contact').value='';
+  $('contact-error').classList.add('hidden'); $('contact-success').classList.add('hidden');
+  $('btn-contact-send').disabled=false;
+  $('contact-overlay').classList.remove('hidden');
+});
+$('btn-contact-close').addEventListener('click', ()=>$('contact-overlay').classList.add('hidden'));
+$('contact-overlay').addEventListener('click', e=>{ if(e.target===$('contact-overlay'))$('contact-overlay').classList.add('hidden'); });
+document.querySelectorAll('input[name=ctype]').forEach(r=>r.addEventListener('change',()=>{
+  ['contact-type-bug','contact-type-suggestion','contact-type-other'].forEach(id=>{
+    $(id).classList.toggle('checked', $(id).querySelector('input').checked);
+  });
+}));
+$('btn-contact-send').addEventListener('click', async () => {
+  const message=$('inp-contact-message').value.trim();
+  $('contact-error').classList.add('hidden'); $('contact-success').classList.add('hidden');
+  if(!message){ $('contact-error').textContent=t('contactEmptyError'); $('contact-error').classList.remove('hidden'); return; }
+  $('btn-contact-send').disabled=true;
+  try{
+    const res = await fetch('/api/feedback', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message,
+        contact: $('inp-contact-contact').value.trim(),
+        type: document.querySelector('input[name=ctype]:checked')?.value||'other',
+        roomCode: roomCode||'',
+        gameType: currentGame||'',
+      }),
+    });
+    const json = await res.json();
+    if(!res.ok || !json.ok){ $('contact-error').textContent=json.error||t('contactSendError'); $('contact-error').classList.remove('hidden'); $('btn-contact-send').disabled=false; return; }
+    $('contact-success').textContent=t('contactSentOk'); $('contact-success').classList.remove('hidden');
+    setTimeout(()=>$('contact-overlay').classList.add('hidden'), 1800);
+  }catch(e){
+    $('contact-error').textContent=t('contactSendError'); $('contact-error').classList.remove('hidden'); $('btn-contact-send').disabled=false;
+  }
+});
 $('btn-rules-close').addEventListener('click', ()=>$('rules-overlay').classList.add('hidden'));
 $('rules-overlay').addEventListener('click', e=>{ if(e.target===$('rules-overlay'))$('rules-overlay').classList.add('hidden'); });
 
@@ -263,6 +305,31 @@ let ALL_CATEGORIES=[], ALL_FORMATIONS=[], maxImpostors=1, minPlayers=3;
 const CAT_KEYS={futbolista:'catFutbolistas',equipo:'catEquipos','selección':'catSelecciones',dt:'catDts'};
 const CAT_LABELS=new Proxy({},{get:(_,cat)=>t(CAT_KEYS[cat])||cat});
 
+// Aviso visible cuando alguien se desconecta/reconecta a mitad de partida.
+// En el lobby ya se ve en el chip de cada jugador, así que solo avisamos
+// fuera de él (donde antes no había ninguna señal de esto).
+let _prevConnMap = null;
+function _checkDisconnectToasts(st){
+  if(st.status==='lobby'){ _prevConnMap=null; return; }
+  const cur=new Map(st.players.map(p=>[p.id,p.connected]));
+  if(_prevConnMap){
+    for(const [id,isConn] of cur.entries()){
+      const was=_prevConnMap.get(id);
+      if(was===undefined) continue;
+      if(was && !isConn){ const p=st.players.find(x=>x.id===id); showToast(t('playerDisconnected',{name:p?.name||'?'}), true); }
+      else if(!was && isConn && id!==myId){ const p=st.players.find(x=>x.id===id); showToast(t('playerReconnected',{name:p?.name||'?'}), false); }
+    }
+  }
+  _prevConnMap=cur;
+}
+let _toastTimer=null;
+function showToast(msg, urgent){
+  let el=$('conn-toast');
+  if(!el){ el=document.createElement('div'); el.id='conn-toast'; el.className='conn-toast'; document.body.appendChild(el); }
+  el.textContent=msg; el.classList.toggle('urgent',!!urgent); el.classList.add('show');
+  clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>el.classList.remove('show'), 4000);
+}
+
 socket.on('room:update', (st) => {
   players = st.players;
   isHost = (st.hostId === myId);
@@ -270,6 +337,7 @@ socket.on('room:update', (st) => {
   if(st.status==='lobby') _lobbyGameType = st.gameType||null;
   maxImpostors = st.maxImpostors; minPlayers = st.minPlayers;
   if(st.formations) formationsData = st.formations;
+  _checkDisconnectToasts(st);
 
   if(st.status==='lobby'){
     renderLobby(st);
@@ -473,11 +541,24 @@ socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount
   $('btn-imp-next').textContent=isLastManga?t('backToStart'):t('nextRound');
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
+  $('btn-share-imp').classList.toggle('hidden',!isLastManga);
+  _impWinner = scores[0]?.name||'';
   if(isLastManga){ sfx.fanfare(); show('s-imp-over'); showWinnerThen(scores,()=>show('s-imp-over'),2.5); }
   else { sfx.reveal(); show('s-imp-over'); }
 });
+let _impWinner='';
 $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_manga',{code:roomCode}); });
+$('btn-share-imp').addEventListener('click',()=>doShareResult($('btn-share-imp'), _impWinner, 'gameImpostorTitle'));
 function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
+
+/* ===== Compartir resultado final ===== */
+async function doShareResult(btn, winnerName, gameLabelKey){
+  if(!winnerName||!btn)return;
+  const url = location.origin;
+  const text = t('shareResultText', {winner:winnerName, game:t(gameLabelKey), url});
+  if(navigator.share){ try{ await navigator.share({title:'412', text, url}); }catch(e){} return; }
+  try{ await navigator.clipboard.writeText(text); const orig=btn.textContent; btn.textContent=t('shareCopied'); setTimeout(()=>{btn.textContent=orig;},2000); }catch(e){}
+}
 
 /* ===================== MENTIROSO ===================== */
 let lieMode='texto', lieTurn=null, lieClaim=0, lieCd=null, amAccused=false, amAccuser=false, liePaused=false;
@@ -548,10 +629,14 @@ socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,ro
   $('btn-lie-next').textContent=isLastRound?t('backToStart'):t('nextRound');
   $('btn-lie-next').classList.toggle('hidden',!isHost);
   $('lie-over-wait').classList.toggle('hidden',isHost);
+  $('btn-share-lie').classList.toggle('hidden',!isLastRound);
+  _lieWinner = scores[0]?.name||'';
   if(isLastRound){ show('s-lie-over'); showWinnerThen(scores,()=>show('s-lie-over'),2.5); }
   else show('s-lie-over');
 });
+let _lieWinner='';
 $('btn-lie-next').addEventListener('click',()=>{ if(lieLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_lie_round',{code:roomCode}); });
+$('btn-share-lie').addEventListener('click',()=>doShareResult($('btn-share-lie'), _lieWinner, 'gameMentirosoTitle'));
 
 /* ===================== SUBASTA ===================== */
 // Carga la imagen del jugador desde las imágenes propias del servidor.
@@ -920,6 +1005,7 @@ socket.on('sub:game_over',({mode,scores,matchups,formation,formationSlots,champi
   });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
   $('sub-over-wait').classList.toggle('hidden',isHost);
+  _subWinner = mode==='votacion' ? (championName||'') : (scores[0]?.name||'');
   if(mode==='ovr'&&matchups?.length){
     startMatchupAnimation(matchups, scores, ()=>showWinnerThen(scores,()=>show('s-sub-over')));
   } else {
@@ -977,6 +1063,8 @@ function pitchTokenEl(card,pos){
   return img;
 }
 $('btn-sub-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
+let _subWinner='';
+$('btn-share-sub').addEventListener('click',()=>doShareResult($('btn-share-sub'), _subWinner, 'gameSubastaTitle'));
 
 // Reconexión a subasta: pedir estado
 socket.on('connect',()=>{ if(roomCode&&currentVisibleSection()==='s-sub-play')socket.emit('player:request_sub_sync',{code:roomCode}); });
@@ -1164,10 +1252,14 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   $('btn-wave-next').textContent = isLastRound ? t('backToStart') : t('nextRound');
   $('btn-wave-next').classList.toggle('hidden', !isHost);
   $('wave-over-wait').classList.toggle('hidden', isHost);
+  $('btn-share-wave').classList.toggle('hidden', !isLastRound);
+  _waveWinner = scores[0]?.name||'';
   if(isLastRound){ show('s-wave-reveal'); showWinnerThen(scores,()=>show('s-wave-reveal'),2.5); }
   else show('s-wave-reveal');
 });
+let _waveWinner='';
 $('btn-wave-next').addEventListener('click', ()=>{ if(waveLastRound) socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:wave_next_round',{code:roomCode}); });
+$('btn-share-wave').addEventListener('click',()=>doShareResult($('btn-share-wave'), _waveWinner, 'gameWavelengthTitle'));
 
 /* ===================== ¿QUIÉN SOY? ===================== */
 const WHO_CAT_KEYS={futbolista:'catFutbolista',dt:'catDt',equipo:'catEquipo','selección':'catSeleccion'};
@@ -1309,9 +1401,12 @@ socket.on('who:game_over', ({scores,assigns})=>{
     grid.appendChild(div);
   });
   show('s-who-reveal');
+  _whoWinner = scores[0]?.name||'';
   setTimeout(()=>showWinnerThen(scores,()=>show('s-who-over')), 4000);
 });
+let _whoWinner='';
 $('btn-who-new').addEventListener('click',()=>socket.emit('host:new_session',{code:roomCode}));
+$('btn-share-who').addEventListener('click',()=>doShareResult($('btn-share-who'), _whoWinner, 'gameWhoTitle'));
 
 /* ===== Winner overlay ===== */
 function showWinnerThen(scores, cb, delaySec) {

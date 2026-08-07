@@ -217,6 +217,8 @@
   <div class="tab" data-tab="subasta">Subasta <span class="badge" id="badge-subasta">–</span></div>
   <div class="tab" data-tab="config">⚙ Config</div>
   <div class="tab" data-tab="formations">⚽ Formaciones</div>
+  <div class="tab" data-tab="feedback">📬 Buzón <span class="badge" id="badge-feedback">–</span></div>
+  <div class="tab" data-tab="analytics">📊 Analytics</div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -504,6 +506,24 @@
   <p id="fpe-status" style="font-size:12px;color:var(--soft);margin-top:8px"></p>
 </div>
 
+<!-- Buzón de contacto -->
+<div class="panel" id="panel-feedback">
+  <div class="panel-header">
+    <h2>📬 Buzón de contacto</h2>
+    <p>Bugs, sugerencias y mensajes enviados por jugadores desde el botón de contacto de la app.</p>
+  </div>
+  <div id="feedback-list"></div>
+</div>
+
+<!-- Analytics -->
+<div class="panel" id="panel-analytics">
+  <div class="panel-header">
+    <h2>📊 Analytics</h2>
+    <p>Contadores básicos, sin servicios externos. Se guardan en el servidor.</p>
+  </div>
+  <div id="analytics-body"></div>
+</div>
+
 <!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
@@ -686,6 +706,8 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.getElementById('panel-' + currentTab).classList.add('active');
     if(currentTab === 'config'){ loadConfig(); }
     else if(currentTab === 'formations'){ fpeLoad(); }
+    else if(currentTab === 'feedback'){ loadFeedback(); }
+    else if(currentTab === 'analytics'){ loadAnalytics(); }
     else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
@@ -1784,6 +1806,111 @@ _pubBtn.addEventListener('click', async ()=>{
   _pubBtn.disabled = false;
   _pubBtn.textContent = '🚀 Publicar en GitHub';
 });
+
+// ============================================================
+// BUZÓN DE CONTACTO (feedback)
+// ============================================================
+const FEEDBACK_TYPE_LABELS = {bug:'🐛 Bug', suggestion:'💡 Sugerencia', other:'💬 Otro'};
+let _feedbackItems = [];
+async function loadFeedback(){
+  const list = document.getElementById('feedback-list');
+  list.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
+  try{
+    const r = await fetch('/admin/feedback', {headers:_authHeaders()});
+    _feedbackItems = await r.json();
+    renderFeedbackList();
+    const unread = _feedbackItems.filter(i=>!i.read).length;
+    document.getElementById('badge-feedback').textContent = unread || '–';
+  }catch(e){
+    list.innerHTML = '<p style="color:var(--red)">Error al cargar el buzón.</p>';
+  }
+}
+function renderFeedbackList(){
+  const list = document.getElementById('feedback-list');
+  if(!_feedbackItems.length){ list.innerHTML = '<p style="color:var(--soft)">Sin mensajes todavía.</p>'; return; }
+  list.innerHTML = '';
+  _feedbackItems.forEach(item=>{
+    const card = document.createElement('div');
+    card.className = 'cfg-section';
+    card.style.opacity = item.read ? '0.6' : '1';
+    let date = '';
+    try{ date = new Date(item.createdAt).toLocaleString('es-MX'); }catch(e){}
+    const meta = [
+      date,
+      item.roomCode ? `Sala: ${esc(item.roomCode)}${item.gameType?' ('+esc(item.gameType)+')':''}` : '',
+    ].filter(Boolean).join(' · ');
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+        <div>
+          <span style="font-weight:700">${FEEDBACK_TYPE_LABELS[item.type]||item.type}</span>
+          <span style="color:var(--soft);font-size:12px;margin-left:8px">${esc(meta)}</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-export fb-toggle" data-id="${esc(item.id)}">${item.read?'Marcar no leído':'Marcar leído'}</button>
+          <button class="btn-export fb-delete" data-id="${esc(item.id)}" style="color:var(--red)">🗑 Eliminar</button>
+        </div>
+      </div>
+      <p style="white-space:pre-wrap;margin:0">${esc(item.message)}</p>
+      ${item.contact?`<p style="color:var(--soft);font-size:12px;margin-top:6px">Contacto: ${esc(item.contact)}</p>`:''}
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('.fb-toggle').forEach(b=>b.addEventListener('click', async ()=>{
+    const item = _feedbackItems.find(i=>i.id===b.dataset.id); if(!item)return;
+    b.disabled = true;
+    try{
+      await fetch(`/admin/feedback/${encodeURIComponent(b.dataset.id)}/read`, { method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({read:!item.read}) });
+      loadFeedback();
+    }catch(e){ b.disabled=false; }
+  }));
+  list.querySelectorAll('.fb-delete').forEach(b=>b.addEventListener('click', async ()=>{
+    if(!confirm('¿Eliminar este mensaje?'))return;
+    b.disabled = true;
+    try{
+      await fetch(`/admin/feedback/${encodeURIComponent(b.dataset.id)}`, { method:'DELETE', headers:_authHeaders() });
+      loadFeedback();
+    }catch(e){ b.disabled=false; }
+  }));
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+const GAME_NAMES = {impostor:'El Impostor', mentiroso:'Mentiroso Futbolero', subasta:'Subasta Futbolera', wavelength:'La Frecuencia', who:'¿Quién Soy?'};
+async function loadAnalytics(){
+  const body = document.getElementById('analytics-body');
+  body.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
+  try{
+    const r = await fetch('/admin/analytics', {headers:_authHeaders()});
+    const a = await r.json();
+    const totalGames = Object.values(a.gamesCompleted||{}).reduce((s,n)=>s+n,0);
+    const days = Object.keys(a.daily||{}).sort().slice(-14);
+    body.innerHTML = `
+      <div class="cfg-section" style="display:flex;gap:32px;flex-wrap:wrap">
+        <div><div style="font-size:32px;font-weight:800">${a.roomsCreated||0}</div><div style="color:var(--soft);font-size:13px">Salas creadas</div></div>
+        <div><div style="font-size:32px;font-weight:800">${a.playersJoined||0}</div><div style="color:var(--soft);font-size:13px">Jugadores (uniones totales)</div></div>
+        <div><div style="font-size:32px;font-weight:800">${totalGames}</div><div style="color:var(--soft);font-size:13px">Partidas completadas</div></div>
+      </div>
+      <div class="cfg-section">
+        <h3 class="cfg-title" style="margin-bottom:12px">Partidas completadas por juego</h3>
+        ${Object.entries(GAME_NAMES).map(([k,label])=>{
+          const n = (a.gamesCompleted||{})[k]||0;
+          const pct = totalGames ? Math.round(n/totalGames*100) : 0;
+          return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${label}</span><span style="color:var(--soft)">${n}</span></div><div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--accent,#5865f2)"></div></div></div>`;
+        }).join('')}
+      </div>
+      <div class="cfg-section">
+        <h3 class="cfg-title" style="margin-bottom:12px">Últimos 14 días con actividad</h3>
+        ${days.length ? `<table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="text-align:left;color:var(--soft)"><th style="padding:6px 0">Día</th><th>Salas</th><th>Jugadores</th><th>Partidas</th></tr></thead>
+          <tbody>${days.reverse().map(d=>{const v=a.daily[d];return `<tr><td style="padding:4px 0">${esc(d)}</td><td>${v.roomsCreated||0}</td><td>${v.playersJoined||0}</td><td>${v.gamesCompleted||0}</td></tr>`;}).join('')}</tbody>
+        </table>` : '<p style="color:var(--soft)">Todavía no hay actividad registrada.</p>'}
+      </div>
+    `;
+  }catch(e){
+    body.innerHTML = '<p style="color:var(--red)">Error al cargar analytics.</p>';
+  }
+}
 
 // ============================================================
 // INIT

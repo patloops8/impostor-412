@@ -189,6 +189,8 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .mute-btn:hover{background:rgba(182,255,46,0.15);transform:scale(1.1);}
 .rules-btn{position:fixed;top:10px;right:56px;z-index:1000;background:rgba(10,12,16,0.72);border:1px solid var(--line2);border-radius:50%;width:36px;height:36px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s,transform .12s;backdrop-filter:blur(4px);color:var(--neon);font-family:var(--display);}
 .rules-btn:hover{background:rgba(182,255,46,0.15);transform:scale(1.1);}
+.contact-btn{position:fixed;top:10px;right:100px;z-index:1000;background:rgba(10,12,16,0.72);border:1px solid var(--line2);border-radius:50%;width:36px;height:36px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .18s,transform .12s;backdrop-filter:blur(4px);}
+.contact-btn:hover{background:rgba(182,255,46,0.15);transform:scale(1.1);}
 .lang-btn{position:fixed;top:10px;left:12px;z-index:1000;background:rgba(10,12,16,0.72);border:1px solid var(--line2);border-radius:999px;height:36px;padding:0 12px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .18s,transform .12s;backdrop-filter:blur(4px);color:var(--ink-soft);font-family:var(--body);}
 .lang-btn:hover{background:rgba(182,255,46,0.15);transform:scale(1.05);color:var(--neon);}
 .rules-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.75);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
@@ -248,6 +250,10 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .donate-link:hover{color:var(--neon);border-color:var(--neon-dim);background:rgba(182,255,46,0.06);}
 
 .legal-disclaimer{margin:14px auto 0;max-width:420px;color:var(--text-dim);font-family:var(--body);font-size:0.72rem;line-height:1.5;text-align:center;opacity:0.75;}
+
+.conn-toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);z-index:3000;background:rgba(10,12,16,0.92);border:1px solid var(--line2);border-radius:999px;padding:10px 18px;font-size:0.82rem;font-weight:700;color:var(--ink-soft);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:90vw;text-align:center;backdrop-filter:blur(6px);}
+.conn-toast.urgent{border-color:var(--red,#f55);color:var(--red,#f55);}
+.conn-toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* Mentiroso: monto de la apuesta actual, tipo marcador de estadio */
 .category-card{background:linear-gradient(160deg,var(--card2) 0%,var(--card) 100%);border:1px solid var(--line2);border-radius:var(--radius);padding:16px 18px;text-align:center;}

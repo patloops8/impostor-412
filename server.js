@@ -47,6 +47,41 @@ let SETTINGS = (() => {
   catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
 })();
 
+/* ===================== FEEDBACK (buzón de contacto) ===================== */
+const FEEDBACK_PATH = path.join(__dirname, 'data', 'feedback.json');
+let FEEDBACK = (() => {
+  try { return JSON.parse(fs.readFileSync(FEEDBACK_PATH, 'utf-8')); }
+  catch { return []; }
+})();
+function saveFeedback(){ fs.writeFileSync(FEEDBACK_PATH, JSON.stringify(FEEDBACK, null, 2), 'utf-8'); }
+// Anti-spam simple: máx 5 mensajes cada 10 min por IP.
+const FEEDBACK_IP_LOG = new Map();
+function feedbackRateOk(ip){
+  const now=Date.now(), windowMs=10*60*1000;
+  const arr=(FEEDBACK_IP_LOG.get(ip)||[]).filter(t=>now-t<windowMs);
+  if(arr.length>=5) { FEEDBACK_IP_LOG.set(ip,arr); return false; }
+  arr.push(now); FEEDBACK_IP_LOG.set(ip,arr);
+  return true;
+}
+
+/* ===================== ANALYTICS (contadores básicos, sin servicios externos) ===================== */
+const ANALYTICS_PATH = path.join(__dirname, 'data', 'analytics.json');
+let ANALYTICS = (() => {
+  try { return JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8')); }
+  catch { return { roomsCreated:0, playersJoined:0, gamesCompleted:{impostor:0,mentiroso:0,subasta:0,wavelength:0,who:0}, daily:{} }; }
+})();
+let _analyticsDirty=false;
+function trackEvent(type, gameType){
+  const today=new Date().toISOString().slice(0,10);
+  ANALYTICS.daily[today]=ANALYTICS.daily[today]||{roomsCreated:0,playersJoined:0,gamesCompleted:0};
+  if(type==='room_created'){ ANALYTICS.roomsCreated++; ANALYTICS.daily[today].roomsCreated++; }
+  else if(type==='player_joined'){ ANALYTICS.playersJoined++; ANALYTICS.daily[today].playersJoined++; }
+  else if(type==='game_completed'){ ANALYTICS.gamesCompleted[gameType]=(ANALYTICS.gamesCompleted[gameType]||0)+1; ANALYTICS.daily[today].gamesCompleted++; }
+  _analyticsDirty=true;
+}
+// Flush a disco cada 30s en vez de por evento: evita I/O innecesario en picos de tráfico.
+setInterval(()=>{ if(_analyticsDirty){ _analyticsDirty=false; fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(ANALYTICS,null,2), 'utf-8'); } }, 30000);
+
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
   POR:'Portero', LD:'Lateral Derecho', DFC:'Defensa Central', LI:'Lateral Izquierdo',
@@ -282,6 +317,7 @@ function endManga(r,result,voters){
   if (result==='impostors_caught'){ for(const p of r.players.values()){ if(r.impostorIds.has(p.id))continue; p.score++; if(voters.includes(p.id))p.score++; } }
   else if (result==='impostors_win'){ for(const id of r.impostorIds){const p=r.players.get(id); if(p?.alive)p.score+=3;} }
   const isLast=r.mangaNumber>=r.impostorConfig.mangaCount;
+  if(isLast) trackEvent('game_completed','impostor');
   io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
 }
 
@@ -341,6 +377,7 @@ function resolveLie(r,success,reason){
   else { if(accuser)accuser.score++; if(accused)accused.score--; }
   r.status='lie_round_over';
   const isLast=r.lie.roundNumber>=r.mentirosoConfig.roundCount;
+  if(isLast) trackEvent('game_completed','mentiroso');
   io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
 }
 
@@ -629,6 +666,7 @@ function finishSubastaOVR(r){
   // Ordenar por puntos ganados; desempate por OVR (sin penalizar trolls ya que perdiste ese punto)
   scores.sort((a,b)=>b.points-a.points||b.ovr-a.ovr);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
+  trackEvent('game_completed','subasta');
   io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,matchups,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 
@@ -752,6 +790,7 @@ function finishTournament(r,championId){
   const order=[championId, ...s.bracket.eliminated.slice().reverse().filter(id=>id!==championId)];
   order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
   const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
+  trackEvent('game_completed','subasta');
   io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 function startFormationVote(r){
@@ -867,6 +906,7 @@ function resolveWaveRound(r){
   if(psy) psy.score+=psychicScore;
   r.status='wave_reveal';
   const isLast = r.wave.roundNumber>=r.waveConfig.roundCount;
+  if(isLast) trackEvent('game_completed','wavelength');
   io.to(r.code).emit('wave:reveal', {
     target:r.wave.target, left:r.wave.pair.left, right:r.wave.pair.right,
     psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?', psychicScore,
@@ -954,6 +994,7 @@ function finishWho(r){
   const isLast = r.who.roundNumber >= r.whoConfig.roundCount;
   if(isLast){
     r.status='who_over';
+    trackEvent('game_completed','who');
     io.to(r.code).emit('who:game_over',{ scores, assigns });
   } else {
     r.status='who_round_over';
@@ -1115,6 +1156,7 @@ io.on('connection', socket => {
     socket.join(code); socket.data.roomCode=code;
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
+    trackEvent('room_created'); trackEvent('player_joined');
   });
 
   socket.on('player:join_room', ({ code, name }, cb) => {
@@ -1129,6 +1171,7 @@ io.on('connection', socket => {
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
+    trackEvent('player_joined');
   });
 
   socket.on('host:kick_player', ({code,targetId}) => {
@@ -1479,6 +1522,24 @@ app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
+// Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin
+// autenticación (es público), pero con límite de tamaño y rate-limit por IP.
+app.post('/api/feedback', express.json({limit:'20kb'}), (req,res)=>{
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+  if(!feedbackRateOk(ip)) return res.status(429).json({error:'Demasiados mensajes, esperá unos minutos.'});
+  const b=req.body||{};
+  const message=(b.message||'').trim().slice(0,2000);
+  if(!message) return res.status(400).json({error:'El mensaje está vacío.'});
+  const contact=(b.contact||'').trim().slice(0,100);
+  const roomCode=(b.roomCode||'').trim().slice(0,4).toUpperCase();
+  const gameType=(b.gameType||'').trim().slice(0,20);
+  const type=['bug','suggestion','other'].includes(b.type)?b.type:'other';
+  FEEDBACK.unshift({ id: Date.now()+'-'+Math.random().toString(36).slice(2,8), message, contact, roomCode, gameType, type, read:false, createdAt: new Date().toISOString() });
+  if(FEEDBACK.length>500) FEEDBACK.length=500; // cap de retención: no crecer sin límite
+  saveFeedback();
+  res.json({ok:true});
+});
+
 /* ---- PANEL ADMIN (solo en desarrollo, invisible en produccion) ---- */
 // Admin panel: local siempre; en producción requiere ADMIN_PASS como query param o header X-Admin-Pass
 {
@@ -1524,6 +1585,26 @@ app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
     if(!f)return res.status(404).json({error:'not found'});
     res.json(JSON.parse(fs.readFileSync(f,'utf-8')));
   });
+
+  // Buzón de contacto (bandeja de feedback)
+  app.get('/admin/feedback', adminAuth, (_q,res)=>res.json(FEEDBACK));
+  app.post('/admin/feedback/:id/read', adminAuth, express.json({limit:'2kb'}), (req,res)=>{
+    const item=FEEDBACK.find(f=>f.id===req.params.id);
+    if(!item)return res.status(404).json({error:'not found'});
+    item.read = req.body?.read !== false;
+    saveFeedback();
+    res.json({ok:true});
+  });
+  app.delete('/admin/feedback/:id', adminAuth, (req,res)=>{
+    const idx=FEEDBACK.findIndex(f=>f.id===req.params.id);
+    if(idx===-1)return res.status(404).json({error:'not found'});
+    FEEDBACK.splice(idx,1);
+    saveFeedback();
+    res.json({ok:true});
+  });
+
+  // Analytics básico (sin servicios externos)
+  app.get('/admin/analytics', adminAuth, (_q,res)=>res.json(ANALYTICS));
 
   app.post('/admin/save/:file', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const f=DATA_FILES[req.params.file];
