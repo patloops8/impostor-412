@@ -98,13 +98,23 @@ let myId = null, roomCode = null, myStoredId = null, isHost = false, currentGame
 // (muy común al volver de segundo plano), podemos reintegrarnos solos en
 // vez de quedar bloqueados fuera de una partida ya empezada.
 const SESSION_KEY='412_session';
-function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({code:roomCode, playerId:myStoredId})); }catch(e){} }
+const SESSION_MAX_AGE_MS = 4*60*60*1000; // 4 horas: cubre una junta larga, no "volví días después"
+function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({code:roomCode, playerId:myStoredId, savedAt:Date.now()})); }catch(e){} }
 function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 (function hydrateSession(){
   try{
     const raw=localStorage.getItem(SESSION_KEY); if(!raw)return;
     const saved=JSON.parse(raw);
-    if(saved && saved.code && saved.playerId){ roomCode=saved.code; myStoredId=saved.playerId; }
+    // Sin esto, cualquiera que haya jugado alguna vez intenta reconectarse a
+    // una sala vieja cada vez que abre la app, para siempre — y ahora que el
+    // fallo muestra un aviso visible, eso se veía como un error molesto en
+    // el uso normal. Una sesión vieja se descarta calladita, sin intentar
+    // reconectar ni avisar nada.
+    if(saved && saved.code && saved.playerId && saved.savedAt && (Date.now()-saved.savedAt)<SESSION_MAX_AGE_MS){
+      roomCode=saved.code; myStoredId=saved.playerId;
+    } else {
+      clearSession();
+    }
   }catch(e){}
 })();
 
