@@ -1527,7 +1527,20 @@ app.use((_req, res, next) => {
 // Bloquear acceso directo a admin.html como archivo estático.
 // La única forma de llegar es vía /admin (que pasa por adminAuth).
 app.get('/admin.html', (_q, res) => res.status(404).end());
-app.use(express.static(path.join(__dirname,'public')));
+// Cache HTTP: las imágenes de cartas/UI casi nunca cambian una vez subidas
+// (mismo nombre de archivo = mismo contenido), así que se cachean agresivo
+// y sin revalidar. El resto (HTML/JS/CSS) sí cambia con cada deploy — se
+// deja sin caché fuerte para que las actualizaciones lleguen al toque,
+// apoyándose igual en ETag/Last-Modified para los 304 rápidos de siempre.
+app.use(express.static(path.join(__dirname,'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.startsWith(path.join(__dirname,'public','images'))) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 días
+    } else {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 // No hay parser JSON global: cada ruta POST declara el suyo inline
 // para evitar que el límite global interfiera con el upload de imágenes.
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
