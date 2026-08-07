@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#070b10" />
 <title>412 — Juegos de fútbol</title>
 <link rel="icon" type="image/png" href="/images/ui/logo.png"/>
+<link rel="apple-touch-icon" href="/images/ui/logo.png"/>
 <link rel="manifest" href="/manifest.json" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -33,13 +34,13 @@
       <button class="rules-close" id="btn-contact-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
     </div>
     <div class="rules-body">
-      <p data-i18n="contactIntro">¿Encontraste un bug o tenés una sugerencia? Contanos.</p>
+      <p data-i18n="contactIntro">¿Encontraste un bug o tienes una sugerencia? Cuéntanos.</p>
       <div class="category-checks" style="margin:12px 0;">
         <label class="category-chip checked" id="contact-type-bug"><input type="radio" name="ctype" value="bug" checked/> <span data-i18n="contactTypeBug">Bug</span></label>
         <label class="category-chip" id="contact-type-suggestion"><input type="radio" name="ctype" value="suggestion"/> <span data-i18n="contactTypeSuggestion">Sugerencia</span></label>
         <label class="category-chip" id="contact-type-other"><input type="radio" name="ctype" value="other"/> <span data-i18n="contactTypeOther">Otro</span></label>
       </div>
-      <textarea id="inp-contact-message" rows="4" maxlength="2000" style="width:100%;resize:vertical;background:var(--panel,#0d141d);color:var(--ink,#eef4ee);border:1px solid var(--line2);border-radius:10px;padding:10px;font-family:var(--body);" placeholder="Contanos qué pasó..." data-i18n-placeholder="contactPlaceholder"></textarea>
+      <textarea id="inp-contact-message" rows="4" maxlength="2000" style="width:100%;resize:vertical;background:var(--panel,#0d141d);color:var(--ink,#eef4ee);border:1px solid var(--line2);border-radius:10px;padding:10px;font-family:var(--body);" placeholder="Cuéntanos qué pasó..." data-i18n-placeholder="contactPlaceholder"></textarea>
       <input type="text" id="inp-contact-contact" placeholder="Tu email o usuario (opcional)" maxlength="100" style="margin-top:8px;" data-i18n-placeholder="contactOptional"/>
       <p class="error-text hidden" id="contact-error" style="margin-top:8px;"></p>
       <p class="hidden" id="contact-success" style="margin-top:8px;color:var(--lime);font-weight:700;"></p>
@@ -86,6 +87,11 @@
     <p class="eyebrow" data-i18n="shareCode">Comparte este código</p>
     <div class="code-display" id="lobby-code">----</div>
     <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;" data-i18n="shareCode">📋 Copiar / compartir código</button>
+    <button class="link-btn" id="btn-toggle-qr" style="display:block;margin:8px auto 0;" data-i18n="showQr">📱 Mostrar código QR</button>
+    <div id="qr-box" class="hidden qr-box">
+      <img id="qr-img" src="" alt="QR para unirse" width="180" height="180" />
+      <p data-i18n="scanToJoin">Escanea para unirte</p>
+    </div>
     <button class="link-btn" id="btn-leave-room" style="display:block;margin:8px auto 0;" data-i18n="leaveRoom">Salir de esta sala</button>
 
     <div class="divider"></div>

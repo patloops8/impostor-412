@@ -4,15 +4,15 @@
   "description": "El Impostor, Subasta Futbolera, Mentiroso, La Frecuencia y ¿Quién Soy? — 5 minijuegos para la próxima reunión.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0c10",
-  "theme_color": "#0a0c10",
+  "background_color": "#070b10",
+  "theme_color": "#070b10",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/images/ui/logo.png",
-      "sizes": "any",
+      "sizes": "900x600",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

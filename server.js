@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const QRCode = require('qrcode');
 const store = require('./store');
 
 const app = express();
@@ -167,6 +168,33 @@ function reassignHostIfNeeded(r){
     const first = connected(r)[0] || playersArr(r)[0];
     if (first) r.hostId = first.id;
   }
+}
+
+// Reasignación de anfitrión a mitad de partida: si el anfitrión se desconecta
+// durante el juego (no el lobby, donde ya se maneja aparte), casi todos los
+// botones de "continuar" son exclusivos del anfitrión — sin esto, la sala
+// queda trabada para siempre esperando a que ESE dispositivo vuelva.
+// Se da un margen de gracia antes de pasarle el control a otro jugador
+// conectado, para no reasignar por un corte de wifi de un par de segundos.
+const HOST_TIMERS = new Map();
+const HOST_REASSIGN_MS = 25000;
+function scheduleHostReassign(r){
+  clearHostTimer(r.code);
+  const timer = setTimeout(()=>{
+    HOST_TIMERS.delete(r.code);
+    const room = rooms.get(r.code); if(!room) return;
+    if(room.players.get(room.hostId)?.connected) return; // volvió por otro camino
+    const candidate = connected(room)[0];
+    if(!candidate) return; // nadie conectado: el sweep de salas huérfanas se encarga
+    room.hostId = candidate.id;
+    emitRoom(room);
+    io.to(room.code).emit('host:reassigned', { newHostName: candidate.name });
+  }, HOST_REASSIGN_MS);
+  HOST_TIMERS.set(r.code, timer);
+}
+function clearHostTimer(code){
+  const t = HOST_TIMERS.get(code);
+  if(t){ clearTimeout(t); HOST_TIMERS.delete(code); }
 }
 
 // Al reconectarse, el jugador recibe un socket.id nuevo (oldId -> newId).
@@ -1069,7 +1097,7 @@ function sendResumeState(r, socket){
 setInterval(()=>{
   for(const [code,r] of rooms.entries()){
     if(connected(r).length===0){
-      clearSubTimer(r); clearLieTimer(r); rooms.delete(code);
+      clearSubTimer(r); clearLieTimer(r); clearHostTimer(code); rooms.delete(code);
     }
   }
 }, 15*60*1000); // cada 15 minutos
@@ -1427,7 +1455,7 @@ io.on('connection', socket => {
 
   socket.on('host:new_session', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
-    clearLieTimer(r); clearSubTimer(r);
+    clearLieTimer(r); clearSubTimer(r); clearHostTimer(code);
     if(r.subasta.nextCardTimer){ clearTimeout(r.subasta.nextCardTimer); r.subasta.nextCardTimer=null; }
     r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
@@ -1455,6 +1483,7 @@ io.on('connection', socket => {
       r.players.delete(playerId);
       existing.id=socket.id; existing.connected=true;
       if(r.hostId===playerId)r.hostId=socket.id;
+      if(r.hostId===socket.id) clearHostTimer(r.code);
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
       cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames()});
@@ -1471,6 +1500,7 @@ io.on('connection', socket => {
       if(r.status==='lobby'){ r.players.delete(socket.id); reassignHostIfNeeded(r); }
       else {
         p.connected=false;
+        if(socket.id===r.hostId) scheduleHostReassign(r);
         if(r.status==='imp_clue'&&r.clueOrder[r.clueTurnIndex]===socket.id)advClue(r);
         if(r.status==='imp_vote'&&r.votes.size>=connectedAlive(r).length&&connectedAlive(r).length>0)resolveVotes(r);
         if(r.status==='lie_claim'&&lieTurnId(r)===socket.id)advLie(r);
@@ -1481,7 +1511,7 @@ io.on('connection', socket => {
       }
       emitRoom(r);
     }
-    if(r.players.size===0){clearSubTimer(r);clearLieTimer(r);rooms.delete(code);}
+    if(r.players.size===0){clearSubTimer(r);clearLieTimer(r);clearHostTimer(code);rooms.delete(code);}
   });
 });
 
@@ -1504,11 +1534,24 @@ app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
 
+// QR para unirse a una sala: apunta al mismo link que ya usa "compartir código".
+app.get('/qr/:code', async (req,res)=>{
+  const code=(req.params.code||'').toUpperCase();
+  if(!/^[A-Z2-9]{4}$/.test(code)) return res.status(400).send('código inválido');
+  try{
+    const url=`${req.protocol}://${req.get('host')}/?code=${code}`;
+    // Negro sobre blanco a propósito: es lo que mejor escanean las cámaras,
+    // más allá de que no combine con el tema oscuro de la app.
+    const svg=await QRCode.toString(url,{type:'svg',margin:1,color:{dark:'#000000',light:'#ffffff'}});
+    res.type('image/svg+xml').set('Cache-Control','no-store').send(svg);
+  }catch(e){ res.status(500).send('error generando QR'); }
+});
+
 // Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin
 // autenticación (es público), pero con límite de tamaño y rate-limit por IP.
 app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
-  if(!feedbackRateOk(ip)) return res.status(429).json({error:'Demasiados mensajes, esperá unos minutos.'});
+  if(!feedbackRateOk(ip)) return res.status(429).json({error:'Demasiados mensajes, espera unos minutos.'});
   const b=req.body||{};
   const message=(b.message||'').trim().slice(0,2000);
   if(!message) return res.status(400).json({error:'El mensaje está vacío.'});

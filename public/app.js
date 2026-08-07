@@ -118,7 +118,10 @@ function applyRoomCode(code){
   $('lobby-code').textContent=roomCode;
   tvLink = location.origin+'/tv?c='+roomCode;
   $('tv-hint').textContent=t('tvView');
+  // Nueva sala: el QR viejo (si había uno cargado) ya no sirve.
+  _qrLoaded=false; $('qr-box').classList.add('hidden'); $('btn-toggle-qr').textContent=t('showQr');
 }
+let _qrLoaded=false;
 
 socket.on('connect', () => {
   connBanner.classList.add('hidden');
@@ -215,6 +218,14 @@ $('btn-share').addEventListener('click', async () => {
   const text = t('shareInviteText', {url});
   if(navigator.share){ try{ await navigator.share({title:'412',text,url}); }catch(e){} }
   else { try{ await navigator.clipboard.writeText(url); $('btn-share').textContent='✓ '+t('copied'); setTimeout(()=>$('btn-share').textContent=t('shareCode'),2000);}catch(e){} }
+});
+
+// QR de la sala: se carga recién al abrirlo (no antes de que exista roomCode,
+// y para no pedirle al servidor un QR que tal vez nadie mira).
+$('btn-toggle-qr').addEventListener('click', () => {
+  const box=$('qr-box'); const open=box.classList.toggle('hidden');
+  $('btn-toggle-qr').textContent = open ? t('showQr') : t('hideQr');
+  if(!open && !_qrLoaded && roomCode){ $('qr-img').src=`/qr/${roomCode}`; _qrLoaded=true; }
 });
 
 $('tv-hint').addEventListener('click', async () => {
@@ -329,6 +340,11 @@ function showToast(msg, urgent){
   el.textContent=msg; el.classList.toggle('urgent',!!urgent); el.classList.add('show');
   clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>el.classList.remove('show'), 4000);
 }
+
+// El anfitrión se desconectó a mitad de partida: el servidor le pasó el
+// control a otro jugador conectado tras un margen de espera. Avisamos a
+// todos, porque de golpe alguien nuevo tiene los botones de "continuar".
+socket.on('host:reassigned', ({newHostName}) => { showToast(t('hostReassigned',{name:newHostName}), true); });
 
 socket.on('room:update', (st) => {
   players = st.players;
