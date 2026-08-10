@@ -614,10 +614,10 @@
   {
     "id": "bruno_guimaraes",
     "name": "Bruno Guimarães",
-    "label": "Bruno Guimarães (Newcastle)",
+    "label": "Bruno Guimarães (Arsenal)",
     "position": "MC",
-    "rareza": "mediano",
-    "media": 85,
+    "rareza": "top",
+    "media": 86,
     "troll": false
   },
   {
@@ -636,15 +636,6 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
-  },
-  {
-    "id": "enzo_fernandez",
-    "name": "Enzo Fernández",
-    "label": "Enzo Fernández (Chelsea)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 84,
     "troll": false
   },
   {
@@ -5406,6 +5397,33 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 81,
+    "troll": false
+  },
+  {
+    "id": "joao_neves",
+    "name": "João Neves",
+    "label": "João Neves (PSG)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 88,
+    "troll": false
+  },
+  {
+    "id": "enzo_fernandez",
+    "name": "Enzo Fernández",
+    "label": "Enzo Fernández (Chelsea)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "ayyoub_bouaddi",
+    "name": "Ayyoub Bouaddi",
+    "label": "Ayyoub Bouaddi (Lille)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
     "troll": false
   }
 ]
