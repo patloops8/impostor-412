@@ -585,15 +585,6 @@
     "troll": false
   },
   {
-    "id": "alexis_mac_allister",
-    "name": "Alexis Mac Allister",
-    "label": "Alexis Mac Allister (Liverpool)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false
-  },
-  {
     "id": "andres_iniesta",
     "name": "Andrés Iniesta",
     "label": "Andrés Iniesta (FC Barcelona)",
@@ -671,7 +662,7 @@
     "label": "Gavi (FC Barcelona)",
     "position": "MC",
     "rareza": "mediano",
-    "media": 83,
+    "media": 82,
     "troll": false
   },
   {
@@ -5424,6 +5415,87 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 84,
+    "troll": false
+  },
+  {
+    "id": "alexis_mac_allister",
+    "name": "Alexis Mac Allister",
+    "label": "Alexis Mac Allister (Liverpool)",
+    "position": "MC",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "felix_nmecha",
+    "name": "Felix Nmecha",
+    "label": "Felix Nmecha (Dortmund)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false
+  },
+  {
+    "id": "pablo_barrios",
+    "name": "Pablo Barrios",
+    "label": "Pablo Barrios (Atletico de Madrid)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "tijjani_reijnders",
+    "name": "Tijjani Reijnders",
+    "label": "Tijjani Reijnders (Manchester City)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "manu_kone",
+    "name": "Manu Koné",
+    "label": "Manu Koné (Roma)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "scott_mctominay",
+    "name": "Scott McTominay",
+    "label": "Scott McTominay (Napoli)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false
+  },
+  {
+    "id": "ederson_dos_santos",
+    "name": "Éderson dos Santos",
+    "label": "Éderson dos Santos (Atalanta)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
+  },
+  {
+    "id": "petar_sucic",
+    "name": "Petar Sučić",
+    "label": "Petar Sučić (Inter de Milan)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false
+  },
+  {
+    "id": "yasin_ayari",
+    "name": "Yasin Ayari",
+    "label": "Yasin Ayari (Brighton)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 80,
     "troll": false
   }
 ]
