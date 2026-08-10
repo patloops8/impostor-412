@@ -5515,5 +5515,41 @@
     "rareza": "mediano",
     "media": 78,
     "troll": false
+  },
+  {
+    "id": "valentin_barco",
+    "name": "Valentín Barco",
+    "label": "Valentín Barco (Chelsea)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 78,
+    "troll": false
+  },
+  {
+    "id": "senny_mayulu",
+    "name": "Senny Mayulu",
+    "label": "Senny Mayulu (PSG)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false
+  },
+  {
+    "id": "mikel_merino",
+    "name": "Mikel Merino",
+    "label": "Mikel Merino (Arsenal)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false
+  },
+  {
+    "id": "adrien_rabiot",
+    "name": "Adrien Rabiot",
+    "label": "Adrien Rabiot (Milan)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false
   }
 ]
