@@ -1708,6 +1708,51 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
   });
   app.get('/admin/store-status', adminAuth, (_q,res)=>res.json({usingDb: store.usingDb}));
 
+  // Logros: alta/baja/edición desde el panel admin. La imagen del ícono
+  // (si el admin sube una en vez de usar un emoji) viaja como data URL
+  // base64 dentro del mismo body — se guarda tal cual en la fila del
+  // logro, sin pasar por el disco ni por el flujo de "publicar en
+  // GitHub" (a diferencia de las cartas): los logros son config viva en
+  // Postgres, no datos versionados.
+  const ACHIEVEMENT_ICON_LIMIT = '2mb';
+  function validateAchievementBody(b){
+    if(!b || typeof b!=='object') return 'Body inválido';
+    if(!b.key || !/^[a-z0-9_]+$/.test(b.key)) return 'La clave (key) debe ser minúsculas, números y guión bajo, sin espacios';
+    if(!b.titleEs || !b.titleEn) return 'Falta título en español o inglés';
+    const validTypes=['total_played','total_won','game_played','game_won','distinct_played','distinct_won'];
+    if(!validTypes.includes(b.conditionType)) return 'Tipo de condición inválido';
+    if((b.conditionType==='game_played'||b.conditionType==='game_won') && !Object.keys(MIN_PLAYERS).includes(b.conditionGame)) return 'Falta el juego para esta condición';
+    if(!Number.isInteger(b.conditionGoal)||b.conditionGoal<1) return 'La meta debe ser un número entero mayor a 0';
+    return null;
+  }
+  app.get('/admin/achievements', adminAuth, async (_q,res)=>{
+    try{ res.json(await store.getAllAchievementsAdmin()); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/achievements', adminAuth, express.json({limit:ACHIEVEMENT_ICON_LIMIT}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los logros necesitan la base de datos conectada (DATABASE_URL). Sin eso no hay dónde guardarlos.'});
+    const err=validateAchievementBody(req.body); if(err) return res.status(400).json({error:err});
+    try{ res.json(await store.createAchievement(req.body)); }
+    catch(e){ res.status(500).json({error: e.code==='23505' ? 'Ya existe un logro con esa clave (key).' : e.message}); }
+  });
+  app.put('/admin/achievements/:id', adminAuth, express.json({limit:ACHIEVEMENT_ICON_LIMIT}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los logros necesitan la base de datos conectada (DATABASE_URL). Sin eso no hay dónde guardarlos.'});
+    const err=validateAchievementBody(req.body); if(err) return res.status(400).json({error:err});
+    try{
+      const updated=await store.updateAchievement(Number(req.params.id), req.body);
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json(updated);
+    }catch(e){ res.status(500).json({error: e.code==='23505' ? 'Ya existe un logro con esa clave (key).' : e.message}); }
+  });
+  app.delete('/admin/achievements/:id', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los logros necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const ok=await store.deleteAchievement(Number(req.params.id));
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+
   app.post('/admin/save/:file', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const f=DATA_FILES[req.params.file];
     if(!f)return res.status(404).json({error:'not found'});

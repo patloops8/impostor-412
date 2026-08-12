@@ -143,39 +143,41 @@ function registerAuthRoutes(app) {
     const decoded = verifyToken((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
     if (!decoded) return res.status(401).json({ ok: false });
     const stats = await store.getUserStats(decoded.uid);
-    res.json({ ok: true, user: { id: decoded.uid, name: decoded.name, avatar: decoded.avatar, provider: decoded.provider }, stats, achievements: computeAchievements(stats) });
+    const defs = await store.getAchievements();
+    res.json({ ok: true, user: { id: decoded.uid, name: decoded.name, avatar: decoded.avatar, provider: decoded.provider }, stats, achievements: computeAchievements(stats, defs) });
   });
 }
 
 // ---- Logros ----
-// Calculados al vuelo a partir de player_stats (partidas jugadas/ganadas
-// por juego) — nada de tabla nueva ni de "desbloqueado" guardado aparte.
-// Esto tiene una consecuencia a propósito: si algún día cambian los
-// umbrales de un logro, todo el mundo ve el resultado actualizado al
-// toque, no hace falta migrar datos viejos.
+// Las DEFINICIONES viven en la tabla `achievements` (editable desde el
+// panel admin: agregar/borrar/editar, con ícono emoji o imagen propia).
+// Lo que se calcula acá es solo si cada definición está desbloqueada,
+// comparando su condición contra las estadísticas reales del jugador —
+// así un logro nuevo que agregue el admin se evalúa retroactivamente
+// para todo el mundo sin tocar una sola fila de player_stats.
 const GAME_TYPES_LIST = ['impostor', 'mentiroso', 'subasta', 'wavelength', 'who'];
-function computeAchievements(stats) {
-  const byGame = {};
-  stats.forEach(s => { byGame[s.gameType] = s; });
-  const totalPlayed = stats.reduce((s, x) => s + x.gamesPlayed, 0);
-  const totalWon = stats.reduce((s, x) => s + x.gamesWon, 0);
-  const distinctGamesPlayed = GAME_TYPES_LIST.filter(g => (byGame[g]?.gamesPlayed || 0) > 0).length;
-  const wonIn = (g) => byGame[g]?.gamesWon || 0;
-
-  const defs = [
-    { key: 'first_game', icon: '🎉', titleKey: 'achFirstGameTitle', descKey: 'achFirstGameDesc', value: totalPlayed, goal: 1 },
-    { key: 'first_win', icon: '🏆', titleKey: 'achFirstWinTitle', descKey: 'achFirstWinDesc', value: totalWon, goal: 1 },
-    { key: 'frequent', icon: '🔥', titleKey: 'achFrequentTitle', descKey: 'achFrequentDesc', value: totalPlayed, goal: 10 },
-    { key: 'veteran', icon: '💪', titleKey: 'achVeteranTitle', descKey: 'achVeteranDesc', value: totalPlayed, goal: 50 },
-    { key: 'allrounder', icon: '🌟', titleKey: 'achAllrounderTitle', descKey: 'achAllrounderDesc', value: distinctGamesPlayed, goal: 5 },
-    { key: 'master_impostor', icon: '🎭', titleKey: 'achMasterImpostorTitle', descKey: 'achMasterImpostorDesc', value: wonIn('impostor'), goal: 5 },
-    { key: 'master_subasta', icon: '💰', titleKey: 'achMasterSubastaTitle', descKey: 'achMasterSubastaDesc', value: wonIn('subasta'), goal: 5 },
-    { key: 'master_mentiroso', icon: '🎲', titleKey: 'achMasterMentirosoTitle', descKey: 'achMasterMentirosoDesc', value: wonIn('mentiroso'), goal: 5 },
-    { key: 'master_wavelength', icon: '📡', titleKey: 'achMasterWavelengthTitle', descKey: 'achMasterWavelengthDesc', value: wonIn('wavelength'), goal: 5 },
-    { key: 'master_who', icon: '🕵️', titleKey: 'achMasterWhoTitle', descKey: 'achMasterWhoDesc', value: wonIn('who'), goal: 5 },
-    { key: 'legend', icon: '👑', titleKey: 'achLegendTitle', descKey: 'achLegendDesc', value: totalWon, goal: 25 },
-  ];
-  return defs.map(d => ({ ...d, progress: Math.min(d.value, d.goal), unlocked: d.value >= d.goal }));
+function achievementValue(def, stats){
+  const byGame = {}; stats.forEach(s => { byGame[s.gameType] = s; });
+  switch(def.conditionType){
+    case 'total_played': return stats.reduce((s,x)=>s+x.gamesPlayed,0);
+    case 'total_won': return stats.reduce((s,x)=>s+x.gamesWon,0);
+    case 'game_played': return byGame[def.conditionGame]?.gamesPlayed || 0;
+    case 'game_won': return byGame[def.conditionGame]?.gamesWon || 0;
+    case 'distinct_played': return GAME_TYPES_LIST.filter(g=>(byGame[g]?.gamesPlayed||0)>0).length;
+    case 'distinct_won': return GAME_TYPES_LIST.filter(g=>(byGame[g]?.gamesWon||0)>0).length;
+    default: return 0;
+  }
+}
+function computeAchievements(stats, defs) {
+  return defs.map(d => {
+    const value = achievementValue(d, stats);
+    const goal = d.conditionGoal;
+    return {
+      key: d.key, iconEmoji: d.iconEmoji, iconImage: d.iconImage,
+      titleEs: d.titleEs, titleEn: d.titleEn, descEs: d.descEs, descEn: d.descEn,
+      progress: Math.min(value, goal), goal, unlocked: value >= goal,
+    };
+  });
 }
 
 module.exports = { registerAuthRoutes, verifyToken, googleEnabled, discordEnabled, computeAchievements };

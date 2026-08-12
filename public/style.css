@@ -217,7 +217,8 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .achv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .achv-badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px 6px;opacity:0.55;transition:opacity .2s,border-color .2s,box-shadow .2s;}
 .achv-badge.unlocked{opacity:1;border-color:var(--neon);box-shadow:0 0 14px rgba(182,255,46,0.25);}
-.achv-icon{font-size:1.6rem;line-height:1;}
+.achv-icon{font-size:1.6rem;line-height:1;display:flex;align-items:center;justify-content:center;height:1.6rem;}
+.achv-icon-img{width:1.6rem;height:1.6rem;border-radius:6px;object-fit:cover;}
 .achv-title{font-size:0.68rem;font-weight:700;line-height:1.25;}
 .achv-progress-track{width:100%;height:4px;background:var(--line2);border-radius:99px;overflow:hidden;margin-top:2px;}
 .achv-progress-fill{height:100%;background:var(--neon);border-radius:99px;}

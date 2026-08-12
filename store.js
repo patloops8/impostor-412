@@ -79,7 +79,60 @@ async function initStore() {
       games_won INT DEFAULT 0,
       PRIMARY KEY (user_id, game_type)
     )`);
-  console.log('[store] Postgres conectado — feedback, analytics y cuentas persisten entre redeploys.');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS achievements (
+      id SERIAL PRIMARY KEY,
+      key TEXT UNIQUE NOT NULL,
+      icon_emoji TEXT,
+      icon_image TEXT,
+      title_es TEXT NOT NULL,
+      title_en TEXT NOT NULL,
+      desc_es TEXT,
+      desc_en TEXT,
+      condition_type TEXT NOT NULL,
+      condition_game TEXT,
+      condition_goal INT NOT NULL DEFAULT 1,
+      sort_order INT DEFAULT 0,
+      active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )`);
+  await seedDefaultAchievements();
+  console.log('[store] Postgres conectado — feedback, analytics, cuentas y logros persisten entre redeploys.');
+}
+
+/* ---- Logros: semilla inicial (solo si la tabla está vacía) ----
+   condition_type: 'total_played' | 'total_won' | 'game_played' | 'game_won'
+                  | 'distinct_played' | 'distinct_won'
+   condition_game solo aplica a 'game_played'/'game_won'. */
+const DEFAULT_ACHIEVEMENTS = [
+  { key:'first_game', icon_emoji:'🎉', title_es:'Primera partida', title_en:'First game', desc_es:'Juega tu primera partida', desc_en:'Play your first match', condition_type:'total_played', condition_goal:1, sort_order:1 },
+  { key:'first_win', icon_emoji:'🏆', title_es:'Primera victoria', title_en:'First win', desc_es:'Gana tu primera partida', desc_en:'Win your first match', condition_type:'total_won', condition_goal:1, sort_order:2 },
+  { key:'frequent', icon_emoji:'🔥', title_es:'Jugador frecuente', title_en:'Regular player', desc_es:'Juega 10 partidas en total', desc_en:'Play 10 matches total', condition_type:'total_played', condition_goal:10, sort_order:3 },
+  { key:'veteran', icon_emoji:'💪', title_es:'Veterano', title_en:'Veteran', desc_es:'Juega 50 partidas en total', desc_en:'Play 50 matches total', condition_type:'total_played', condition_goal:50, sort_order:4 },
+  { key:'tireless', icon_emoji:'🎖️', title_es:'Incansable', title_en:'Tireless', desc_es:'Juega 100 partidas en total', desc_en:'Play 100 matches total', condition_type:'total_played', condition_goal:100, sort_order:5 },
+  { key:'allrounder', icon_emoji:'🌟', title_es:'Todoterreno', title_en:'All-rounder', desc_es:'Juega los 5 juegos al menos una vez', desc_en:'Play all 5 games at least once', condition_type:'distinct_played', condition_goal:5, sort_order:6 },
+  { key:'triple_crown', icon_emoji:'🥉', title_es:'Triple corona', title_en:'Triple crown', desc_es:'Gana al menos una partida en 3 juegos distintos', desc_en:'Win at least one match in 3 different games', condition_type:'distinct_won', condition_goal:3, sort_order:7 },
+  { key:'grand_champion', icon_emoji:'🏅', title_es:'Campeón absoluto', title_en:'Grand champion', desc_es:'Gana al menos una partida en los 5 juegos', desc_en:'Win at least one match in all 5 games', condition_type:'distinct_won', condition_goal:5, sort_order:8 },
+  { key:'master_impostor', icon_emoji:'🎭', title_es:'Maestro del Impostor', title_en:'Impostor Master', desc_es:'Gana 5 partidas de El Impostor', desc_en:'Win 5 matches of The Impostor', condition_type:'game_won', condition_game:'impostor', condition_goal:5, sort_order:9 },
+  { key:'master_subasta', icon_emoji:'💰', title_es:'Rey de la Subasta', title_en:'Auction King', desc_es:'Gana 5 partidas de Subasta Futbolera', desc_en:'Win 5 matches of Football Auction', condition_type:'game_won', condition_game:'subasta', condition_goal:5, sort_order:10 },
+  { key:'master_mentiroso', icon_emoji:'🎲', title_es:'Mentiroso Profesional', title_en:'Professional Liar', desc_es:'Gana 5 partidas de Mentiroso Futbolero', desc_en:'Win 5 matches of Football Liar', condition_type:'game_won', condition_game:'mentiroso', condition_goal:5, sort_order:11 },
+  { key:'master_wavelength', icon_emoji:'📡', title_es:'Sintonía Perfecta', title_en:'Perfect Tuning', desc_es:'Gana 5 partidas de La Frecuencia', desc_en:'Win 5 matches of Wavelength', condition_type:'game_won', condition_game:'wavelength', condition_goal:5, sort_order:12 },
+  { key:'master_who', icon_emoji:'🕵️', title_es:'Detective', title_en:'Detective', desc_es:'Gana 5 partidas de ¿Quién Soy?', desc_en:'Win 5 matches of Who Am I?', condition_type:'game_won', condition_game:'who', condition_goal:5, sort_order:13 },
+  { key:'impostor_elite', icon_emoji:'🎩', title_es:'Impostor de élite', title_en:'Elite Impostor', desc_es:'Gana 15 partidas de El Impostor', desc_en:'Win 15 matches of The Impostor', condition_type:'game_won', condition_game:'impostor', condition_goal:15, sort_order:14 },
+  { key:'subasta_magnate', icon_emoji:'💎', title_es:'Magnate', title_en:'Magnate', desc_es:'Gana 15 partidas de Subasta Futbolera', desc_en:'Win 15 matches of Football Auction', condition_type:'game_won', condition_game:'subasta', condition_goal:15, sort_order:15 },
+  { key:'legend', icon_emoji:'👑', title_es:'Leyenda', title_en:'Legend', desc_es:'Gana 25 partidas en total', desc_en:'Win 25 matches total', condition_type:'total_won', condition_goal:25, sort_order:16 },
+  { key:'immortal', icon_emoji:'🌌', title_es:'Inmortal', title_en:'Immortal', desc_es:'Gana 100 partidas en total', desc_en:'Win 100 matches total', condition_type:'total_won', condition_goal:100, sort_order:17 },
+];
+async function seedDefaultAchievements() {
+  const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM achievements`);
+  if (rows[0].n > 0) return; // ya hay logros (por defecto o editados por el admin): no tocar
+  for (const a of DEFAULT_ACHIEVEMENTS) {
+    await pool.query(
+      `INSERT INTO achievements (key,icon_emoji,title_es,title_en,desc_es,desc_en,condition_type,condition_game,condition_goal,sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [a.key, a.icon_emoji, a.title_es, a.title_en, a.desc_es, a.desc_en, a.condition_type, a.condition_game || null, a.condition_goal, a.sort_order]
+    );
+  }
 }
 
 /* ---- Feedback ---- */
@@ -198,8 +251,46 @@ async function getUserStats(userId) {
   return r.rows;
 }
 
+/* ---- Logros: CRUD para el panel admin + lectura pública ---- */
+const ACHIEVEMENT_COLUMNS = `id, key, icon_emoji as "iconEmoji", icon_image as "iconImage", title_es as "titleEs", title_en as "titleEn", desc_es as "descEs", desc_en as "descEn", condition_type as "conditionType", condition_game as "conditionGame", condition_goal as "conditionGoal", sort_order as "sortOrder", active`;
+async function getAchievements() {
+  if (!pool) return [];
+  const r = await pool.query(`SELECT ${ACHIEVEMENT_COLUMNS} FROM achievements WHERE active=TRUE ORDER BY sort_order ASC, id ASC`);
+  return r.rows;
+}
+async function getAllAchievementsAdmin() {
+  if (!pool) return [];
+  const r = await pool.query(`SELECT ${ACHIEVEMENT_COLUMNS} FROM achievements ORDER BY sort_order ASC, id ASC`);
+  return r.rows;
+}
+async function createAchievement(a) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `INSERT INTO achievements (key,icon_emoji,icon_image,title_es,title_en,desc_es,desc_en,condition_type,condition_game,condition_goal,sort_order,active)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING ${ACHIEVEMENT_COLUMNS}`,
+    [a.key, a.iconEmoji || null, a.iconImage || null, a.titleEs, a.titleEn, a.descEs || null, a.descEn || null, a.conditionType, a.conditionGame || null, a.conditionGoal, a.sortOrder || 0, a.active !== false]
+  );
+  return r.rows[0];
+}
+async function updateAchievement(id, a) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `UPDATE achievements SET key=$1,icon_emoji=$2,icon_image=$3,title_es=$4,title_en=$5,desc_es=$6,desc_en=$7,
+       condition_type=$8,condition_game=$9,condition_goal=$10,sort_order=$11,active=$12
+     WHERE id=$13 RETURNING ${ACHIEVEMENT_COLUMNS}`,
+    [a.key, a.iconEmoji || null, a.iconImage || null, a.titleEs, a.titleEn, a.descEs || null, a.descEn || null, a.conditionType, a.conditionGame || null, a.conditionGoal, a.sortOrder || 0, a.active !== false, id]
+  );
+  return r.rows[0] || null;
+}
+async function deleteAchievement(id) {
+  if (!pool) return false;
+  const r = await pool.query(`DELETE FROM achievements WHERE id=$1`, [id]);
+  return r.rowCount > 0;
+}
+
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics,
   upsertUser, getUserById, recordGameResult, getUserStats,
+  getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

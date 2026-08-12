@@ -298,12 +298,18 @@ function renderStats(){
   const achvHtml = `
     <h3 class="stats-section-title">${esc(t('achievementsTitle'))} <span class="stats-section-sub">${esc(t('achievementsUnlockedOf',{n:unlockedCount,total:achievements.length}))}</span></h3>
     <div class="achv-grid">
-      ${achievements.map(a=>`
-        <div class="achv-badge${a.unlocked?' unlocked':''}" title="${esc(t(a.descKey))}">
-          <div class="achv-icon">${a.unlocked?a.icon:'🔒'}</div>
-          <div class="achv-title">${esc(t(a.titleKey))}</div>
+      ${achievements.map(a=>{
+        const title = (currentLang==='en' ? a.titleEn : a.titleEs) || a.titleEs || a.titleEn || '';
+        const desc = (currentLang==='en' ? a.descEn : a.descEs) || a.descEs || a.descEn || '';
+        const iconHtml = a.unlocked
+          ? (a.iconImage ? `<img src="${esc(a.iconImage)}" alt="" class="achv-icon-img"/>` : esc(a.iconEmoji||'🏆'))
+          : '🔒';
+        return `
+        <div class="achv-badge${a.unlocked?' unlocked':''}" title="${esc(desc)}">
+          <div class="achv-icon">${iconHtml}</div>
+          <div class="achv-title">${esc(title)}</div>
           ${!a.unlocked?`<div class="achv-progress-track"><div class="achv-progress-fill" style="width:${Math.round(a.progress/a.goal*100)}%"></div></div><div class="achv-progress-label">${a.progress}/${a.goal}</div>`:''}
-        </div>`).join('')}
+        </div>`;}).join('')}
     </div>`;
 
   const byGameHtml = stats.length ? `
