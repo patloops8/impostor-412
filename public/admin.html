@@ -595,7 +595,7 @@
 <div class="panel" id="panel-users">
   <div class="panel-header">
     <h2>👤 Usuarios</h2>
-    <p>Cuentas logueadas con Google o Discord. Borrar una cuenta borra también sus estadísticas, logros e historial (no se puede deshacer).</p>
+    <p>Cuentas logueadas con Google o Discord. "Nombre" y "Foto" moderan un perfil inapropiado sin tocar sus estadísticas — el jugador conserva su cuenta y puede volver a personalizarse. Borrar la cuenta sí es definitivo: se pierden estadísticas, logros e historial (el jugador puede volver a loguearse cuando quiera, pero empieza de cero).</p>
   </div>
   <div class="filter-row">
     <input type="text" id="search-users" placeholder="Buscar por nombre…">
@@ -2243,7 +2243,11 @@ function renderUsers(){
           <div style="font-weight:700">${esc(u.displayName||u.name)} ${u.displayName?`<span style="color:var(--soft);font-weight:400;font-size:12px">(${esc(u.name)})</span>`:''}</div>
           <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas</div>
         </div>
-        <button class="btn-export" data-del-user="${u.id}" style="color:var(--red);flex-shrink:0">🗑 Borrar</button>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-export" data-reset-name="${u.id}" title="Reemplaza el nombre por uno genérico (UserNNNN)">🔤 Nombre</button>
+          <button class="btn-export" data-clear-avatar="${u.id}" ${u.avatarImage?'':'disabled style="opacity:0.4;"'} title="Saca la foto de perfil personalizada">🖼 Foto</button>
+          <button class="btn-export" data-del-user="${u.id}" style="color:var(--red);">🗑 Borrar</button>
+        </div>
       </div>`;
   }).join('');
 }
@@ -2253,17 +2257,47 @@ document.getElementById('search-users').addEventListener('input', e=>{
   window._usersSearchTimer = setTimeout(loadUsers, 300);
 });
 document.getElementById('list-users').addEventListener('click', async e=>{
-  const btn = e.target.closest('[data-del-user]'); if(!btn) return;
-  const id = Number(btn.dataset.delUser);
-  const u = _usersItems.find(x=>x.id===id);
-  if(!confirm(`¿Borrar la cuenta de "${u?.displayName||u?.name}"? Se pierden sus estadísticas, logros e historial. No se puede deshacer.`)) return;
-  try{
-    const r = await fetch('/admin/users/'+id, {method:'DELETE', headers:_authHeaders()});
-    const data = await r.json();
-    if(!r.ok || !data.ok) throw new Error(data.error||'error');
-    toast('✓ Usuario borrado','ok');
-    loadUsers();
-  }catch(e){ toast('Error: '+e.message,'err'); }
+  const delBtn = e.target.closest('[data-del-user]');
+  const nameBtn = e.target.closest('[data-reset-name]');
+  const avatarBtn = e.target.closest('[data-clear-avatar]');
+  if(delBtn){
+    const id = Number(delBtn.dataset.delUser);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Borrar la cuenta de "${u?.displayName||u?.name}"? Se pierden sus estadísticas, logros e historial. No se puede deshacer.`)) return;
+    try{
+      const r = await fetch('/admin/users/'+id, {method:'DELETE', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Usuario borrado','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(nameBtn){
+    const id = Number(nameBtn.dataset.resetName);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Reemplazar el nombre de "${u?.displayName||u?.name}" por uno genérico (ej: User1234)? El jugador puede volver a personalizarlo después.`)) return;
+    try{
+      const r = await fetch(`/admin/users/${id}/reset-name`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast(`✓ Nombre reemplazado por "${data.user.displayName}"`,'ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(avatarBtn){
+    const id = Number(avatarBtn.dataset.clearAvatar);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Quitar la foto de perfil personalizada de "${u?.displayName||u?.name}"? Vuelve al avatar por defecto.`)) return;
+    try{
+      const r = await fetch(`/admin/users/${id}/clear-avatar`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Foto de perfil quitada','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+  }
 });
 
 // ============================================================

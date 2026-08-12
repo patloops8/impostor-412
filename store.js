@@ -377,6 +377,31 @@ async function deleteUser(id) {
   const r = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
   return r.rowCount > 0;
 }
+// Moderación: le pone un nombre genérico ("User1234"), tanto si lo
+// inapropiado era el nombre personalizado como el original de la cuenta
+// OAuth (display_name manda sobre name, así que esto lo tapa para siempre,
+// sin depender de qué mandó el proveedor). Solo toca display_name, la
+// foto de perfil queda como estaba.
+async function adminResetUserName(id) {
+  if (!pool) return null;
+  const randomName = 'User' + Math.floor(1000 + Math.random() * 9000);
+  const r = await pool.query(
+    `UPDATE users SET display_name=$1 WHERE id=$2 RETURNING ${USER_COLUMNS}`,
+    [randomName, id]
+  );
+  return r.rows[0] || null;
+}
+// Moderación: saca la foto personalizada y vuelve al avatar por defecto
+// (iniciales) o a la foto original de Google/Discord si el jugador nunca
+// subió una propia. Solo toca avatar_image, el nombre queda como estaba.
+async function adminClearUserAvatar(id) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `UPDATE users SET avatar_image=NULL WHERE id=$1 RETURNING ${USER_COLUMNS}`,
+    [id]
+  );
+  return r.rows[0] || null;
+}
 
 /* ---- Logros: CRUD para el panel admin + lectura pública ---- */
 const ACHIEVEMENT_COLUMNS = `id, key, icon_emoji as "iconEmoji", icon_image as "iconImage", title_es as "titleEs", title_en as "titleEn", desc_es as "descEs", desc_en as "descEn", condition_type as "conditionType", condition_game as "conditionGame", condition_goal as "conditionGoal", sort_order as "sortOrder", active`;
@@ -418,7 +443,7 @@ async function deleteAchievement(id) {
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics, resetAnalytics,
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
-  addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser,
+  addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

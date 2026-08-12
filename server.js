@@ -1816,6 +1816,24 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
       res.json({ok:true});
     }catch(e){ res.status(500).json({error:e.message}); }
   });
+  // Moderación de perfil: le pone un nombre genérico ("UserNNNN") o le
+  // saca la foto personalizada, sin borrar la cuenta ni sus estadísticas.
+  app.post('/admin/users/:id/reset-name', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const updated=await store.adminResetUserName(Number(req.params.id));
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/users/:id/clear-avatar', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const updated=await store.adminClearUserAvatar(Number(req.params.id));
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
 
   app.post('/admin/save/:file', adminAuth, express.json({limit:'200kb'}), (req,res)=>{
     const f=DATA_FILES[req.params.file];
