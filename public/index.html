@@ -119,14 +119,18 @@
           <span data-i18n="loginDiscord">Iniciar sesión con Discord</span>
         </button>
       </div>
-      <div id="auth-logged-in" class="hidden" style="display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <img id="auth-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />
-        <span id="auth-name" style="font-weight:700;"></span>
-        <button class="link-btn" id="btn-my-stats" data-i18n="myStats">Mis estadísticas</button>
-        <button class="link-btn" id="btn-auth-logout" data-i18n="logout">Cerrar sesión</button>
+      <div id="auth-logged-in" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img id="auth-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />
+          <span id="auth-name" style="font-weight:700;"></span>
+        </div>
+        <div class="chip-btn-row">
+          <button class="chip-btn" id="btn-my-stats" data-i18n="myStats">Mis estadísticas</button>
+          <button class="chip-btn chip-danger" id="btn-auth-logout" data-i18n="logout">Cerrar sesión</button>
+        </div>
       </div>
-      <div style="text-align:center;margin-top:6px;">
-        <button class="link-btn" id="btn-leaderboard" data-i18n="leaderboardBtn">🏅 Tabla de posiciones</button>
+      <div class="chip-btn-row" style="margin-top:10px;">
+        <button class="chip-btn" id="btn-leaderboard" data-i18n="leaderboardBtn">🏅 Tabla de posiciones</button>
       </div>
     </div>
 
@@ -139,12 +143,16 @@
     <p class="eyebrow" data-i18n="shareCode">Comparte este código</p>
     <div class="code-display" id="lobby-code">----</div>
     <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;" data-i18n="shareCode">📋 Copiar / compartir código</button>
-    <button class="link-btn" id="btn-toggle-qr" style="display:block;margin:8px auto 0;" data-i18n="showQr">📱 Mostrar código QR</button>
+    <div class="chip-btn-row" style="margin-top:8px;">
+      <button class="chip-btn" id="btn-toggle-qr" data-i18n="showQr">📱 Mostrar código QR</button>
+    </div>
     <div id="qr-box" class="hidden qr-box">
       <img id="qr-img" src="" alt="QR para unirse" width="180" height="180" />
       <p data-i18n="scanToJoin">Escanea para unirte</p>
     </div>
-    <button class="link-btn" id="btn-leave-room" style="display:block;margin:8px auto 0;" data-i18n="leaveRoom">Salir de esta sala</button>
+    <div class="chip-btn-row" style="margin-top:8px;">
+      <button class="chip-btn chip-danger" id="btn-leave-room" data-i18n="leaveRoom">Salir de esta sala</button>
+    </div>
 
     <div class="divider"></div>
     <div class="between lobby-players-head">

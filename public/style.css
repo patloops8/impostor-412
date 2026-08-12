@@ -290,6 +290,11 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .category-chip input{accent-color:var(--neon);}
 .category-chip.checked{border-color:var(--neon);color:var(--neon);background:rgba(182,255,46,0.08);}
 .link-btn{background:none;border:none;color:var(--ink-soft);font-family:var(--body);font-size:0.82rem;text-decoration:underline;padding:4px;font-weight:600;}
+.chip-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--bg2);border:1px solid var(--line2);border-radius:999px;color:var(--ink-soft);font-family:var(--body);font-size:0.82rem;font-weight:700;padding:9px 16px;cursor:pointer;transition:border-color .15s,color .15s,background .15s,box-shadow .15s;}
+.chip-btn:hover{border-color:var(--neon-dim);color:var(--neon);background:rgba(182,255,46,0.08);}
+.chip-btn.chip-danger{color:var(--red);border-color:rgba(255,77,77,0.35);background:rgba(255,77,77,0.06);}
+.chip-btn.chip-danger:hover{border-color:var(--red);color:var(--red);background:rgba(255,77,77,0.14);box-shadow:0 0 14px rgba(255,77,77,0.18);}
+.chip-btn-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
 
 .donate-link{display:inline-flex;align-items:center;gap:6px;margin:18px auto 0;color:var(--ink-soft);font-family:var(--body);font-size:0.85rem;font-weight:600;text-decoration:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line2);transition:border-color .15s,color .15s,background .15s;}
 .donate-link:hover{color:var(--neon);border-color:var(--neon-dim);background:rgba(182,255,46,0.06);}
