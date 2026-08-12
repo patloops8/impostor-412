@@ -143,8 +143,39 @@ function registerAuthRoutes(app) {
     const decoded = verifyToken((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
     if (!decoded) return res.status(401).json({ ok: false });
     const stats = await store.getUserStats(decoded.uid);
-    res.json({ ok: true, user: { id: decoded.uid, name: decoded.name, avatar: decoded.avatar, provider: decoded.provider }, stats });
+    res.json({ ok: true, user: { id: decoded.uid, name: decoded.name, avatar: decoded.avatar, provider: decoded.provider }, stats, achievements: computeAchievements(stats) });
   });
 }
 
-module.exports = { registerAuthRoutes, verifyToken, googleEnabled, discordEnabled };
+// ---- Logros ----
+// Calculados al vuelo a partir de player_stats (partidas jugadas/ganadas
+// por juego) — nada de tabla nueva ni de "desbloqueado" guardado aparte.
+// Esto tiene una consecuencia a propósito: si algún día cambian los
+// umbrales de un logro, todo el mundo ve el resultado actualizado al
+// toque, no hace falta migrar datos viejos.
+const GAME_TYPES_LIST = ['impostor', 'mentiroso', 'subasta', 'wavelength', 'who'];
+function computeAchievements(stats) {
+  const byGame = {};
+  stats.forEach(s => { byGame[s.gameType] = s; });
+  const totalPlayed = stats.reduce((s, x) => s + x.gamesPlayed, 0);
+  const totalWon = stats.reduce((s, x) => s + x.gamesWon, 0);
+  const distinctGamesPlayed = GAME_TYPES_LIST.filter(g => (byGame[g]?.gamesPlayed || 0) > 0).length;
+  const wonIn = (g) => byGame[g]?.gamesWon || 0;
+
+  const defs = [
+    { key: 'first_game', icon: '🎉', titleKey: 'achFirstGameTitle', descKey: 'achFirstGameDesc', value: totalPlayed, goal: 1 },
+    { key: 'first_win', icon: '🏆', titleKey: 'achFirstWinTitle', descKey: 'achFirstWinDesc', value: totalWon, goal: 1 },
+    { key: 'frequent', icon: '🔥', titleKey: 'achFrequentTitle', descKey: 'achFrequentDesc', value: totalPlayed, goal: 10 },
+    { key: 'veteran', icon: '💪', titleKey: 'achVeteranTitle', descKey: 'achVeteranDesc', value: totalPlayed, goal: 50 },
+    { key: 'allrounder', icon: '🌟', titleKey: 'achAllrounderTitle', descKey: 'achAllrounderDesc', value: distinctGamesPlayed, goal: 5 },
+    { key: 'master_impostor', icon: '🎭', titleKey: 'achMasterImpostorTitle', descKey: 'achMasterImpostorDesc', value: wonIn('impostor'), goal: 5 },
+    { key: 'master_subasta', icon: '💰', titleKey: 'achMasterSubastaTitle', descKey: 'achMasterSubastaDesc', value: wonIn('subasta'), goal: 5 },
+    { key: 'master_mentiroso', icon: '🎲', titleKey: 'achMasterMentirosoTitle', descKey: 'achMasterMentirosoDesc', value: wonIn('mentiroso'), goal: 5 },
+    { key: 'master_wavelength', icon: '📡', titleKey: 'achMasterWavelengthTitle', descKey: 'achMasterWavelengthDesc', value: wonIn('wavelength'), goal: 5 },
+    { key: 'master_who', icon: '🕵️', titleKey: 'achMasterWhoTitle', descKey: 'achMasterWhoDesc', value: wonIn('who'), goal: 5 },
+    { key: 'legend', icon: '👑', titleKey: 'achLegendTitle', descKey: 'achLegendDesc', value: totalWon, goal: 25 },
+  ];
+  return defs.map(d => ({ ...d, progress: Math.min(d.value, d.goal), unlocked: d.value >= d.goal }));
+}
+
+module.exports = { registerAuthRoutes, verifyToken, googleEnabled, discordEnabled, computeAchievements };

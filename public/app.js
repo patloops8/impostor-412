@@ -278,6 +278,50 @@ function renderAuthUI(){
 $('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/google/start'; });
 $('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
 $('btn-auth-logout').addEventListener('click', ()=>{ setAuthToken(null); authUser=null; renderAuthUI(); });
+const GAME_COLORS = {impostor:'#8b54e0', mentiroso:'#ff4d4d', subasta:'#e9b949', wavelength:'#22d3ee', who:'#2563eb'};
+let _lastStatsData = null;
+function renderStats(){
+  if(!_lastStatsData) return;
+  const {stats, achievements} = _lastStatsData;
+  const totalPlayed = stats.reduce((s,x)=>s+x.gamesPlayed,0);
+  const totalWon = stats.reduce((s,x)=>s+x.gamesWon,0);
+  const winRate = totalPlayed ? Math.round(totalWon/totalPlayed*100) : 0;
+  const unlockedCount = achievements.filter(a=>a.unlocked).length;
+
+  const headerHtml = `
+    <div class="stats-summary">
+      <div class="stats-summary-stat"><div class="stats-summary-num">${totalPlayed}</div><div class="stats-summary-lbl">${esc(t('statsGamesPlayed'))}</div></div>
+      <div class="stats-summary-stat"><div class="stats-summary-num">${totalWon}</div><div class="stats-summary-lbl">${esc(t('statsGamesWon'))}</div></div>
+      <div class="stats-summary-stat"><div class="stats-summary-num">${winRate}%</div><div class="stats-summary-lbl">${esc(t('statsWinRate'))}</div></div>
+    </div>`;
+
+  const achvHtml = `
+    <h3 class="stats-section-title">${esc(t('achievementsTitle'))} <span class="stats-section-sub">${esc(t('achievementsUnlockedOf',{n:unlockedCount,total:achievements.length}))}</span></h3>
+    <div class="achv-grid">
+      ${achievements.map(a=>`
+        <div class="achv-badge${a.unlocked?' unlocked':''}" title="${esc(t(a.descKey))}">
+          <div class="achv-icon">${a.unlocked?a.icon:'🔒'}</div>
+          <div class="achv-title">${esc(t(a.titleKey))}</div>
+          ${!a.unlocked?`<div class="achv-progress-track"><div class="achv-progress-fill" style="width:${Math.round(a.progress/a.goal*100)}%"></div></div><div class="achv-progress-label">${a.progress}/${a.goal}</div>`:''}
+        </div>`).join('')}
+    </div>`;
+
+  const byGameHtml = stats.length ? `
+    <h3 class="stats-section-title">${esc(t('byGameTitle'))}</h3>
+    <div class="stats-game-list">
+      ${stats.map(s=>{
+        const color = GAME_COLORS[s.gameType]||'var(--neon)';
+        const pct = s.gamesPlayed ? Math.round(s.gamesWon/s.gamesPlayed*100) : 0;
+        return `
+        <div class="stats-game-card" style="border-left-color:${color}">
+          <div class="stats-game-head"><span>${esc(t(GAME_TITLE_KEYS[s.gameType]||s.gameType))}</span><span style="color:${color};font-weight:700;">${s.gamesWon}/${s.gamesPlayed}</span></div>
+          <div class="stats-game-bar-track"><div class="stats-game-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>` : `<p style="color:var(--text-dim);text-align:center;">${esc(t('statsEmpty'))}</p>`;
+
+  $('stats-body').innerHTML = headerHtml + achvHtml + byGameHtml;
+}
 $('btn-my-stats').addEventListener('click', async ()=>{
   const tok=getAuthToken();
   $('stats-body').innerHTML = `<p style="color:var(--text-dim)">${esc(t('loading'))}</p>`;
@@ -286,14 +330,11 @@ $('btn-my-stats').addEventListener('click', async ()=>{
     const res = await fetch('/auth/me', { headers:{ Authorization:'Bearer '+tok } });
     const json = await res.json();
     if(!json.ok){ $('stats-body').innerHTML=`<p>${esc(t('statsError'))}</p>`; return; }
-    if(!json.stats.length){ $('stats-body').innerHTML=`<p style="color:var(--text-dim)">${esc(t('statsEmpty'))}</p>`; return; }
-    $('stats-body').innerHTML = json.stats.map(s=>`
-      <div class="config-row" style="justify-content:space-between;">
-        <span>${esc(t(GAME_TITLE_KEYS[s.gameType]||s.gameType))}</span>
-        <span style="color:var(--neon);font-weight:700;">${s.gamesWon}/${s.gamesPlayed} ${esc(t('statsWon'))}</span>
-      </div>`).join('');
+    _lastStatsData = json;
+    renderStats();
   }catch(e){ $('stats-body').innerHTML=`<p>${esc(t('statsError'))}</p>`; }
 });
+document.addEventListener('langchange', ()=>{ if(!$('stats-overlay').classList.contains('hidden')) renderStats(); });
 $('btn-stats-close').addEventListener('click',()=>$('stats-overlay').classList.add('hidden'));
 $('stats-overlay').addEventListener('click', e=>{ if(e.target===$('stats-overlay'))$('stats-overlay').classList.add('hidden'); });
 
