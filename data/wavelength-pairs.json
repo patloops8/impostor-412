@@ -1,334 +1,85 @@
 [
-  {
-    "left": "Club grande",
-    "right": "Club chico"
-  },
-  {
-    "left": "Jugador que juega limpio",
-    "right": "Jugador tramposo"
-  },
-  {
-    "left": "Gol de mucha suerte",
-    "right": "Golazo de crack"
-  },
-  {
-    "left": "DT tranquilo en la banca",
-    "right": "DT que explota en cada jugada"
-  },
-  {
-    "left": "Hincha fanático de toda la vida",
-    "right": "Hincha de \"cuando gana no más\""
-  },
-  {
-    "left": "Fichaje que valió la pena",
-    "right": "Fichaje que fue un fracaso total"
-  },
-  {
-    "left": "Jugador que rinde en la selección",
-    "right": "Jugador que solo rinde en su club"
-  },
-  {
-    "left": "Árbitro que deja jugar",
-    "right": "Árbitro que para todo"
-  },
-  {
-    "left": "Equipo que juega bonito",
-    "right": "Equipo que juega feo pero gana"
-  },
-  {
-    "left": "Jugador humilde",
-    "right": "Jugador con el ego gigante"
-  },
-  {
-    "left": "Estadio con un ambiente increíble",
-    "right": "Estadio sin nada de gente"
-  },
-  {
-    "left": "Camiseta hermosa",
-    "right": "Camiseta espantosa"
-  },
-  {
-    "left": "Festejo de gol elegante",
-    "right": "Festejo de gol ridículo"
-  },
-  {
-    "left": "Jugador que se cuida en la cancha",
-    "right": "Jugador que entra a matar"
-  },
-  {
-    "left": "Relato apasionado",
-    "right": "Relato aburrido"
-  },
-  {
-    "left": "Táctica ofensiva a muerte",
-    "right": "Táctica ultra defensiva"
-  },
-  {
-    "left": "Comentarista objetivo",
-    "right": "Comentarista fanático de un equipo"
-  },
-  {
-    "left": "Penal clarísimo",
-    "right": "Penal inventado"
-  },
-  {
-    "left": "Jugador que rinde a los 38 años",
-    "right": "Jugador que se retira joven"
-  },
-  {
-    "left": "Transferencia limpia y rápida",
-    "right": "Transferencia con culebrón de meses"
-  },
-  {
-    "left": "DT que arriesga",
-    "right": "DT que juega a no perder"
-  },
-  {
-    "left": "Rival histórico de toda la vida",
-    "right": "Rival de ocasión sin historia"
-  },
-  {
-    "left": "Jugador de barrio, hecho a pulso",
-    "right": "Jugador de cantera de club grande"
-  },
-  {
-    "left": "Gol en el descuento",
-    "right": "Gol en el primer minuto"
-  },
-  {
-    "left": "Capitán que lidera con el ejemplo",
-    "right": "Capitán solo por el brazalete"
-  },
-  {
-    "left": "Fútbol femenino de gran nivel",
-    "right": "Fútbol femenino que recién arranca"
-  },
-  {
-    "left": "Selección con identidad de juego",
-    "right": "Selección sin ninguna idea de juego"
-  },
-  {
-    "left": "Torneo con historia y prestigio",
-    "right": "Torneo inventado sin arraigo"
-  },
-  {
-    "left": "Jugador que rinde en cualquier puesto",
-    "right": "Jugador que solo sirve en un puesto"
-  },
-  {
-    "left": "Portero seguro",
-    "right": "Portero que regala goles"
-  },
-  {
-    "left": "Lateral que ataca todo el partido",
-    "right": "Lateral que solo defiende"
-  },
-  {
-    "left": "Delantero goleador nato",
-    "right": "Delantero que la trabaja mucho y no la mete"
-  },
-  {
-    "left": "Prensa deportiva seria",
-    "right": "Prensa deportiva puro circo"
-  },
-  {
-    "left": "Hinchada organizada y ruidosa",
-    "right": "Hinchada tranquila y familiar"
-  },
-  {
-    "left": "Fútbol de potrero, callejero",
-    "right": "Fútbol de academia, de formación"
-  },
-  {
-    "left": "Jugador mediático, todo redes",
-    "right": "Jugador reservado, bajo perfil"
-  },
-  {
-    "left": "Clásico con historia centenaria",
-    "right": "Clásico \"inventado\" por el marketing"
-  },
-  {
-    "left": "Liga competitiva y pareja",
-    "right": "Liga con un equipo que gana siempre"
-  },
-  {
-    "left": "DT con gran carrera como jugador",
-    "right": "DT que nunca jugó profesional"
-  },
-  {
-    "left": "Jugador criado y fiel al club",
-    "right": "Jugador mercenario que solo busca el cheque"
-  },
-  {
-    "left": "Estilo de juego vistoso, de área a área",
-    "right": "Estilo de juego especulativo, de resultado"
-  },
-  {
-    "left": "Hinchada que apoya en las malas",
-    "right": "Hinchada que abandona cuando pierde"
-  },
-  {
-    "left": "VAR bien usado",
-    "right": "VAR que arruina el espectáculo"
-  },
-  {
-    "left": "Jugador veterano con experiencia",
-    "right": "Jugador joven promesa sin rodaje"
-  },
-  {
-    "left": "Club con historia de títulos",
-    "right": "Club \"grande\" sin nada ganado"
-  },
-  {
-    "left": "Festejo de gol discreto, con respeto",
-    "right": "Festejo explosivo y provocador"
-  },
-  {
-    "left": "DT que confía en la cantera",
-    "right": "DT que solo ficha caro de afuera"
-  },
-  {
-    "left": "Jugador que rinde en la altura",
-    "right": "Jugador que se ahoga en la altura"
-  },
-  {
-    "left": "Cancha de pasto impecable",
-    "right": "Cancha en muy mal estado"
-  },
-  {
-    "left": "Fútbol de selecciones (Mundial)",
-    "right": "Fútbol de clubes (Champions)"
-  },
-  {
-    "left": "Frase que diria Messi",
-    "right": "Frase que diria Cr7"
-  },
-  {
-    "left": "Jugador disiplinado",
-    "right": "Jugador fiestero"
-  },
-  {
-    "left": "Jugador guapo",
-    "right": "Jugador feo"
-  },
-  {
-    "left": "Jugador amado",
-    "right": "Jugador odiado"
-  },
-  {
-    "left": "Gol imposible de replicar",
-    "right": "Gol normal"
-  },
-  {
-    "left": "Trofeo sin mucha importancia",
-    "right": "Trofeo muy importante"
-  },
-  {
-    "left": "Record imposible de superar",
-    "right": "Record superable"
-  },
-  {
-    "left": "Equipo que merecia ganar alguna competicion",
-    "right": "Equipo que no se merecia ganar alguna copetición"
-  },
-  {
-    "left": "Joven promesa que prometia y cumplio",
-    "right": "Joven promesa que prometia y no cumplio"
-  },
-  {
-    "left": "Gran Mundial",
-    "right": "Mundial Normalito "
-  },
-  {
-    "left": "Buena final de Champions",
-    "right": "Mala final de Champions"
-  },
-  {
-    "left": "Jugador en gran momento",
-    "right": "Jugador en mal momento"
-  },
-  {
-    "left": "Buen equipo en la actulidad",
-    "right": "Mal equipo en la actualidad"
-  },
-  {
-    "left": "Buena seleccion en la actulidad",
-    "right": "Mala seleccion en la actulidad"
-  },
-  {
-    "left": "Jugador Calvo",
-    "right": "Jugador con mucho pelo"
-  },
-  {
-    "left": "Jugador Rapido",
-    "right": "Jugador Lento"
-  },
-  {
-    "left": "Jugador Sobrevalorado",
-    "right": "Jugador Infravalorado"
-  },
-  {
-    "left": "Buen DT en la actualidad",
-    "right": "Mal DT en la actualidad"
-  },
-  {
-    "left": "Buen clima para jugar futbol",
-    "right": "Mal clima para jugar futbol"
-  },
-  {
-    "left": "Opinion que todo el mundo cree, pero es mentira",
-    "right": "Opinion que casi nadie cree, pero es verdad"
-  },
-  {
-    "left": "Festejo con Aura",
-    "right": "Festejo Ridiculo"
-  },
-  {
-    "left": "Equipo grande en la Premier",
-    "right": "Equipo chico en la Premier"
-  },
-  {
-    "left": "Buen jugador en Champions",
-    "right": "Mal jugador en Champions"
-  },
-  {
-    "left": "Jugador determinante",
-    "right": "Jugador pecho frio"
-  },
-  {
-    "left": "Buen equipo de mundial",
-    "right": "Mal equipo de mundial"
-  },
-  {
-    "left": "Buen Clasico",
-    "right": "Clasico Irrelevante"
-  },
-  {
-    "left": "Buen rematador de cabeza",
-    "right": "Mal rematador de cabeza"
-  },
-  {
-    "left": "Solo usa una pierna",
-    "right": "Ambidiestro"
-  },
-  {
-    "left": "Empezo siendo un meme y sobresalio",
-    "right": "Empezo siendo bueno y termino siendo un meme"
-  },
-  {
-    "left": "Frase que diria Mourinho",
-    "right": "Frase que dirira Pep Guardiola"
-  },
-  {
-    "left": "Jugador fiel a un equipo",
-    "right": "Jugador con muchas transferencias"
-  },
-  {
-    "left": "Portero determinante",
-    "right": "Portero pecho frio"
-  },
-  {
-    "left": "Jugador con buena actuación en mundail",
-    "right": "Jugador con mala actuaacion en mundial"
-  }
+  { "left": { "es": "Club grande", "en": "Big club" }, "right": { "es": "Club chico", "en": "Small club" } },
+  { "left": { "es": "Jugador que juega limpio", "en": "Fair-play player" }, "right": { "es": "Jugador tramposo", "en": "Cheating player" } },
+  { "left": { "es": "Gol de mucha suerte", "en": "Lucky goal" }, "right": { "es": "Golazo de crack", "en": "Superstar wondergoal" } },
+  { "left": { "es": "DT tranquilo en la banca", "en": "Calm coach on the bench" }, "right": { "es": "DT que explota en cada jugada", "en": "Coach who explodes on every play" } },
+  { "left": { "es": "Hincha fanático de toda la vida", "en": "Lifelong die-hard fan" }, "right": { "es": "Hincha de \"cuando gana no más\"", "en": "Fair-weather fan" } },
+  { "left": { "es": "Fichaje que valió la pena", "en": "Signing that was worth it" }, "right": { "es": "Fichaje que fue un fracaso total", "en": "Signing that was a total flop" } },
+  { "left": { "es": "Jugador que rinde en la selección", "en": "Player who performs for the national team" }, "right": { "es": "Jugador que solo rinde en su club", "en": "Player who only performs for his club" } },
+  { "left": { "es": "Árbitro que deja jugar", "en": "Referee who lets the game flow" }, "right": { "es": "Árbitro que para todo", "en": "Referee who stops everything" } },
+  { "left": { "es": "Equipo que juega bonito", "en": "Team that plays beautiful football" }, "right": { "es": "Equipo que juega feo pero gana", "en": "Team that plays ugly but wins" } },
+  { "left": { "es": "Jugador humilde", "en": "Humble player" }, "right": { "es": "Jugador con el ego gigante", "en": "Player with a giant ego" } },
+  { "left": { "es": "Estadio con un ambiente increíble", "en": "Stadium with an incredible atmosphere" }, "right": { "es": "Estadio sin nada de gente", "en": "Stadium with no fans at all" } },
+  { "left": { "es": "Camiseta hermosa", "en": "Beautiful jersey" }, "right": { "es": "Camiseta espantosa", "en": "Hideous jersey" } },
+  { "left": { "es": "Festejo de gol elegante", "en": "Elegant goal celebration" }, "right": { "es": "Festejo de gol ridículo", "en": "Ridiculous goal celebration" } },
+  { "left": { "es": "Jugador que se cuida en la cancha", "en": "Player who plays it safe" }, "right": { "es": "Jugador que entra a matar", "en": "Player who goes in to kill" } },
+  { "left": { "es": "Relato apasionado", "en": "Passionate commentary" }, "right": { "es": "Relato aburrido", "en": "Boring commentary" } },
+  { "left": { "es": "Táctica ofensiva a muerte", "en": "All-out attacking tactics" }, "right": { "es": "Táctica ultra defensiva", "en": "Ultra-defensive tactics" } },
+  { "left": { "es": "Comentarista objetivo", "en": "Objective commentator" }, "right": { "es": "Comentarista fanático de un equipo", "en": "Commentator who's a die-hard fan of one team" } },
+  { "left": { "es": "Penal clarísimo", "en": "Crystal-clear penalty" }, "right": { "es": "Penal inventado", "en": "Made-up penalty" } },
+  { "left": { "es": "Jugador que rinde a los 38 años", "en": "Player still performing at 38" }, "right": { "es": "Jugador que se retira joven", "en": "Player who retires young" } },
+  { "left": { "es": "Transferencia limpia y rápida", "en": "Clean, quick transfer" }, "right": { "es": "Transferencia con culebrón de meses", "en": "Transfer that drags on for months" } },
+  { "left": { "es": "DT que arriesga", "en": "Coach who takes risks" }, "right": { "es": "DT que juega a no perder", "en": "Coach who plays not to lose" } },
+  { "left": { "es": "Rival histórico de toda la vida", "en": "Historic lifelong rival" }, "right": { "es": "Rival de ocasión sin historia", "en": "One-off rival with no history" } },
+  { "left": { "es": "Jugador de barrio, hecho a pulso", "en": "Self-made neighborhood player" }, "right": { "es": "Jugador de cantera de club grande", "en": "Big club academy product" } },
+  { "left": { "es": "Gol en el descuento", "en": "Goal in stoppage time" }, "right": { "es": "Gol en el primer minuto", "en": "Goal in the first minute" } },
+  { "left": { "es": "Capitán que lidera con el ejemplo", "en": "Captain who leads by example" }, "right": { "es": "Capitán solo por el brazalete", "en": "Captain in armband only" } },
+  { "left": { "es": "Fútbol femenino de gran nivel", "en": "High-level women's football" }, "right": { "es": "Fútbol femenino que recién arranca", "en": "Women's football that's just getting started" } },
+  { "left": { "es": "Selección con identidad de juego", "en": "National team with a clear style of play" }, "right": { "es": "Selección sin ninguna idea de juego", "en": "National team with no game plan at all" } },
+  { "left": { "es": "Torneo con historia y prestigio", "en": "Tournament with history and prestige" }, "right": { "es": "Torneo inventado sin arraigo", "en": "Made-up tournament with no roots" } },
+  { "left": { "es": "Jugador que rinde en cualquier puesto", "en": "Player who performs in any position" }, "right": { "es": "Jugador que solo sirve en un puesto", "en": "Player who's only good in one position" } },
+  { "left": { "es": "Portero seguro", "en": "Reliable goalkeeper" }, "right": { "es": "Portero que regala goles", "en": "Goalkeeper who gifts goals away" } },
+  { "left": { "es": "Lateral que ataca todo el partido", "en": "Fullback who attacks all match" }, "right": { "es": "Lateral que solo defiende", "en": "Fullback who only defends" } },
+  { "left": { "es": "Delantero goleador nato", "en": "Natural-born goalscorer" }, "right": { "es": "Delantero que la trabaja mucho y no la mete", "en": "Striker who works hard but can't score" } },
+  { "left": { "es": "Prensa deportiva seria", "en": "Serious sports press" }, "right": { "es": "Prensa deportiva puro circo", "en": "Pure circus sports press" } },
+  { "left": { "es": "Hinchada organizada y ruidosa", "en": "Organized, loud fanbase" }, "right": { "es": "Hinchada tranquila y familiar", "en": "Calm, family-friendly fanbase" } },
+  { "left": { "es": "Fútbol de potrero, callejero", "en": "Street football, raw and unpolished" }, "right": { "es": "Fútbol de academia, de formación", "en": "Academy football, formally trained" } },
+  { "left": { "es": "Jugador mediático, todo redes", "en": "Media-savvy player, all over social media" }, "right": { "es": "Jugador reservado, bajo perfil", "en": "Reserved, low-profile player" } },
+  { "left": { "es": "Clásico con historia centenaria", "en": "Clásico with a century of history" }, "right": { "es": "Clásico \"inventado\" por el marketing", "en": "Clásico \"invented\" by marketing" } },
+  { "left": { "es": "Liga competitiva y pareja", "en": "Competitive, even league" }, "right": { "es": "Liga con un equipo que gana siempre", "en": "League with one team that always wins" } },
+  { "left": { "es": "DT con gran carrera como jugador", "en": "Coach with a great playing career" }, "right": { "es": "DT que nunca jugó profesional", "en": "Coach who never played professionally" } },
+  { "left": { "es": "Jugador criado y fiel al club", "en": "Player raised in and loyal to the club" }, "right": { "es": "Jugador mercenario que solo busca el cheque", "en": "Mercenary player only chasing the paycheck" } },
+  { "left": { "es": "Estilo de juego vistoso, de área a área", "en": "Eye-catching box-to-box style" }, "right": { "es": "Estilo de juego especulativo, de resultado", "en": "Cautious, result-driven style" } },
+  { "left": { "es": "Hinchada que apoya en las malas", "en": "Fans who support through the bad times" }, "right": { "es": "Hinchada que abandona cuando pierde", "en": "Fans who bail when the team loses" } },
+  { "left": { "es": "VAR bien usado", "en": "VAR used well" }, "right": { "es": "VAR que arruina el espectáculo", "en": "VAR that ruins the spectacle" } },
+  { "left": { "es": "Jugador veterano con experiencia", "en": "Experienced veteran player" }, "right": { "es": "Jugador joven promesa sin rodaje", "en": "Young prospect with no mileage" } },
+  { "left": { "es": "Club con historia de títulos", "en": "Club with a history of titles" }, "right": { "es": "Club \"grande\" sin nada ganado", "en": "\"Big\" club with nothing won" } },
+  { "left": { "es": "Festejo de gol discreto, con respeto", "en": "Discreet, respectful goal celebration" }, "right": { "es": "Festejo explosivo y provocador", "en": "Explosive, provocative celebration" } },
+  { "left": { "es": "DT que confía en la cantera", "en": "Coach who trusts the academy" }, "right": { "es": "DT que solo ficha caro de afuera", "en": "Coach who only signs expensive outsiders" } },
+  { "left": { "es": "Jugador que rinde en la altura", "en": "Player who thrives at altitude" }, "right": { "es": "Jugador que se ahoga en la altura", "en": "Player who suffocates at altitude" } },
+  { "left": { "es": "Cancha de pasto impecable", "en": "Immaculate grass pitch" }, "right": { "es": "Cancha en muy mal estado", "en": "Pitch in terrible condition" } },
+  { "left": { "es": "Fútbol de selecciones (Mundial)", "en": "International football (World Cup)" }, "right": { "es": "Fútbol de clubes (Champions)", "en": "Club football (Champions League)" } },
+  { "left": { "es": "Frase que diria Messi", "en": "Something Messi would say" }, "right": { "es": "Frase que diria Cr7", "en": "Something Cristiano Ronaldo would say" } },
+  { "left": { "es": "Jugador disiplinado", "en": "Disciplined player" }, "right": { "es": "Jugador fiestero", "en": "Party animal player" } },
+  { "left": { "es": "Jugador guapo", "en": "Good-looking player" }, "right": { "es": "Jugador feo", "en": "Ugly player" } },
+  { "left": { "es": "Jugador amado", "en": "Beloved player" }, "right": { "es": "Jugador odiado", "en": "Hated player" } },
+  { "left": { "es": "Gol imposible de replicar", "en": "Goal impossible to replicate" }, "right": { "es": "Gol normal", "en": "Ordinary goal" } },
+  { "left": { "es": "Trofeo sin mucha importancia", "en": "Trophy that doesn't mean much" }, "right": { "es": "Trofeo muy importante", "en": "Hugely important trophy" } },
+  { "left": { "es": "Record imposible de superar", "en": "Record impossible to break" }, "right": { "es": "Record superable", "en": "Breakable record" } },
+  { "left": { "es": "Equipo que merecia ganar alguna competicion", "en": "Team that deserved to win some competition" }, "right": { "es": "Equipo que no se merecia ganar alguna copetición", "en": "Team that didn't deserve to win any competition" } },
+  { "left": { "es": "Joven promesa que prometia y cumplio", "en": "Young prospect who promised and delivered" }, "right": { "es": "Joven promesa que prometia y no cumplio", "en": "Young prospect who promised and flopped" } },
+  { "left": { "es": "Gran Mundial", "en": "Great World Cup" }, "right": { "es": "Mundial Normalito ", "en": "Pretty average World Cup" } },
+  { "left": { "es": "Buena final de Champions", "en": "Great Champions League final" }, "right": { "es": "Mala final de Champions", "en": "Bad Champions League final" } },
+  { "left": { "es": "Jugador en gran momento", "en": "Player in great form" }, "right": { "es": "Jugador en mal momento", "en": "Player in poor form" } },
+  { "left": { "es": "Buen equipo en la actulidad", "en": "Good team right now" }, "right": { "es": "Mal equipo en la actualidad", "en": "Bad team right now" } },
+  { "left": { "es": "Buena seleccion en la actulidad", "en": "Good national team right now" }, "right": { "es": "Mala seleccion en la actulidad", "en": "Bad national team right now" } },
+  { "left": { "es": "Jugador Calvo", "en": "Bald player" }, "right": { "es": "Jugador con mucho pelo", "en": "Player with lots of hair" } },
+  { "left": { "es": "Jugador Rapido", "en": "Fast player" }, "right": { "es": "Jugador Lento", "en": "Slow player" } },
+  { "left": { "es": "Jugador Sobrevalorado", "en": "Overrated player" }, "right": { "es": "Jugador Infravalorado", "en": "Underrated player" } },
+  { "left": { "es": "Buen DT en la actualidad", "en": "Good coach right now" }, "right": { "es": "Mal DT en la actualidad", "en": "Bad coach right now" } },
+  { "left": { "es": "Buen clima para jugar futbol", "en": "Good weather to play football" }, "right": { "es": "Mal clima para jugar futbol", "en": "Bad weather to play football" } },
+  { "left": { "es": "Opinion que todo el mundo cree, pero es mentira", "en": "Opinion everyone believes, but it's false" }, "right": { "es": "Opinion que casi nadie cree, pero es verdad", "en": "Opinion almost no one believes, but it's true" } },
+  { "left": { "es": "Festejo con Aura", "en": "Celebration with aura" }, "right": { "es": "Festejo Ridiculo", "en": "Ridiculous celebration" } },
+  { "left": { "es": "Equipo grande en la Premier", "en": "Big club in the Premier League" }, "right": { "es": "Equipo chico en la Premier", "en": "Small club in the Premier League" } },
+  { "left": { "es": "Buen jugador en Champions", "en": "Good player in the Champions League" }, "right": { "es": "Mal jugador en Champions", "en": "Bad player in the Champions League" } },
+  { "left": { "es": "Jugador determinante", "en": "Game-changing player" }, "right": { "es": "Jugador pecho frio", "en": "Player who freezes under pressure" } },
+  { "left": { "es": "Buen equipo de mundial", "en": "Good World Cup team" }, "right": { "es": "Mal equipo de mundial", "en": "Bad World Cup team" } },
+  { "left": { "es": "Buen Clasico", "en": "A great Clásico" }, "right": { "es": "Clasico Irrelevante", "en": "An irrelevant Clásico" } },
+  { "left": { "es": "Buen rematador de cabeza", "en": "Good header of the ball" }, "right": { "es": "Mal rematador de cabeza", "en": "Bad header of the ball" } },
+  { "left": { "es": "Solo usa una pierna", "en": "Only uses one leg" }, "right": { "es": "Ambidiestro", "en": "Two-footed" } },
+  { "left": { "es": "Empezo siendo un meme y sobresalio", "en": "Started as a meme and turned out great" }, "right": { "es": "Empezo siendo bueno y termino siendo un meme", "en": "Started out great and ended up a meme" } },
+  { "left": { "es": "Frase que diria Mourinho", "en": "Something Mourinho would say" }, "right": { "es": "Frase que dirira Pep Guardiola", "en": "Something Pep Guardiola would say" } },
+  { "left": { "es": "Jugador fiel a un equipo", "en": "Player loyal to one club" }, "right": { "es": "Jugador con muchas transferencias", "en": "Player with many transfers" } },
+  { "left": { "es": "Portero determinante", "en": "Game-changing goalkeeper" }, "right": { "es": "Portero pecho frio", "en": "Goalkeeper who freezes under pressure" } },
+  { "left": { "es": "Jugador con buena actuación en mundail", "en": "Player with a great World Cup performance" }, "right": { "es": "Jugador con mala actuaacion en mundial", "en": "Player with a poor World Cup performance" } }
 ]

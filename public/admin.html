@@ -80,15 +80,20 @@
   .dot-dt{background:#fd9644}
 
   /* ---- LIST (Mentiroso) ---- */
-  .list-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
+  .list-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
   .list-item:first-child{border-top:none}
   .list-item input{flex:1}
-  .list-num{color:var(--soft);font-size:11px;width:24px;text-align:right;flex-shrink:0}
+  .list-num{color:var(--soft);font-size:11px;width:24px;text-align:right;flex-shrink:0;padding-top:6px}
 
   /* ---- PAIRS (Frecuencia) ---- */
-  .pair-row{display:grid;grid-template-columns:1fr 32px 1fr 40px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}
+  .pair-row{display:grid;grid-template-columns:1fr 32px 1fr 40px;gap:8px;align-items:start;padding:8px 0;border-top:1px solid var(--border)}
   .pair-row:first-child{border-top:none}
-  .pair-arrow{color:var(--soft);text-align:center;font-size:16px}
+  .pair-arrow{color:var(--soft);text-align:center;font-size:16px;padding-top:6px}
+
+  /* ---- Campos bilingües (ES/EN) reutilizados en Mentiroso y Frecuencia ---- */
+  .bi-field{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+  .bi-row{display:flex;align-items:center;gap:6px}
+  .bi-tag{font-size:10px;font-weight:700;color:var(--soft);width:20px;flex-shrink:0;text-align:center}
 
   /* ---- SAVE BAR ---- */
   .save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;transform:translateY(100%);transition:transform .25s}
@@ -267,7 +272,7 @@
   <div class="toolbar">
     <div>
       <h2>Categorías — Mentiroso Futbolero</h2>
-      <p>Cada línea es el tema de una ronda. El jugador tiene que nombrar N elementos de esa categoría.</p>
+      <p>Cada línea es el tema de una ronda, en español e inglés. El jugador tiene que nombrar N elementos de esa categoría.</p>
     </div>
     <div class="export-group">
       <button class="btn-export" id="copy-mentiroso">📋 Copiar lista</button>
@@ -280,8 +285,9 @@
   <div class="filter-row">
     <input type="text" id="search-mentiroso" placeholder="Buscar categoría…">
   </div>
-  <div class="add-row">
-    <input type="text" id="new-lie-cat" placeholder="Nueva categoría (ej: porteros que han metido goles de penalti)">
+  <div class="add-row" style="align-items:flex-end;">
+    <input type="text" id="new-lie-cat-es" placeholder="Nueva categoría en español">
+    <input type="text" id="new-lie-cat-en" placeholder="New category in English">
     <button class="btn btn-ghost" id="add-lie">+ Agregar</button>
   </div>
   <div class="tbl-wrap" style="padding:12px 16px" id="list-mentiroso"></div>
@@ -292,7 +298,7 @@
   <div class="toolbar">
     <div>
       <h2>Pares — La Frecuencia</h2>
-      <p>Cada par define los extremos de la escala. El psíquico da una pista que ubica el dial entre los dos conceptos.</p>
+      <p>Cada par define los extremos de la escala, en español e inglés. El psíquico da una pista que ubica el dial entre los dos conceptos.</p>
     </div>
     <div class="export-group">
       <button class="btn-export" id="copy-wavelength">📋 Copiar lista</button>
@@ -305,10 +311,12 @@
   <div class="filter-row">
     <input type="text" id="search-wavelength" placeholder="Buscar par…">
   </div>
-  <div class="add-row">
-    <input type="text" id="new-wave-left" placeholder="Extremo izquierdo (ej: Muy sucio)">
+  <div class="add-row" style="flex-wrap:wrap;align-items:flex-end;">
+    <input type="text" id="new-wave-left-es" placeholder="Extremo izquierdo (ES)">
+    <input type="text" id="new-wave-left-en" placeholder="Left side (EN)">
     <span style="color:var(--soft);flex-shrink:0">↔</span>
-    <input type="text" id="new-wave-right" placeholder="Extremo derecho (ej: Muy limpio)">
+    <input type="text" id="new-wave-right-es" placeholder="Extremo derecho (ES)">
+    <input type="text" id="new-wave-right-en" placeholder="Right side (EN)">
     <button class="btn btn-ghost" id="add-wave">+ Agregar</button>
   </div>
   <div class="tbl-wrap" style="padding:12px 16px" id="list-wavelength"></div>
@@ -875,9 +883,13 @@ document.getElementById('save-concepts').addEventListener('click', ()=>doSave('c
 // ============================================================
 // MENTIROSO
 // ============================================================
+// Cada categoría es { es, en }: la app usa la que corresponda según el
+// idioma del jugador, así que las dos hacen falta para que el juego se
+// pueda jugar completo en inglés (a diferencia de nombres propios de
+// jugadores, esto sí necesita traducción).
 function filteredMentiroso(){
   const q = mentirosoSearch.toLowerCase();
-  return DATA.mentiroso.map((s,i)=>({s,i})).filter(({s})=>!q||s.toLowerCase().includes(q));
+  return DATA.mentiroso.map((s,i)=>({s,i})).filter(({s})=>!q||(s.es||'').toLowerCase().includes(q)||(s.en||'').toLowerCase().includes(q));
 }
 
 function renderMentiroso(){
@@ -888,7 +900,10 @@ function renderMentiroso(){
   el.innerHTML = list.map(({s,i})=>`
     <div class="list-item">
       <span class="list-num">${i+1}</span>
-      <input type="text" value="${esc(s)}" data-idx="${i}" class="lie-input">
+      <div class="bi-field">
+        <div class="bi-row"><span class="bi-tag">ES</span><input type="text" value="${esc(s.es||'')}" data-idx="${i}" data-field="es" class="lie-input"></div>
+        <div class="bi-row"><span class="bi-tag">EN</span><input type="text" value="${esc(s.en||'')}" data-idx="${i}" data-field="en" class="lie-input"></div>
+      </div>
       <button class="btn btn-danger btn-sm lie-del" data-del="${i}">✕</button>
     </div>`).join('');
   document.getElementById('badge-mentiroso').textContent = DATA.mentiroso.length;
@@ -900,7 +915,7 @@ document.getElementById('search-mentiroso').addEventListener('input', e=>{
 
 document.getElementById('list-mentiroso').addEventListener('input', e=>{
   if(!e.target.classList.contains('lie-input')) return;
-  DATA.mentiroso[parseInt(e.target.dataset.idx)] = e.target.value;
+  DATA.mentiroso[parseInt(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
   setDirty('mentiroso', true);
 });
 
@@ -908,17 +923,19 @@ document.getElementById('list-mentiroso').addEventListener('click', e=>{
   const btn = e.target.closest('.lie-del');
   if(!btn) return;
   const idx = parseInt(btn.dataset.del);
-  if(!confirm(`Eliminar "${DATA.mentiroso[idx]}"?`)) return;
+  if(!confirm(`Eliminar "${DATA.mentiroso[idx].es}"?`)) return;
   DATA.mentiroso.splice(idx, 1);
   setDirty('mentiroso', true);
   renderMentiroso();
 });
 
 document.getElementById('add-lie').addEventListener('click', ()=>{
-  const v = document.getElementById('new-lie-cat').value.trim();
-  if(!v) return;
-  DATA.mentiroso.push(v);
-  document.getElementById('new-lie-cat').value = '';
+  const es = document.getElementById('new-lie-cat-es').value.trim();
+  const en = document.getElementById('new-lie-cat-en').value.trim();
+  if(!es||!en) return;
+  DATA.mentiroso.push({ es, en });
+  document.getElementById('new-lie-cat-es').value = '';
+  document.getElementById('new-lie-cat-en').value = '';
   setDirty('mentiroso', true);
   renderMentiroso();
 });
@@ -928,9 +945,12 @@ document.getElementById('save-mentiroso').addEventListener('click', ()=>doSave('
 // ============================================================
 // WAVELENGTH
 // ============================================================
+// Cada extremo es { es, en } por el mismo motivo que las categorías de
+// Mentiroso: son frases descriptivas, no nombres propios, así que hace
+// falta la traducción para que se pueda jugar en inglés.
 function filteredWavelength(){
   const q = wavelengthSearch.toLowerCase();
-  return DATA.wavelength.map((p,i)=>({p,i})).filter(({p})=>!q||p.left.toLowerCase().includes(q)||p.right.toLowerCase().includes(q));
+  return DATA.wavelength.map((p,i)=>({p,i})).filter(({p})=>!q||(p.left.es||'').toLowerCase().includes(q)||(p.left.en||'').toLowerCase().includes(q)||(p.right.es||'').toLowerCase().includes(q)||(p.right.en||'').toLowerCase().includes(q));
 }
 
 function renderWavelength(){
@@ -940,9 +960,15 @@ function renderWavelength(){
   if(!list.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
   el.innerHTML = list.map(({p,i})=>`
     <div class="pair-row">
-      <input type="text" value="${esc(p.left)}" data-idx="${i}" data-field="left" class="wave-input">
+      <div class="bi-field">
+        <div class="bi-row"><span class="bi-tag">ES</span><input type="text" value="${esc(p.left.es||'')}" data-idx="${i}" data-side="left" data-field="es" class="wave-input"></div>
+        <div class="bi-row"><span class="bi-tag">EN</span><input type="text" value="${esc(p.left.en||'')}" data-idx="${i}" data-side="left" data-field="en" class="wave-input"></div>
+      </div>
       <span class="pair-arrow">↔</span>
-      <input type="text" value="${esc(p.right)}" data-idx="${i}" data-field="right" class="wave-input">
+      <div class="bi-field">
+        <div class="bi-row"><span class="bi-tag">ES</span><input type="text" value="${esc(p.right.es||'')}" data-idx="${i}" data-side="right" data-field="es" class="wave-input"></div>
+        <div class="bi-row"><span class="bi-tag">EN</span><input type="text" value="${esc(p.right.en||'')}" data-idx="${i}" data-side="right" data-field="en" class="wave-input"></div>
+      </div>
       <button class="btn btn-danger btn-sm wave-del" data-del="${i}">✕</button>
     </div>`).join('');
   document.getElementById('badge-wavelength').textContent = DATA.wavelength.length;
@@ -954,7 +980,7 @@ document.getElementById('search-wavelength').addEventListener('input', e=>{
 
 document.getElementById('list-wavelength').addEventListener('input', e=>{
   if(!e.target.classList.contains('wave-input')) return;
-  DATA.wavelength[parseInt(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
+  DATA.wavelength[parseInt(e.target.dataset.idx)][e.target.dataset.side][e.target.dataset.field] = e.target.value;
   setDirty('wavelength', true);
 });
 
@@ -962,19 +988,23 @@ document.getElementById('list-wavelength').addEventListener('click', e=>{
   const btn = e.target.closest('.wave-del');
   if(!btn) return;
   const idx = parseInt(btn.dataset.del);
-  if(!confirm(`Eliminar par "${DATA.wavelength[idx].left} ↔ ${DATA.wavelength[idx].right}"?`)) return;
+  if(!confirm(`Eliminar par "${DATA.wavelength[idx].left.es} ↔ ${DATA.wavelength[idx].right.es}"?`)) return;
   DATA.wavelength.splice(idx, 1);
   setDirty('wavelength', true);
   renderWavelength();
 });
 
 document.getElementById('add-wave').addEventListener('click', ()=>{
-  const l = document.getElementById('new-wave-left').value.trim();
-  const r = document.getElementById('new-wave-right').value.trim();
-  if(!l||!r) return;
-  DATA.wavelength.push({ left: l, right: r });
-  document.getElementById('new-wave-left').value = '';
-  document.getElementById('new-wave-right').value = '';
+  const lEs = document.getElementById('new-wave-left-es').value.trim();
+  const lEn = document.getElementById('new-wave-left-en').value.trim();
+  const rEs = document.getElementById('new-wave-right-es').value.trim();
+  const rEn = document.getElementById('new-wave-right-en').value.trim();
+  if(!lEs||!lEn||!rEs||!rEn) return;
+  DATA.wavelength.push({ left: { es:lEs, en:lEn }, right: { es:rEs, en:rEn } });
+  document.getElementById('new-wave-left-es').value = '';
+  document.getElementById('new-wave-left-en').value = '';
+  document.getElementById('new-wave-right-es').value = '';
+  document.getElementById('new-wave-right-en').value = '';
   setDirty('wavelength', true);
   renderWavelength();
 });
@@ -1575,12 +1605,12 @@ function conceptsAsText(){
 
 function mentirosoAsText(){
   if(!DATA.mentiroso) return '';
-  return DATA.mentiroso.map((s,i)=>`${i+1}. ${s}`).join('\n');
+  return DATA.mentiroso.map((s,i)=>`${i+1}. ${s.es} / ${s.en}`).join('\n');
 }
 
 function wavelengthAsText(){
   if(!DATA.wavelength) return '';
-  return DATA.wavelength.map((p,i)=>`${i+1}. ${p.left}  ↔  ${p.right}`).join('\n');
+  return DATA.wavelength.map((p,i)=>`${i+1}. ${p.left.es} (${p.left.en})  ↔  ${p.right.es} (${p.right.en})`).join('\n');
 }
 
 function subastaAsText(){
@@ -1645,9 +1675,9 @@ document.getElementById('dl-mentiroso-excel').addEventListener('click', async fu
   btn.textContent='⏳ Generando...';
   try{
     const XLSX=await loadXLSX();
-    const rows=DATA.mentiroso.map((s,i)=>({'#':i+1,'Categoría':s}));
+    const rows=DATA.mentiroso.map((s,i)=>({'#':i+1,'Categoría (ES)':s.es,'Category (EN)':s.en}));
     const ws=XLSX.utils.json_to_sheet(rows);
-    ws['!cols']=[{wch:6},{wch:60}];
+    ws['!cols']=[{wch:6},{wch:60},{wch:60}];
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'Categorías');
     XLSX.writeFile(wb,'mentiroso-412.xlsx');
@@ -1663,9 +1693,9 @@ document.getElementById('dl-wavelength-excel').addEventListener('click', async f
   btn.textContent='⏳ Generando...';
   try{
     const XLSX=await loadXLSX();
-    const rows=DATA.wavelength.map((p,i)=>({'#':i+1,'Extremo Izquierdo':p.left,'Extremo Derecho':p.right}));
+    const rows=DATA.wavelength.map((p,i)=>({'#':i+1,'Izquierda (ES)':p.left.es,'Left (EN)':p.left.en,'Derecha (ES)':p.right.es,'Right (EN)':p.right.en}));
     const ws=XLSX.utils.json_to_sheet(rows);
-    ws['!cols']=[{wch:6},{wch:38},{wch:38}];
+    ws['!cols']=[{wch:6},{wch:32},{wch:32},{wch:32},{wch:32}];
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,'Pares');
     XLSX.writeFile(wb,'frecuencia-412.xlsx');
@@ -1787,31 +1817,40 @@ document.getElementById('import-concepts-file').addEventListener('change', async
   resetImport('concepts',this);
 });
 
-// -- MENTIROSO: Excel con columna "Categoría"
+// -- MENTIROSO: Excel con columnas "Categoría (ES)" / "Category (EN)"
 document.getElementById('import-mentiroso-file').addEventListener('change', async function(){
   const lbl=importLabel('mentiroso'); lbl.textContent='⏳ Procesando...';
   try{
     const {XLSX,wb} = await readXLSX(this.files[0]);
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     const data = rows
-      .map(r=>String(r['Categoría']||r['Categoria']||r['categoria']||r['categoría']||Object.values(r)[1]||'').trim())
-      .filter(Boolean);
+      .map(r=>({
+        es: String(r['Categoría (ES)']||r['Categoría']||r['Categoria']||r['categoria']||Object.values(r)[1]||'').trim(),
+        en: String(r['Category (EN)']||r['Categoria en']||r['English']||Object.values(r)[2]||'').trim(),
+      }))
+      .filter(s=>s.es&&s.en);
     const ok = await confirmAndSave('mentiroso', data, lbl, `✓ Importadas ${data.length} categorías`);
     if(ok) renderMentiroso();
   }catch(e){ toast('Error: '+e.message,'err'); }
   resetImport('mentiroso',this);
 });
 
-// -- FRECUENCIA: Excel con columnas "Extremo Izquierdo" / "Extremo Derecho"
+// -- FRECUENCIA: Excel con columnas "Izquierda (ES)" / "Left (EN)" / "Derecha (ES)" / "Right (EN)"
 document.getElementById('import-wavelength-file').addEventListener('change', async function(){
   const lbl=importLabel('wavelength'); lbl.textContent='⏳ Procesando...';
   try{
     const {XLSX,wb} = await readXLSX(this.files[0]);
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     const data = rows.map(r=>({
-      left:  String(r['Extremo Izquierdo']||r['extremo_izquierdo']||r['left']||'').trim(),
-      right: String(r['Extremo Derecho']  ||r['extremo_derecho'] ||r['right']||'').trim(),
-    })).filter(p=>p.left&&p.right);
+      left:  {
+        es: String(r['Izquierda (ES)']||r['Extremo Izquierdo']||r['extremo_izquierdo']||'').trim(),
+        en: String(r['Left (EN)']||r['left']||'').trim(),
+      },
+      right: {
+        es: String(r['Derecha (ES)']||r['Extremo Derecho']||r['extremo_derecho']||'').trim(),
+        en: String(r['Right (EN)']||r['right']||'').trim(),
+      },
+    })).filter(p=>p.left.es&&p.left.en&&p.right.es&&p.right.en);
     const ok = await confirmAndSave('wavelength', data, lbl, `✓ Importados ${data.length} pares`);
     if(ok) renderWavelength();
   }catch(e){ toast('Error: '+e.message,'err'); }

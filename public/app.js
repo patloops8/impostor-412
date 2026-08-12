@@ -160,6 +160,13 @@ socket.io.on('reconnect', () => { connBanner.classList.add('hidden'); });
 /* ===== Helpers ===== */
 const $ = id => document.getElementById(id);
 function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+// Contenido de juego bilingüe (categorías de Mentiroso, pares de La Frecuencia):
+// el servidor manda {es,en} y acá se elige el idioma actual, con fallback si
+// falta alguno de los dos. Si viene un string plano (compatibilidad), se usa tal cual.
+function pickLang(v){
+  if(v && typeof v==='object') return (currentLang==='en' ? v.en : v.es) || v.es || v.en || '';
+  return v||'';
+}
 // Paleta de avatares para jugadores humanos (sin foto): color de fondo + color de letra legible.
 const AVATAR_PALETTE=[{bg:'#b6ff2e',fg:'#0a1400'},{bg:'#e9b949',fg:'#1a1200'},{bg:'#8b54e0',fg:'#ffffff'},{bg:'#ff4d4d',fg:'#ffffff'},{bg:'#4e8ecb',fg:'#ffffff'}];
 function avatarFor(id){
@@ -882,7 +889,7 @@ socket.on('lie:pause_state',({paused,deadlineAt,remainingMs})=>{
   setLiePauseUI(paused, remainingMs);
   if(!paused && deadlineAt) startLieCd(deadlineAt);
 });
-socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=category; $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; acquireWakeLock(); renderLieClaim(); show('s-lie-claim'); });
+socket.on('lie:round',({roundNumber,roundCount,category,mode,currentTurnPlayerId})=>{ $('lie-round').textContent=roundNumber; $('lie-round-count').textContent=roundCount; $('lie-category').textContent=pickLang(category); $('lie-claim-amount').textContent='0'; lieClaim=0; lieMode=mode; lieTurn=currentTurnPlayerId; acquireWakeLock(); renderLieClaim(); show('s-lie-claim'); });
 socket.on('lie:turn',({currentTurnPlayerId})=>{ lieTurn=currentTurnPlayerId; if(currentVisibleSection()==='s-lie-claim')renderLieClaim(); });
 socket.on('lie:claim',({amount})=>{ lieClaim=amount; const el=$('lie-claim-amount'); el.textContent=amount; bump(el); });
 function renderLieClaim(){ const mine=lieTurn===myId; $('lie-my-turn').classList.toggle('hidden',!mine); $('lie-wait-turn').classList.toggle('hidden',mine); if(mine){$('inp-claim').value='';$('claim-error').classList.add('hidden');$('btn-accuse').disabled=lieClaim<=0; sfx.turn(); vib(80);}else{const pl=players.find(p=>p.id===lieTurn);$('lie-turn-name').textContent=pl?pl.name:'—';const av=$('lie-turn-avatar');const c=avatarFor(lieTurn||'?');av.style.background=c.bg;av.style.color=c.fg;av.textContent=(pl?pl.name:'?').trim().charAt(0).toUpperCase()||'?';} }
@@ -892,8 +899,9 @@ socket.on('lie:claim_rejected',({reason})=>{ $('claim-error').textContent=reason
 socket.on('lie:accused',({accuserId,accuserName,accusedId,accusedName,target,category,mode,deadlineAt,paused,remainingMs})=>{
   amAccused=accusedId===myId; amAccuser=accuserId===myId; lieMode=mode;
   if(amAccused) sfx.turn();
+  const catText=pickLang(category);
   $('lie-target').textContent=target; $('lie-named-count').textContent='0'; $('lie-named-log').innerHTML='';
-  $('lie-naming-heading').textContent=amAccused?t('didntBelieveYou',{accuser:accuserName,target,cat:category}):t('accusedOf',{accuser:accuserName,accused:accusedName,cat:category});
+  $('lie-naming-heading').textContent=amAccused?t('didntBelieveYou',{accuser:accuserName,target,cat:catText}):t('accusedOf',{accuser:accuserName,accused:accusedName,cat:catText});
   $('btn-mark').classList.add('hidden'); $('lie-am-accused').classList.add('hidden'); $('lie-naming-wait').classList.add('hidden');
   if(mode==='voz'){ if(amAccuser){$('btn-mark').classList.remove('hidden');}else if(amAccused){$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('sayAnswersAloud');}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('listenAndJudge');} }
   else { if(amAccused){$('lie-am-accused').classList.remove('hidden');$('inp-name-item').value='';}else{$('lie-naming-wait').classList.remove('hidden');$('lie-naming-wait').textContent=t('isTyping',{name:accusedName});} }
@@ -1475,11 +1483,11 @@ let waveRoundInfo={n:1,c:5}, waveIsPsychic=false, waveMyValue=50, waveLocked=fal
 let waveLeft='', waveRight='', wavePeekTarget=null, wavePeeking=false, waveLastRound=false;
 
 socket.on('wave:round', ({roundNumber,roundCount,left,right,psychicId,psychicName})=>{
-  waveRoundInfo={n:roundNumber,c:roundCount}; waveLeft=left; waveRight=right;
+  waveRoundInfo={n:roundNumber,c:roundCount}; waveLeft=pickLang(left); waveRight=pickLang(right);
   waveIsPsychic = psychicId===myId; wavePeekTarget=null; wavePeeking=false;
   $('wave-round').textContent=roundNumber; $('wave-round-count').textContent=roundCount;
   $('wave-round-2').textContent=roundNumber; $('wave-round-count-2').textContent=roundCount;
-  renderWaveDial('wave-dial-psychic', {leftLabel:left, rightLabel:right});
+  renderWaveDial('wave-dial-psychic', {leftLabel:waveLeft, rightLabel:waveRight});
   $('wave-psychic-controls').classList.toggle('hidden', !waveIsPsychic);
   $('wave-psychic-wait').classList.toggle('hidden', waveIsPsychic);
   $('btn-wave-peek').textContent=t('seeZone');
@@ -1521,8 +1529,8 @@ socket.on('wave:target', ({target})=>{
 $('btn-wave-ready').addEventListener('click', ()=>socket.emit('player:wave_ready',{code:roomCode}));
 
 socket.on('wave:guessing_start', ({secondsLeft,left,right})=>{
-  waveLocked=false; waveMyValue=50; waveLeft=left; waveRight=right;
-  renderWaveDial('wave-dial-guess', {leftLabel:left, rightLabel:right, interactive:!waveIsPsychic, value:50, onChange:v=>{waveMyValue=v;}});
+  waveLocked=false; waveMyValue=50; waveLeft=pickLang(left); waveRight=pickLang(right);
+  renderWaveDial('wave-dial-guess', {leftLabel:waveLeft, rightLabel:waveRight, interactive:!waveIsPsychic, value:50, onChange:v=>{waveMyValue=v;}});
   $('wave-guess-controls').classList.toggle('hidden', waveIsPsychic);
   $('wave-guess-wait').classList.toggle('hidden', !waveIsPsychic);
   $('wave-lock-status').textContent = waveIsPsychic ? t('waitingGuesses') : t('moveYourNeedle');
@@ -1548,7 +1556,7 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   const myScore = waveIsPsychic ? psychicScore : (guesses.find(g=>g.id===myId)?.score??0);
   if(myScore >= 2) sfx.win();
   const needles = guesses.map(g=>({ value:g.value, color:avatarFor(g.id).bg, label:g.name }));
-  renderWaveDial('wave-dial-reveal', {leftLabel:left, rightLabel:right, target, needles});
+  renderWaveDial('wave-dial-reveal', {leftLabel:pickLang(left), rightLabel:pickLang(right), target, needles});
   $('wave-reveal-eyebrow').textContent = t('roundOf',{n:roundNumber,c:roundCount});
   const list=$('wave-reveal-list'); list.innerHTML='';
   const psyRow=document.createElement('div'); psyRow.className='clue-item';
