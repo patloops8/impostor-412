@@ -1551,15 +1551,17 @@ app.use((_req, res, next) => {
 // Bloquear acceso directo a admin.html como archivo estático.
 // La única forma de llegar es vía /admin (que pasa por adminAuth).
 app.get('/admin.html', (_q, res) => res.status(404).end());
-// Cache HTTP: las imágenes de cartas/UI casi nunca cambian una vez subidas
-// (mismo nombre de archivo = mismo contenido), así que se cachean agresivo
-// y sin revalidar. El resto (HTML/JS/CSS) sí cambia con cada deploy — se
-// deja sin caché fuerte para que las actualizaciones lleguen al toque,
-// apoyándose igual en ETag/Last-Modified para los 304 rápidos de siempre.
+// Cache HTTP: las imágenes de cartas/UI casi siempre son las mismas de
+// partida a partida, así que se cachean fuerte. OJO: el panel admin permite
+// resubir la foto de un jugador reusando el mismo nombre de archivo (así
+// funciona /admin/upload-image), así que NO se usa "immutable" ni un plazo
+// tan largo como para bloquear esa actualización por semanas — 1 día es
+// buen equilibrio entre "no redescargar en cada partida de la misma noche"
+// y "una corrección de foto se propaga al día siguiente, no en un mes".
 app.use(express.static(path.join(__dirname,'public'), {
   setHeaders: (res, filePath) => {
     if (filePath.startsWith(path.join(__dirname,'public','images'))) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 días
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 día
     } else {
       res.setHeader('Cache-Control', 'no-cache');
     }

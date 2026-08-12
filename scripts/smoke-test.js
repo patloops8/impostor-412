@@ -11,6 +11,14 @@
 // Uso:
 //   npm run smoke                       # contra http://localhost:3000
 //   SMOKE_URL=https://tu-app.onrender.com npm run smoke   # contra producción
+//
+// Nota: cada corrida crea 5 salas y las abandona (todos los jugadores se
+// desconectan). El servidor las limpia solo, pero recién en el barrido
+// periódico de salas huérfanas (cada 15 min) — así que correr esto muchas
+// veces seguidas en poco tiempo puede acercarse al límite de 100 salas
+// simultáneas (protección real del servidor, no un bug). Si eso pasa vas
+// a ver "Servidor lleno" — no afecta producción real, ahí nadie crea y
+// abandona decenas de salas por minuto.
 const { io } = require('socket.io-client');
 
 const URL = process.env.SMOKE_URL || 'http://localhost:3000';
@@ -85,17 +93,33 @@ async function runGame(name, fn) {
   }
 }
 
+// IMPORTANTE: en todos los tests de abajo, el waitFor() de cada evento se
+// registra ANTES de emitir la acción que lo dispara, nunca después. Si el
+// servidor responde muy rápido (a veces sin ningún setTimeout de por
+// medio, ej. imp:round), el evento puede llegar antes de que el próximo
+// "await waitFor(...)" alcance a registrar su listener .once() — y como
+// para ese momento ya pasó, se queda esperando para siempre hasta el
+// timeout. Es una carrera clásica de tests basados en eventos.
+
 async function testImpostor() {
   const room = await makeRoom('Host', ['Guest1', 'Guest2']); // impostor necesita mín. 3
   const { host, code } = room;
   host.emit('host:select_game', { code, gameType: 'impostor' });
   await wait(150);
+  const rolesPromise = Promise.all(room.all.map((s) => waitFor(s, 'imp:role')));
+  const roundPromise = waitFor(host, 'imp:round');
   host.emit('host:start_match', { code });
-  await Promise.all(room.all.map((s) => waitFor(s, 'imp:role')));
-  const round = await waitFor(host, 'imp:round');
+  await rolesPromise;
+  const round = await roundPromise;
   if (!round.currentTurnPlayerId) throw new Error('imp:round sin currentTurnPlayerId');
-  host.emit('player:submit_clue', { code, word: 'prueba' });
-  await waitFor(host, 'imp:clue');
+  // El servidor ignora en silencio la pista si no la manda quien tiene el
+  // turno (server.js: r.clueOrder[r.clueTurnIndex]!==socket.id), así que
+  // hay que mandarla desde el socket correcto, no siempre desde el host.
+  const turnSocket = room.all.find((s) => s.id === round.currentTurnPlayerId);
+  if (!turnSocket) throw new Error('no se encontró el socket con el turno actual');
+  const cluePromise = waitFor(host, 'imp:clue');
+  turnSocket.emit('player:submit_clue', { code, word: 'prueba' });
+  await cluePromise;
   closeAll(room);
 }
 
@@ -104,11 +128,13 @@ async function testMentiroso() {
   const { host, code } = room;
   host.emit('host:select_game', { code, gameType: 'mentiroso' });
   await wait(150);
+  const roundPromise = waitFor(host, 'lie:round');
   host.emit('host:start_match', { code });
-  const roundData = await waitFor(host, 'lie:round');
+  const roundData = await roundPromise;
   const turnSocket = roundData.currentTurnPlayerId === host.id ? host : room.guests[0];
+  const claimPromise = waitFor(host, 'lie:claim');
   turnSocket.emit('player:make_claim', { code, amount: 1 });
-  await waitFor(host, 'lie:claim');
+  await claimPromise;
   closeAll(room);
 }
 
@@ -117,19 +143,23 @@ async function testSubasta() {
   const { host, guests, code } = room;
   host.emit('host:select_game', { code, gameType: 'subasta' });
   await wait(150);
+  const votePromise = waitFor(host, 'sub:formation_vote');
   host.emit('host:start_match', { code });
-  const voteData = await waitFor(host, 'sub:formation_vote');
+  const voteData = await votePromise;
   const formation = voteData.formations[0];
+  const decidedPromise = waitFor(host, 'sub:formation_decided');
   host.emit('player:vote_formation', { code, formation });
   guests[0].emit('player:vote_formation', { code, formation });
-  await waitFor(host, 'sub:formation_decided');
+  await decidedPromise;
   // Tras decidir formación hay un setTimeout(1500ms) antes de mostrar la 1ra carta.
-  const card = await waitFor(host, 'sub:card', 8000);
+  const cardPromise = waitFor(host, 'sub:card', 8000);
+  const card = await cardPromise;
   if (typeof card.startingPrice !== 'number') throw new Error('sub:card sin startingPrice');
+  // Ambos pasan -> la carta se descarta y llega el resultado.
+  const resolvedPromise = waitFor(host, 'sub:card_resolved', 8000);
   host.emit('player:skip_card', { code });
   guests[0].emit('player:skip_card', { code });
-  // Ambos pasan -> la carta se descarta y llega el resultado.
-  await waitFor(host, 'sub:card_resolved', 8000);
+  await resolvedPromise;
   closeAll(room);
 }
 
@@ -138,12 +168,14 @@ async function testWavelength() {
   const { host, guests, code } = room;
   host.emit('host:select_game', { code, gameType: 'wavelength' });
   await wait(150);
+  const roundPromise = waitFor(host, 'wave:round');
   host.emit('host:start_match', { code });
-  const roundData = await waitFor(host, 'wave:round');
+  const roundData = await roundPromise;
   const psychic = roundData.psychicId === host.id ? host : guests[0];
   const guesser = psychic === host ? guests[0] : host;
+  const guessingPromise = waitFor(guesser, 'wave:guessing_start');
   psychic.emit('player:wave_ready', { code });
-  await waitFor(guesser, 'wave:guessing_start');
+  await guessingPromise;
   guesser.emit('player:wave_lock', { code, value: 50 });
   await wait(500); // confirma que el servidor no explota al procesar el lock
   closeAll(room);
@@ -154,10 +186,16 @@ async function testWho() {
   const { host, code } = room;
   host.emit('host:select_game', { code, gameType: 'who' });
   await wait(150);
+  const statePromise = waitFor(host, 'who:state');
   host.emit('host:start_match', { code });
-  await waitFor(host, 'who:state');
-  host.emit('player:who_question', { code, text: '¿Es delantero?' });
-  await waitFor(host, 'who:question');
+  const state = await statePromise;
+  // El servidor ignora la pregunta si no la manda el jugador activo
+  // (server.js: if(socket.id!==whoActiveId(r))return;).
+  const activeSocket = room.all.find((s) => s.id === state.activePlayerId);
+  if (!activeSocket) throw new Error('no se encontró el socket del jugador activo');
+  const questionPromise = waitFor(host, 'who:question');
+  activeSocket.emit('player:who_question', { code, text: '¿Es delantero?' });
+  await questionPromise;
   closeAll(room);
 }
 
