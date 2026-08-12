@@ -23,6 +23,9 @@ const { io } = require('socket.io-client');
 
 const URL = process.env.SMOKE_URL || 'http://localhost:3000';
 const STEP_TIMEOUT = 15000;
+// Mismo valor por defecto que SMOKE_TEST_TOKEN en server.js: le dice al
+// servidor que estas salas son de prueba, para que no sumen a Analytics.
+const SMOKE_TEST_TOKEN = process.env.SMOKE_TEST_TOKEN || 'local-smoke-test-412';
 
 let passed = 0, failed = 0;
 const results = [];
@@ -61,7 +64,7 @@ async function checkHealth() {
 async function makeRoom(hostName, playerNames) {
   const host = connect();
   await once(host, 'connect');
-  const created = await emitAck(host, 'player:create_room', { name: hostName });
+  const created = await emitAck(host, 'player:create_room', { name: hostName, isTest: true, testToken: SMOKE_TEST_TOKEN });
   if (!created.ok) throw new Error('no se pudo crear la sala: ' + created.error);
   const code = created.code;
   const guests = [];

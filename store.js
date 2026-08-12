@@ -215,6 +215,16 @@ async function getAnalytics() {
   }
   return _fileAnalytics;
 }
+// Vuelve los contadores a cero (ej. para descartar números ensuciados por
+// pruebas). Solo borra analytics, nunca feedback/cuentas/logros.
+async function resetAnalytics() {
+  if (pool) {
+    await pool.query(`TRUNCATE analytics_daily, analytics_totals`);
+    return;
+  }
+  _fileAnalytics = { roomsCreated: 0, playersJoined: 0, gamesCompleted: { impostor: 0, mentiroso: 0, subasta: 0, wavelength: 0, who: 0 }, daily: {} };
+  _fileAnalyticsDirty = true;
+}
 
 /* ---- Cuentas (login con Google/Discord) y estadísticas ----
    A propósito NO tienen fallback en archivo: una cuenta de usuario solo
@@ -324,7 +334,7 @@ async function deleteAchievement(id) {
 }
 
 module.exports = {
-  initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics,
+  initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics, resetAnalytics,
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },

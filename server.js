@@ -94,6 +94,10 @@ const timers = new Map(); // code -> intervalId (reloj único por sala)
 
 const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MIN_PLAYERS = { impostor: 3, mentiroso: 2, subasta: 2, wavelength: 2, who: 2 };
+// Token compartido con scripts/smoke-test.js: una sala solo se marca como
+// prueba (y así no ensucia Analytics) si el cliente manda este token exacto
+// junto con isTest, no alcanza con mandar isTest:true a mano desde la consola.
+const SMOKE_TEST_TOKEN = process.env.SMOKE_TEST_TOKEN || 'local-smoke-test-412';
 // Extraído de host:start_match para poder reusarlo desde host:rematch
 // ("jugar de nuevo" con el mismo juego, sin pasar por el lobby).
 function startCurrentGame(r){
@@ -149,6 +153,7 @@ function newRoom(code, hostId) {
     players: new Map(),
     gameType: null,
     status: 'lobby',
+    isTest: false,                // true en salas creadas por scripts/smoke-test.js: no suman a Analytics
     impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
@@ -367,7 +372,7 @@ function endManga(r,result,voters){
   else if (result==='impostors_win'){ for(const id of r.impostorIds){const p=r.players.get(id); if(p?.alive)p.score+=3;} }
   const isLast=r.mangaNumber>=r.impostorConfig.mangaCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ trackEvent('game_completed','impostor'); recordGameStats(r,'impostor',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','impostor'); recordGameStats(r,'impostor',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
   io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores });
 }
 
@@ -428,7 +433,7 @@ function resolveLie(r,success,reason){
   r.status='lie_round_over';
   const isLast=r.lie.roundNumber>=r.mentirosoConfig.roundCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ trackEvent('game_completed','mentiroso'); recordGameStats(r,'mentiroso',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','mentiroso'); recordGameStats(r,'mentiroso',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
   io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores });
 }
 
@@ -717,7 +722,7 @@ function finishSubastaOVR(r){
   // Ordenar por puntos ganados; desempate por OVR (sin penalizar trolls ya que perdiste ese punto)
   scores.sort((a,b)=>b.points-a.points||b.ovr-a.ovr);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
-  trackEvent('game_completed','subasta');
+  if(!r.isTest) trackEvent('game_completed','subasta');
   recordGameStats(r,'subasta',scores.filter(s=>s.points===scores[0]?.points).map(s=>s.id));
   io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,matchups,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
@@ -842,7 +847,7 @@ function finishTournament(r,championId){
   const order=[championId, ...s.bracket.eliminated.slice().reverse().filter(id=>id!==championId)];
   order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
   const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
-  trackEvent('game_completed','subasta');
+  if(!r.isTest) trackEvent('game_completed','subasta');
   recordGameStats(r,'subasta',[championId]);
   io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
@@ -960,7 +965,7 @@ function resolveWaveRound(r){
   r.status='wave_reveal';
   const isLast = r.wave.roundNumber>=r.waveConfig.roundCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ trackEvent('game_completed','wavelength'); recordGameStats(r,'wavelength',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','wavelength'); recordGameStats(r,'wavelength',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
   io.to(r.code).emit('wave:reveal', {
     target:r.wave.target, left:r.wave.pair.left, right:r.wave.pair.right,
     psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?', psychicScore,
@@ -1048,7 +1053,7 @@ function finishWho(r){
   const isLast = r.who.roundNumber >= r.whoConfig.roundCount;
   if(isLast){
     r.status='who_over';
-    trackEvent('game_completed','who');
+    if(!r.isTest) trackEvent('game_completed','who');
     recordGameStats(r,'who',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id));
     io.to(r.code).emit('who:game_over',{ scores, assigns });
   } else {
@@ -1214,18 +1219,19 @@ io.on('connection', socket => {
     return decoded ? (decoded.avatar || null) : null;
   }
 
-  socket.on('player:create_room', ({ name, authToken }, cb) => {
+  socket.on('player:create_room', ({ name, authToken, isTest, testToken }, cb) => {
     if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     const code=genCode();
     const room=newRoom(code,socket.id);
+    room.isTest = !!isTest && testToken===SMOKE_TEST_TOKEN;
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
-    trackEvent('room_created'); trackEvent('player_joined');
+    if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined'); }
   });
 
   socket.on('player:join_room', ({ code, name, authToken }, cb) => {
@@ -1240,7 +1246,7 @@ io.on('connection', socket => {
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
-    trackEvent('player_joined');
+    if(!room.isTest) trackEvent('player_joined');
   });
 
   socket.on('host:kick_player', ({code,targetId}) => {
@@ -1734,6 +1740,10 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
   // Analytics básico (sin servicios externos)
   app.get('/admin/analytics', adminAuth, async (_q,res)=>{
     try{ res.json(await store.getAnalytics()); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/analytics/reset', adminAuth, async (_q,res)=>{
+    try{ await store.resetAnalytics(); res.json({ok:true}); }
     catch(e){ res.status(500).json({error:e.message}); }
   });
   app.get('/admin/store-status', adminAuth, (_q,res)=>res.json({usingDb: store.usingDb}));

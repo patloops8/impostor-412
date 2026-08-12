@@ -530,6 +530,7 @@
     <h2>📊 Analytics</h2>
     <p>Contadores básicos, sin servicios externos. Se guardan en el servidor.</p>
   </div>
+  <button class="btn btn-danger btn-sm" id="btn-reset-analytics" style="margin-bottom:14px">🗑 Reiniciar contadores a 0</button>
   <div id="analytics-body"></div>
 </div>
 
@@ -2015,6 +2016,19 @@ async function loadAnalytics(){
     body.innerHTML = '<p style="color:var(--red)">Error al cargar analytics.</p>';
   }
 }
+
+document.getElementById('btn-reset-analytics').addEventListener('click', async function(){
+  if(!confirm('¿Reiniciar todos los contadores de Analytics a 0? Esto no se puede deshacer.')) return;
+  const btn = this; btn.disabled = true; btn.textContent = '⏳ Reiniciando...';
+  try{
+    const res = await fetch('/admin/analytics/reset', { method:'POST', headers:_authHeaders() });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error||'error');
+    toast('✓ Analytics reiniciado', 'ok');
+    loadAnalytics();
+  }catch(e){ toast('Error: '+e.message, 'err'); }
+  btn.disabled = false; btn.textContent = '🗑 Reiniciar contadores a 0';
+});
 
 // ============================================================
 // LOGROS
