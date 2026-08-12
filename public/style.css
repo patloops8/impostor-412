@@ -228,6 +228,26 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .stats-game-head{display:flex;justify-content:space-between;align-items:center;font-size:0.86rem;font-weight:600;margin-bottom:8px;}
 .stats-game-bar-track{width:100%;height:6px;background:var(--line2);border-radius:99px;overflow:hidden;}
 .stats-game-bar-fill{height:100%;border-radius:99px;background:var(--neon);}
+
+/* ===== Tabla de posiciones ===== */
+.lb-row{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:8px 12px;margin-bottom:8px;}
+.lb-row.lb-top{border-color:var(--neon);box-shadow:0 0 10px rgba(182,255,46,0.18);}
+.lb-rank{font-family:var(--display);font-weight:800;font-size:1rem;color:var(--text-dim);width:1.6em;text-align:center;flex-shrink:0;}
+.lb-row.lb-top .lb-rank{color:var(--neon);}
+.lb-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.lb-avatar-blank{display:flex;align-items:center;justify-content:center;background:var(--line2);font-size:1rem;}
+.lb-name{flex:1;font-weight:700;font-size:0.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-wins,.lb-played{display:flex;flex-direction:column;align-items:center;font-weight:800;font-size:0.9rem;line-height:1;min-width:2.6em;}
+.lb-wins{color:var(--neon);}
+.lb-wins-lbl,.lb-played-lbl{font-size:0.58rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.03em;margin-top:3px;}
+
+/* ===== Aviso de logro desbloqueado ===== */
+.achv-toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-30px);z-index:3100;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(20,16,4,0.96),rgba(10,12,16,0.96));border:1px solid #e9b949;border-radius:14px;padding:10px 16px;box-shadow:0 0 22px rgba(233,185,73,0.4);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:92vw;}
+.achv-toast.show{opacity:1;transform:translate(-50%,0);}
+.achv-toast-icon{font-size:1.8rem;line-height:1;display:flex;align-items:center;justify-content:center;width:1.8rem;height:1.8rem;flex-shrink:0;}
+.achv-toast-icon img{width:1.8rem;height:1.8rem;border-radius:6px;object-fit:cover;}
+.achv-toast-label{font-size:0.62rem;font-weight:800;color:#e9b949;text-transform:uppercase;letter-spacing:.06em;}
+.achv-toast-title{font-size:0.88rem;font-weight:700;color:var(--ink);}
 .rules-body p{margin:0 0 8px;color:var(--ink);}
 .rules-body ul{margin:0 0 8px;padding-left:18px;color:var(--ink);}
 .rules-body ul li{margin-bottom:4px;}

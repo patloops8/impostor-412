@@ -111,11 +111,26 @@ function startCurrentGame(r){
 // winnerIds: ids de socket que "ganaron" esta partida (puede ser más de uno
 // en caso de empate); el resto de los jugadores de la sala cuentan como
 // jugada-pero-no-ganada.
+// No se espera (await) desde los llamadores: la pantalla de fin de partida
+// ya se mostró por su cuenta, y el aviso de logro puede llegar unos
+// instantes después sin que nadie note la demora.
 function recordGameStats(r, gameType, winnerIds){
   const winSet = new Set(winnerIds||[]);
   for(const p of r.players.values()){
-    if(p.userId) store.recordGameResult(p.userId, gameType, winSet.has(p.id));
+    if(p.userId) notifyGameResultAndAchievements(p.id, p.userId, gameType, winSet.has(p.id));
   }
+}
+async function notifyGameResultAndAchievements(socketId, userId, gameType, won){
+  try{
+    const defs = await store.getAchievements();
+    if(!defs.length) { await store.recordGameResult(userId, gameType, won); return; }
+    const before = auth.computeAchievements(await store.getUserStats(userId), defs);
+    const beforeUnlocked = new Set(before.filter(a=>a.unlocked).map(a=>a.key));
+    await store.recordGameResult(userId, gameType, won);
+    const after = auth.computeAchievements(await store.getUserStats(userId), defs);
+    const newlyUnlocked = after.filter(a=>a.unlocked && !beforeUnlocked.has(a.key));
+    if(newlyUnlocked.length) io.to(socketId).emit('achievements:unlocked', { achievements: newlyUnlocked });
+  }catch(e){ console.error('[achievements] error notificando logros:', e.message); }
 }
 
 function genCode() {
@@ -1612,6 +1627,15 @@ app.get('/qr/:code', async (req,res)=>{
     const svg=await QRCode.toString(url,{type:'svg',margin:1,color:{dark:'#000000',light:'#ffffff'}});
     res.type('image/svg+xml').set('Cache-Control','no-store').send(svg);
   }catch(e){ res.status(500).send('error generando QR'); }
+});
+
+// Tabla de posiciones: pública (no requiere login para verla, solo para
+// aparecer en ella). Se recalcula en cada consulta a partir de las
+// estadísticas reales, sin cachear nada — el volumen de tráfico esperado
+// no justifica la complejidad de invalidar un caché.
+app.get('/api/leaderboard', async (_q,res)=>{
+  try{ res.json(await store.getLeaderboard(20)); }
+  catch(e){ res.status(500).json({error:'No se pudo cargar la tabla de posiciones.'}); }
 });
 
 // Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin

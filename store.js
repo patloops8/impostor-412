@@ -250,6 +250,22 @@ async function getUserStats(userId) {
   );
   return r.rows;
 }
+async function getLeaderboard(limit = 20) {
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT u.id, u.name, u.avatar_url as "avatarUrl",
+            COALESCE(SUM(ps.games_won),0)::int as "totalWon",
+            COALESCE(SUM(ps.games_played),0)::int as "totalPlayed"
+     FROM users u
+     LEFT JOIN player_stats ps ON ps.user_id = u.id
+     GROUP BY u.id
+     HAVING COALESCE(SUM(ps.games_played),0) > 0
+     ORDER BY "totalWon" DESC, "totalPlayed" ASC
+     LIMIT $1`,
+    [limit]
+  );
+  return r.rows;
+}
 
 /* ---- Logros: CRUD para el panel admin + lectura pública ---- */
 const ACHIEVEMENT_COLUMNS = `id, key, icon_emoji as "iconEmoji", icon_image as "iconImage", title_es as "titleEs", title_en as "titleEn", desc_es as "descEs", desc_en as "descEn", condition_type as "conditionType", condition_game as "conditionGame", condition_goal as "conditionGoal", sort_order as "sortOrder", active`;
@@ -290,7 +306,7 @@ async function deleteAchievement(id) {
 
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics,
-  upsertUser, getUserById, recordGameResult, getUserStats,
+  upsertUser, getUserById, recordGameResult, getUserStats, getLeaderboard,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

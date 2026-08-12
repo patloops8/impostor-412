@@ -344,6 +344,36 @@ document.addEventListener('langchange', ()=>{ if(!$('stats-overlay').classList.c
 $('btn-stats-close').addEventListener('click',()=>$('stats-overlay').classList.add('hidden'));
 $('stats-overlay').addEventListener('click', e=>{ if(e.target===$('stats-overlay'))$('stats-overlay').classList.add('hidden'); });
 
+let _lastLeaderboardData = null;
+function renderLeaderboard(){
+  if(!_lastLeaderboardData) return;
+  if(!_lastLeaderboardData.length){
+    $('leaderboard-body').innerHTML = `<p style="color:var(--text-dim);text-align:center;">${esc(t('leaderboardEmpty'))}</p>`;
+    return;
+  }
+  const rows = _lastLeaderboardData.map((u,i)=>`
+    <div class="lb-row${i<3?' lb-top':''}">
+      <div class="lb-rank">${i+1}</div>
+      ${u.avatarUrl ? `<img class="lb-avatar" src="${esc(u.avatarUrl)}" alt=""/>` : `<div class="lb-avatar lb-avatar-blank">👤</div>`}
+      <div class="lb-name">${esc(u.name||'')}</div>
+      <div class="lb-wins">${u.totalWon}<span class="lb-wins-lbl">${esc(t('leaderboardWins'))}</span></div>
+      <div class="lb-played">${u.totalPlayed}<span class="lb-played-lbl">${esc(t('leaderboardPlayed'))}</span></div>
+    </div>`).join('');
+  $('leaderboard-body').innerHTML = rows;
+}
+$('btn-leaderboard').addEventListener('click', async ()=>{
+  $('leaderboard-body').innerHTML = `<p style="color:var(--text-dim)">${esc(t('loading'))}</p>`;
+  $('leaderboard-overlay').classList.remove('hidden');
+  try{
+    const res = await fetch('/api/leaderboard');
+    _lastLeaderboardData = await res.json();
+    renderLeaderboard();
+  }catch(e){ $('leaderboard-body').innerHTML = `<p>${esc(t('statsError'))}</p>`; }
+});
+document.addEventListener('langchange', ()=>{ if(!$('leaderboard-overlay').classList.contains('hidden')) renderLeaderboard(); });
+$('btn-leaderboard-close').addEventListener('click',()=>$('leaderboard-overlay').classList.add('hidden'));
+$('leaderboard-overlay').addEventListener('click', e=>{ if(e.target===$('leaderboard-overlay'))$('leaderboard-overlay').classList.add('hidden'); });
+
 /* ===== Compartir código (link directo con ?code=) ===== */
 $('btn-share').addEventListener('click', async () => {
   const url  = `${location.origin}/?code=${roomCode}`;
@@ -477,6 +507,29 @@ function showToast(msg, urgent){
 // control a otro jugador conectado tras un margen de espera. Avisamos a
 // todos, porque de golpe alguien nuevo tiene los botones de "continuar".
 socket.on('host:reassigned', ({newHostName}) => { showToast(t('hostReassigned',{name:newHostName}), true); });
+
+let _achvToastQueue = [];
+let _achvToastShowing = false;
+function _showNextAchievementToast(){
+  if(_achvToastShowing || !_achvToastQueue.length) return;
+  _achvToastShowing = true;
+  const a = _achvToastQueue.shift();
+  const title = (currentLang==='en' ? a.titleEn : a.titleEs) || a.titleEs || a.titleEn || '';
+  const iconHtml = a.iconImage ? `<img src="${esc(a.iconImage)}" alt=""/>` : esc(a.iconEmoji||'🏆');
+  let el = $('achv-toast');
+  if(!el){ el=document.createElement('div'); el.id='achv-toast'; el.className='achv-toast'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="achv-toast-icon">${iconHtml}</div><div class="achv-toast-text"><div class="achv-toast-label">${esc(t('achievementUnlocked'))}</div><div class="achv-toast-title">${esc(title)}</div></div>`;
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>{ _achvToastShowing=false; _showNextAchievementToast(); }, 400);
+  }, 4200);
+}
+socket.on('achievements:unlocked', ({achievements}) => {
+  if(!achievements || !achievements.length) return;
+  _achvToastQueue.push(...achievements);
+  _showNextAchievementToast();
+});
 
 socket.on('room:update', (st) => {
   players = st.players;
