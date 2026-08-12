@@ -7,6 +7,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
 const store = require('./store');
+const auth = require('./auth');
 
 const app = express();
 const server = http.createServer(app);
@@ -104,6 +105,17 @@ function startCurrentGame(r){
   else if(r.gameType==='wavelength'){startWaveSession(r);}
   else if(r.gameType==='who'){startWhoSession(r);}
   return true;
+}
+// Guarda partidas jugadas/ganadas para quien esté logueado (store.js es un
+// no-op si no hay base configurada, así que esto es seguro llamarlo siempre).
+// winnerIds: ids de socket que "ganaron" esta partida (puede ser más de uno
+// en caso de empate); el resto de los jugadores de la sala cuentan como
+// jugada-pero-no-ganada.
+function recordGameStats(r, gameType, winnerIds){
+  const winSet = new Set(winnerIds||[]);
+  for(const p of r.players.values()){
+    if(p.userId) store.recordGameResult(p.userId, gameType, winSet.has(p.id));
+  }
 }
 
 function genCode() {
@@ -339,8 +351,9 @@ function endManga(r,result,voters){
   if (result==='impostors_caught'){ for(const p of r.players.values()){ if(r.impostorIds.has(p.id))continue; p.score++; if(voters.includes(p.id))p.score++; } }
   else if (result==='impostors_win'){ for(const id of r.impostorIds){const p=r.players.get(id); if(p?.alive)p.score+=3;} }
   const isLast=r.mangaNumber>=r.impostorConfig.mangaCount;
-  if(isLast) trackEvent('game_completed','impostor');
-  io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
+  const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
+  if(isLast){ trackEvent('game_completed','impostor'); recordGameStats(r,'impostor',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores });
 }
 
 /* ===================== MENTIROSO ===================== */
@@ -399,8 +412,9 @@ function resolveLie(r,success,reason){
   else { if(accuser)accuser.score++; if(accused)accused.score--; }
   r.status='lie_round_over';
   const isLast=r.lie.roundNumber>=r.mentirosoConfig.roundCount;
-  if(isLast) trackEvent('game_completed','mentiroso');
-  io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score) });
+  const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
+  if(isLast){ trackEvent('game_completed','mentiroso'); recordGameStats(r,'mentiroso',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores });
 }
 
 /* ===================== SUBASTA ===================== */
@@ -689,6 +703,7 @@ function finishSubastaOVR(r){
   scores.sort((a,b)=>b.points-a.points||b.ovr-a.ovr);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
   trackEvent('game_completed','subasta');
+  recordGameStats(r,'subasta',scores.filter(s=>s.points===scores[0]?.points).map(s=>s.id));
   io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,matchups,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 
@@ -813,6 +828,7 @@ function finishTournament(r,championId){
   order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
   const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
   trackEvent('game_completed','subasta');
+  recordGameStats(r,'subasta',[championId]);
   io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 function startFormationVote(r){
@@ -928,12 +944,13 @@ function resolveWaveRound(r){
   if(psy) psy.score+=psychicScore;
   r.status='wave_reveal';
   const isLast = r.wave.roundNumber>=r.waveConfig.roundCount;
-  if(isLast) trackEvent('game_completed','wavelength');
+  const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
+  if(isLast){ trackEvent('game_completed','wavelength'); recordGameStats(r,'wavelength',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
   io.to(r.code).emit('wave:reveal', {
     target:r.wave.target, left:r.wave.pair.left, right:r.wave.pair.right,
     psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?', psychicScore,
     guesses:results, roundNumber:r.wave.roundNumber, roundCount:r.waveConfig.roundCount,
-    isLastRound:isLast, scores:publicPlayers(r).sort((a,b)=>b.score-a.score),
+    isLastRound:isLast, scores,
   });
 }
 
@@ -1017,6 +1034,7 @@ function finishWho(r){
   if(isLast){
     r.status='who_over';
     trackEvent('game_completed','who');
+    recordGameStats(r,'who',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id));
     io.to(r.code).emit('who:game_over',{ scores, assigns });
   } else {
     r.status='who_round_over';
@@ -1167,13 +1185,21 @@ io.on('connection', socket => {
     emitRoom(r); // mandar estado actual inmediatamente
   });
 
-  socket.on('player:create_room', ({ name }, cb) => {
+  // Vincula el jugador a su cuenta si mandó un JWT válido (login opcional:
+  // si el token falta o venció, simplemente juega como invitado, sin cortar
+  // el flujo — el login nunca debe ser un requisito para jugar).
+  function userIdFromToken(authToken){
+    const decoded = authToken ? auth.verifyToken(authToken) : null;
+    return decoded ? decoded.uid : null;
+  }
+
+  socket.on('player:create_room', ({ name, authToken }, cb) => {
     if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     const code=genCode();
     const room=newRoom(code,socket.id);
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
@@ -1181,7 +1207,7 @@ io.on('connection', socket => {
     trackEvent('room_created'); trackEvent('player_joined');
   });
 
-  socket.on('player:join_room', ({ code, name }, cb) => {
+  socket.on('player:join_room', ({ code, name, authToken }, cb) => {
     const room=rooms.get((code||'').toUpperCase());
     if(!room){cb({ok:false,error:'Sala no encontrada.'});return;}
     if(room.status!=='lobby'){cb({ok:false,error:'La partida ya empezó.'});return;}
@@ -1189,7 +1215,7 @@ io.on('connection', socket => {
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true});
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken)});
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
@@ -1572,6 +1598,8 @@ app.use(express.static(path.join(__dirname,'public'), {
 app.get('/favicon.ico',(_q,res)=>res.status(204).end());
 app.get('/health',(_q,res)=>res.status(200).send('ok'));
 app.get('/tv',(_q,res)=>res.sendFile(path.join(__dirname,'public','tv.html')));
+
+auth.registerAuthRoutes(app);
 
 // QR para unirse a una sala: apunta al mismo link que ya usa "compartir código".
 app.get('/qr/:code', async (req,res)=>{

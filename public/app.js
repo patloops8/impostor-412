@@ -202,14 +202,14 @@ $('btn-lang').addEventListener('click', () => {
 $('btn-create').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
   if(!name){ showHomeError(t('enterYourName')); return; }
-  socket.emit('player:create_room', { name }, onJoined);
+  socket.emit('player:create_room', { name, authToken:getAuthToken() }, onJoined);
 });
 $('btn-join').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
   const code = $('inp-code').value.trim().toUpperCase();
   if(!name){ showHomeError(t('enterYourName')); return; }
   if(!code){ showHomeError(t('enterCode')); return; }
-  socket.emit('player:join_room', { code, name }, onJoined);
+  socket.emit('player:join_room', { code, name, authToken:getAuthToken() }, onJoined);
 });
 $('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')$('btn-join').click(); });
 function showHomeError(m){ $('home-error').textContent=m; $('home-error').classList.remove('hidden'); }
@@ -221,6 +221,81 @@ function onJoined(res){
   saveSession();
   show('s-lobby');
 }
+
+/* ===== Login (Google/Discord) — opcional, la app funciona igual como invitado ===== */
+const AUTH_KEY = '412_auth';
+let authUser = null; // {id,name,avatar,provider} o null si juega como invitado
+let _authAnyEnabled = false;
+const GAME_TITLE_KEYS = {impostor:'gameImpostorTitle',mentiroso:'gameMentirosoTitle',subasta:'gameSubastaTitle',wavelength:'gameWavelengthTitle',who:'gameWhoTitle'};
+function getAuthToken(){ try{ return localStorage.getItem(AUTH_KEY); }catch(e){ return null; } }
+function setAuthToken(tok){ try{ if(tok) localStorage.setItem(AUTH_KEY, tok); else localStorage.removeItem(AUTH_KEY); }catch(e){} }
+function decodeJwtPayload(tok){
+  try{ return JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+  catch(e){ return null; }
+}
+function renderAuthUI(){
+  const box=$('auth-box');
+  if(authUser){
+    $('auth-logged-out').classList.add('hidden');
+    $('auth-logged-in').classList.remove('hidden');
+    box.classList.remove('hidden');
+    $('auth-avatar').src = authUser.avatar || '/images/ui/logo.png';
+    $('auth-name').textContent = authUser.name;
+  } else {
+    $('auth-logged-in').classList.add('hidden');
+    $('auth-logged-out').classList.toggle('hidden', !_authAnyEnabled);
+    box.classList.toggle('hidden', !_authAnyEnabled);
+  }
+}
+(async function initAuth(){
+  // Capturar el token que vuelve del callback de OAuth (?auth=...) y
+  // limpiar la URL para no dejarlo visible/guardable en el historial.
+  const params = new URLSearchParams(location.search);
+  const tokenFromUrl = params.get('auth');
+  const hadAuthError = params.has('authError');
+  if(tokenFromUrl || hadAuthError){
+    if(tokenFromUrl) setAuthToken(tokenFromUrl);
+    params.delete('auth'); params.delete('authError');
+    const clean = location.pathname + (params.toString()?`?${params}`:'');
+    history.replaceState({}, '', clean);
+  }
+  const tok = getAuthToken();
+  if(tok){
+    const payload = decodeJwtPayload(tok);
+    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; }
+    else setAuthToken(null);
+  }
+  try{
+    const res = await fetch('/auth/status');
+    const st = await res.json();
+    $('btn-login-google').classList.toggle('hidden', !st.google);
+    $('btn-login-discord').classList.toggle('hidden', !st.discord);
+    _authAnyEnabled = !!(st.google || st.discord);
+  }catch(e){ _authAnyEnabled = false; }
+  renderAuthUI();
+  if(hadAuthError) showHomeError(t('authError'));
+})();
+$('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/google/start'; });
+$('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
+$('btn-auth-logout').addEventListener('click', ()=>{ setAuthToken(null); authUser=null; renderAuthUI(); });
+$('btn-my-stats').addEventListener('click', async ()=>{
+  const tok=getAuthToken();
+  $('stats-body').innerHTML = `<p style="color:var(--text-dim)">${esc(t('loading'))}</p>`;
+  $('stats-overlay').classList.remove('hidden');
+  try{
+    const res = await fetch('/auth/me', { headers:{ Authorization:'Bearer '+tok } });
+    const json = await res.json();
+    if(!json.ok){ $('stats-body').innerHTML=`<p>${esc(t('statsError'))}</p>`; return; }
+    if(!json.stats.length){ $('stats-body').innerHTML=`<p style="color:var(--text-dim)">${esc(t('statsEmpty'))}</p>`; return; }
+    $('stats-body').innerHTML = json.stats.map(s=>`
+      <div class="config-row" style="justify-content:space-between;">
+        <span>${esc(t(GAME_TITLE_KEYS[s.gameType]||s.gameType))}</span>
+        <span style="color:var(--neon);font-weight:700;">${s.gamesWon}/${s.gamesPlayed} ${esc(t('statsWon'))}</span>
+      </div>`).join('');
+  }catch(e){ $('stats-body').innerHTML=`<p>${esc(t('statsError'))}</p>`; }
+});
+$('btn-stats-close').addEventListener('click',()=>$('stats-overlay').classList.add('hidden'));
+$('stats-overlay').addEventListener('click', e=>{ if(e.target===$('stats-overlay'))$('stats-overlay').classList.add('hidden'); });
 
 /* ===== Compartir código (link directo con ?code=) ===== */
 $('btn-share').addEventListener('click', async () => {

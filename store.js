@@ -61,7 +61,25 @@ async function initStore() {
       key TEXT PRIMARY KEY,
       value INT DEFAULT 0
     )`);
-  console.log('[store] Postgres conectado — feedback y analytics ahora persisten entre redeploys.');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      provider TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      avatar_url TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      UNIQUE(provider, provider_id)
+    )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS player_stats (
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      game_type TEXT NOT NULL,
+      games_played INT DEFAULT 0,
+      games_won INT DEFAULT 0,
+      PRIMARY KEY (user_id, game_type)
+    )`);
+  console.log('[store] Postgres conectado — feedback, analytics y cuentas persisten entre redeploys.');
 }
 
 /* ---- Feedback ---- */
@@ -139,7 +157,49 @@ async function getAnalytics() {
   return _fileAnalytics;
 }
 
+/* ---- Cuentas (login con Google/Discord) y estadísticas ----
+   A propósito NO tienen fallback en archivo: una cuenta de usuario solo
+   tiene sentido si persiste de verdad. Sin DATABASE_URL, el login queda
+   deshabilitado (authEnabled=false) en vez de simular algo que se
+   perdería en el próximo redeploy. */
+async function upsertUser({ provider, providerId, name, avatarUrl }) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `INSERT INTO users (provider,provider_id,name,avatar_url) VALUES ($1,$2,$3,$4)
+     ON CONFLICT (provider,provider_id) DO UPDATE SET name=$3, avatar_url=$4
+     RETURNING id, provider, name, avatar_url as "avatarUrl"`,
+    [provider, providerId, name, avatarUrl]
+  );
+  return r.rows[0];
+}
+async function getUserById(id) {
+  if (!pool) return null;
+  const r = await pool.query(`SELECT id, provider, name, avatar_url as "avatarUrl" FROM users WHERE id=$1`, [id]);
+  return r.rows[0] || null;
+}
+async function recordGameResult(userId, gameType, won) {
+  if (!pool || !userId) return;
+  try {
+    await pool.query(
+      `INSERT INTO player_stats (user_id,game_type,games_played,games_won) VALUES ($1,$2,1,$3)
+       ON CONFLICT (user_id,game_type) DO UPDATE SET
+         games_played=player_stats.games_played+1,
+         games_won=player_stats.games_won+GREATEST($3,0)`,
+      [userId, gameType, won ? 1 : 0]
+    );
+  } catch (e) { console.error('[store] recordGameResult falló:', e.message); }
+}
+async function getUserStats(userId) {
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT game_type as "gameType", games_played as "gamesPlayed", games_won as "gamesWon" FROM player_stats WHERE user_id=$1`,
+    [userId]
+  );
+  return r.rows;
+}
+
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics,
+  upsertUser, getUserById, recordGameResult, getUserStats,
   get usingDb() { return !!pool; },
 };
