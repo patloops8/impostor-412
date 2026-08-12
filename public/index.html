@@ -82,6 +82,33 @@
   </div>
 </div>
 
+<!-- Modal de perfil de juego -->
+<div id="profile-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="profileTitle">Mi perfil de juego</h2>
+      <button class="rules-close" id="btn-profile-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body">
+      <p class="stats-section-sub" style="text-align:center;margin-bottom:14px;" data-i18n="profileHint">Elige cómo te ven los demás jugadores dentro del juego. No cambia tu cuenta de Google/Discord.</p>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <img id="profile-avatar-preview" src="" alt="" class="profile-avatar-preview" />
+        <div class="chip-btn-row">
+          <label class="chip-btn" for="profile-avatar-file" style="cursor:pointer;margin:0;" data-i18n="profileChangePhoto">📷 Cambiar foto</label>
+          <button class="chip-btn chip-danger hidden" id="btn-profile-avatar-clear" type="button" data-i18n="profileRemovePhoto">Quitar foto</button>
+        </div>
+        <input type="file" id="profile-avatar-file" accept="image/*" class="hidden" />
+      </div>
+      <div style="margin-top:18px;">
+        <label class="stats-section-title" style="display:block;margin-bottom:8px;" data-i18n="profileNameLabel">Nombre en el juego</label>
+        <input type="text" id="profile-name" maxlength="20" data-i18n-placeholder="yourName" />
+      </div>
+      <p class="error-text hidden" id="profile-error" style="margin-top:10px;" aria-live="assertive"></p>
+      <button class="btn-primary" id="btn-profile-save" style="width:100%;margin-top:16px;" data-i18n="profileSave">Guardar perfil</button>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <!-- ===== HOME: crear o unirse ===== -->
@@ -120,10 +147,11 @@
         </button>
       </div>
       <div id="auth-logged-in" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
+        <button type="button" id="btn-edit-profile" style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:999px;" aria-label="Editar perfil">
           <img id="auth-avatar" src="" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />
-          <span id="auth-name" style="font-weight:700;"></span>
-        </div>
+          <span id="auth-name" style="font-weight:700;color:var(--ink);"></span>
+          <span style="font-size:0.7rem;color:var(--text-dim);">✏️</span>
+        </button>
         <div class="chip-btn-row">
           <button class="chip-btn" id="btn-my-stats" data-i18n="myStats">Mis estadísticas</button>
           <button class="chip-btn chip-danger" id="btn-auth-logout" data-i18n="logout">Cerrar sesión</button>

@@ -105,6 +105,7 @@ select{font-family:var(--display);font-weight:600;letter-spacing:0.04em;backgrou
 .player-chip{background:var(--card);border:1px solid var(--line2);border-radius:12px;padding:12px;text-align:center;}
 .player-chip-top{display:flex;align-items:center;justify-content:center;gap:8px;}
 .player-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:0.82rem;flex-shrink:0;line-height:1;}
+.player-avatar-img{object-fit:cover;}
 .player-chip .name{font-weight:800;font-size:0.95rem;color:var(--ink);}
 .player-chip .meta{font-family:var(--mono);font-size:0.72rem;color:var(--ink-soft);margin-top:4px;font-variant-numeric:tabular-nums;}
 .player-chip.dead{opacity:0.4;}
@@ -240,6 +241,9 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .lb-wins,.lb-played{display:flex;flex-direction:column;align-items:center;font-weight:800;font-size:0.9rem;line-height:1;min-width:2.6em;}
 .lb-wins{color:var(--neon);}
 .lb-wins-lbl,.lb-played-lbl{font-size:0.58rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.03em;margin-top:3px;}
+
+/* ===== Perfil de juego ===== */
+.profile-avatar-preview{width:88px;height:88px;border-radius:50%;object-fit:cover;background:var(--bg2);border:2px solid var(--line2);}
 
 /* ===== Aviso de logro desbloqueado ===== */
 .achv-toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-30px);z-index:3100;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(20,16,4,0.96),rgba(10,12,16,0.96));border:1px solid #e9b949;border-radius:14px;padding:10px 16px;box-shadow:0 0 22px rgba(233,185,73,0.4);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:92vw;}

@@ -180,7 +180,7 @@ const connectedAlive = r => alive(r).filter(p=>p.connected);
 const connected = r => playersArr(r).filter(p=>p.connected);
 
 function publicPlayers(r){
-  return playersArr(r).map(p=>({ id:p.id, name:p.name, score:p.score, alive:p.alive, connected:p.connected, isHost: p.id===r.hostId }));
+  return playersArr(r).map(p=>({ id:p.id, name:p.name, avatar:p.avatarUrl||null, score:p.score, alive:p.alive, connected:p.connected, isHost: p.id===r.hostId }));
 }
 
 function emitRoom(r){
@@ -1207,6 +1207,12 @@ io.on('connection', socket => {
     const decoded = authToken ? auth.verifyToken(authToken) : null;
     return decoded ? decoded.uid : null;
   }
+  // El avatar personalizado ya viaja adentro del JWT (auth.js lo firma con
+  // el perfil efectivo), así que no hace falta ir a buscarlo a la base acá.
+  function avatarFromToken(authToken){
+    const decoded = authToken ? auth.verifyToken(authToken) : null;
+    return decoded ? (decoded.avatar || null) : null;
+  }
 
   socket.on('player:create_room', ({ name, authToken }, cb) => {
     if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
@@ -1214,7 +1220,7 @@ io.on('connection', socket => {
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     const code=genCode();
     const room=newRoom(code,socket.id);
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken)});
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
@@ -1230,7 +1236,7 @@ io.on('connection', socket => {
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken)});
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);

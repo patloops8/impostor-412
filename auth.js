@@ -7,7 +7,13 @@
 // localStorage, igual que ya hace con el código de sala.
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const express = require('express');
 const store = require('./store');
+
+// Tope generoso para la imagen de perfil en base64 (el cliente ya la
+// redimensiona/comprime antes de mandarla, pero esto evita que alguien
+// mande un payload gigante directamente a la API).
+const PROFILE_BODY_LIMIT = '400kb';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_MAX_AGE = '180d';
@@ -46,7 +52,12 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 function signToken(user) {
-  return jwt.sign({ uid: user.id, name: user.name, avatar: user.avatarUrl, provider: user.provider }, JWT_SECRET, { expiresIn: JWT_MAX_AGE });
+  // El JWT lleva el perfil EFECTIVO (nombre/foto personalizados si el
+  // jugador los eligió, si no los del proveedor OAuth), para que se vea
+  // bien apenas vuelve de loguearse sin esperar a /auth/me.
+  const name = user.displayName || user.name;
+  const avatar = user.avatarImage || user.avatarUrl;
+  return jwt.sign({ uid: user.id, name, avatar, provider: user.provider }, JWT_SECRET, { expiresIn: JWT_MAX_AGE });
 }
 function verifyToken(token) {
   if (!JWT_SECRET || !token) return null;
@@ -142,10 +153,53 @@ function registerAuthRoutes(app) {
   app.get('/auth/me', async (req, res) => {
     const decoded = verifyToken((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
     if (!decoded) return res.status(401).json({ ok: false });
+    const dbUser = await store.getUserById(decoded.uid);
+    if (!dbUser) return res.status(401).json({ ok: false });
     const stats = await store.getUserStats(decoded.uid);
     const defs = await store.getAchievements();
-    res.json({ ok: true, user: { id: decoded.uid, name: decoded.name, avatar: decoded.avatar, provider: decoded.provider }, stats, achievements: computeAchievements(stats, defs) });
+    // Reemitimos el JWT con el perfil actual: si el nombre/foto se editó
+    // desde otro dispositivo, este también queda al día (el token viejo
+    // guardado en localStorage es lo que viaja al crear/unirse a una sala).
+    const token = signToken({ ...dbUser, provider: decoded.provider });
+    res.json({ ok: true, user: profileView(dbUser, decoded.provider), stats, achievements: computeAchievements(stats, defs), token });
   });
+
+  // Perfil de juego personalizado: el jugador puede elegir un nombre y una
+  // foto propios para mostrar en el juego, sin tocar su nombre/foto real
+  // de Google/Discord. Enviar displayName/avatarImage null o "" limpia esa
+  // personalización y vuelve a mostrar el nombre/foto original del login.
+  app.put('/auth/profile', express.json({ limit: PROFILE_BODY_LIMIT }), async (req, res) => {
+    const decoded = verifyToken((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+    if (!decoded) return res.status(401).json({ error: 'No autenticado.' });
+    let { displayName, avatarImage } = req.body || {};
+    if (displayName != null) {
+      displayName = String(displayName).trim().slice(0, 20);
+      if (!displayName) displayName = null;
+    }
+    if (avatarImage != null && !/^data:image\/(png|jpeg|jpg|webp);base64,/.test(avatarImage)) {
+      return res.status(400).json({ error: 'Imagen inválida.' });
+    }
+    const dbUser = await store.updateUserProfile(decoded.uid, { displayName, avatarImage });
+    if (!dbUser) return res.status(500).json({ error: 'No se pudo guardar el perfil.' });
+    // El cliente reemplaza el JWT guardado con este: si no lo hiciéramos,
+    // el nombre/foto nuevos no se usarían al crear/unirse a una sala hasta
+    // el próximo login (player:create_room manda el JWT tal cual al server).
+    const token = signToken({ ...dbUser, provider: decoded.provider });
+    res.json({ ok: true, user: profileView(dbUser, decoded.provider), token });
+  });
+}
+
+function profileView(dbUser, provider) {
+  return {
+    id: dbUser.id,
+    name: dbUser.displayName || dbUser.name,
+    avatar: dbUser.avatarImage || dbUser.avatarUrl,
+    provider,
+    originalName: dbUser.name,
+    originalAvatar: dbUser.avatarUrl,
+    hasCustomName: !!dbUser.displayName,
+    hasCustomAvatar: !!dbUser.avatarImage,
+  };
 }
 
 // ---- Logros ----

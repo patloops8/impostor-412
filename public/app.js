@@ -167,7 +167,8 @@ function avatarFor(id){
   const c=AVATAR_PALETTE[h%AVATAR_PALETTE.length];
   return c;
 }
-function avatarHTML(id,name){
+function avatarHTML(id,name,avatarUrl){
+  if(avatarUrl) return `<img class="player-avatar player-avatar-img" src="${esc(avatarUrl)}" alt=""/>`;
   const c=avatarFor(id||name||'?');
   const initial=esc((name||'?').trim().charAt(0).toUpperCase()||'?');
   return `<span class="player-avatar" style="background:${c.bg};color:${c.fg};">${initial}</span>`;
@@ -233,6 +234,16 @@ function decodeJwtPayload(tok){
   try{ return JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
   catch(e){ return null; }
 }
+// Si el nombre de la sala coincide con lo que ya autocompletamos antes (o
+// está vacío), lo mantenemos sincronizado con el perfil; si el jugador lo
+// editó a mano, no se lo pisamos.
+let _nameWasAutofilled = false;
+$('inp-name').addEventListener('input', ()=>{ _nameWasAutofilled = false; });
+function autofillNameFromAuth(){
+  if(!authUser) return;
+  const cur = $('inp-name').value.trim();
+  if(!cur || _nameWasAutofilled){ $('inp-name').value = authUser.name; _nameWasAutofilled = true; }
+}
 function renderAuthUI(){
   const box=$('auth-box');
   if(authUser){
@@ -241,6 +252,7 @@ function renderAuthUI(){
     box.classList.remove('hidden');
     $('auth-avatar').src = authUser.avatar || '/images/ui/logo.png';
     $('auth-name').textContent = authUser.name;
+    autofillNameFromAuth();
   } else {
     $('auth-logged-in').classList.add('hidden');
     $('auth-logged-out').classList.toggle('hidden', !_authAnyEnabled);
@@ -274,6 +286,20 @@ function renderAuthUI(){
   }catch(e){ _authAnyEnabled = false; }
   renderAuthUI();
   if(hadAuthError) showHomeError(t('authError'));
+  // El JWT puede tener el nombre/foto desactualizados si el jugador editó
+  // su perfil de juego en otra sesión/dispositivo — se refresca en segundo
+  // plano contra la base sin bloquear la pantalla inicial.
+  if(authUser){
+    try{
+      const meRes = await fetch('/auth/me', { headers:{ Authorization:'Bearer '+getAuthToken() } });
+      const meJson = await meRes.json();
+      if(meJson.ok){
+        authUser = { id:meJson.user.id, name:meJson.user.name, avatar:meJson.user.avatar, provider:meJson.user.provider, hasCustomAvatar:meJson.user.hasCustomAvatar };
+        if(meJson.token) setAuthToken(meJson.token);
+        renderAuthUI();
+      }
+    }catch(e){}
+  }
 })();
 $('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/google/start'; });
 $('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
@@ -373,6 +399,81 @@ $('btn-leaderboard').addEventListener('click', async ()=>{
 document.addEventListener('langchange', ()=>{ if(!$('leaderboard-overlay').classList.contains('hidden')) renderLeaderboard(); });
 $('btn-leaderboard-close').addEventListener('click',()=>$('leaderboard-overlay').classList.add('hidden'));
 $('leaderboard-overlay').addEventListener('click', e=>{ if(e.target===$('leaderboard-overlay'))$('leaderboard-overlay').classList.add('hidden'); });
+
+/* ===== Perfil de juego (nombre e imagen personalizados, aparte de la cuenta OAuth) ===== */
+// 'unchanged': no tocar el avatar guardado; 'clear': volver a la foto original de la
+// cuenta; 'new': subir _profileAvatarData como nueva foto personalizada.
+let _profileAvatarAction = 'unchanged';
+let _profileAvatarData = null;
+function openProfileEditor(){
+  if(!authUser) return;
+  _profileAvatarAction = 'unchanged'; _profileAvatarData = null;
+  $('profile-avatar-preview').src = authUser.avatar || '/images/ui/logo.png';
+  $('profile-name').value = authUser.name || '';
+  $('profile-error').classList.add('hidden');
+  $('btn-profile-avatar-clear').classList.toggle('hidden', !authUser.hasCustomAvatar);
+  $('profile-overlay').classList.remove('hidden');
+}
+$('btn-edit-profile').addEventListener('click', openProfileEditor);
+$('btn-profile-close').addEventListener('click', ()=>$('profile-overlay').classList.add('hidden'));
+$('profile-overlay').addEventListener('click', e=>{ if(e.target===$('profile-overlay'))$('profile-overlay').classList.add('hidden'); });
+
+// Redimensiona/comprime la foto en el navegador antes de mandarla: evita
+// subir fotos de varios MB directo desde la cámara del celular.
+function resizeImageToDataUrl(file, maxSize){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width-side)/2, sy = (img.height-side)/2;
+        const canvas = document.createElement('canvas');
+        canvas.width = maxSize; canvas.height = maxSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, maxSize, maxSize);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+$('profile-avatar-file').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    const dataUrl = await resizeImageToDataUrl(file, 256);
+    _profileAvatarData = dataUrl; _profileAvatarAction = 'new';
+    $('profile-avatar-preview').src = dataUrl;
+    $('btn-profile-avatar-clear').classList.remove('hidden');
+  }catch(e){
+    $('profile-error').textContent = t('profileImageError');
+    $('profile-error').classList.remove('hidden');
+  }
+  $('profile-avatar-file').value = '';
+});
+$('btn-profile-avatar-clear').addEventListener('click', ()=>{
+  _profileAvatarAction = 'clear'; _profileAvatarData = null;
+  $('profile-avatar-preview').src = '/images/ui/logo.png';
+});
+$('btn-profile-save').addEventListener('click', async ()=>{
+  $('profile-error').classList.add('hidden');
+  const body = { displayName: $('profile-name').value.trim() };
+  if(_profileAvatarAction==='new') body.avatarImage = _profileAvatarData;
+  else if(_profileAvatarAction==='clear') body.avatarImage = null;
+  try{
+    const res = await fetch('/auth/profile', { method:'PUT', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body: JSON.stringify(body) });
+    const json = await res.json();
+    if(!res.ok || !json.ok){ $('profile-error').textContent = json.error || t('profileError'); $('profile-error').classList.remove('hidden'); return; }
+    authUser = { id:json.user.id, name:json.user.name, avatar:json.user.avatar, provider:json.user.provider, hasCustomAvatar:json.user.hasCustomAvatar };
+    if(json.token) setAuthToken(json.token);
+    renderAuthUI();
+    showToast(t('profileSaved'), false);
+    $('profile-overlay').classList.add('hidden');
+  }catch(e){ $('profile-error').textContent = t('profileError'); $('profile-error').classList.remove('hidden'); }
+});
 
 /* ===== Compartir código (link directo con ?code=) ===== */
 $('btn-share').addEventListener('click', async () => {
@@ -559,7 +660,7 @@ function renderLobby(st){
   st.players.forEach(p=>{
     const c=document.createElement('div'); c.className='player-chip'+(p.id===myId?' me':'');
     const kickHtml = isHost&&p.id!==myId ? `<button class="kick-btn" data-id="${esc(p.id)}" title="${t('kickAria')}">✕</button>` : '';
-    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div>${kickHtml}</div><div class="meta">${p.isHost?t('host'):(p.connected?t('connected'):'...')}</div>`;
+    c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name,p.avatar)}<div class="name">${esc(p.name)}</div>${kickHtml}</div><div class="meta">${p.isHost?t('host'):(p.connected?t('connected'):'...')}</div>`;
     grid.appendChild(c);
   });
   grid.querySelectorAll('.kick-btn').forEach(btn=>{
@@ -707,7 +808,7 @@ socket.on('imp:turn',({currentTurnPlayerId})=>{ impTurn=currentTurnPlayerId; if(
 function renderClue(){
   $('imp-manga-label').textContent=t('impRoundLabel',{n:impManga.n,c:impManga.c});
   const grid=$('imp-players'); grid.innerHTML='';
-  players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name)}<div class="name">${esc(p.name)}</div></div>`; grid.appendChild(c); });
+  players.forEach(p=>{ const c=document.createElement('div'); c.className='player-chip'+(p.id===impTurn?' turn':'')+(p.id===myId?' me':''); c.innerHTML=`<div class="player-chip-top">${avatarHTML(p.id,p.name,p.avatar)}<div class="name">${esc(p.name)}</div></div>`; grid.appendChild(c); });
   const mine=impTurn===myId;
   $('imp-my-turn').classList.toggle('hidden',!mine);
   $('imp-wait-turn').classList.toggle('hidden',mine);

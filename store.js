@@ -71,6 +71,12 @@ async function initStore() {
       created_at TIMESTAMPTZ DEFAULT now(),
       UNIQUE(provider, provider_id)
     )`);
+  // display_name/avatar_image: perfil de juego personalizado, separado del
+  // nombre/foto que manda el proveedor OAuth (name/avatar_url no se tocan,
+  // así siempre queda un valor original al que volver). ADD COLUMN IF NOT
+  // EXISTS porque la tabla `users` ya existe en producción desde antes.
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_image TEXT`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS player_stats (
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -215,19 +221,31 @@ async function getAnalytics() {
    tiene sentido si persiste de verdad. Sin DATABASE_URL, el login queda
    deshabilitado (authEnabled=false) en vez de simular algo que se
    perdería en el próximo redeploy. */
+const USER_COLUMNS = `id, provider, name, avatar_url as "avatarUrl", display_name as "displayName", avatar_image as "avatarImage"`;
 async function upsertUser({ provider, providerId, name, avatarUrl }) {
   if (!pool) return null;
   const r = await pool.query(
     `INSERT INTO users (provider,provider_id,name,avatar_url) VALUES ($1,$2,$3,$4)
      ON CONFLICT (provider,provider_id) DO UPDATE SET name=$3, avatar_url=$4
-     RETURNING id, provider, name, avatar_url as "avatarUrl"`,
+     RETURNING ${USER_COLUMNS}`,
     [provider, providerId, name, avatarUrl]
   );
   return r.rows[0];
 }
 async function getUserById(id) {
   if (!pool) return null;
-  const r = await pool.query(`SELECT id, provider, name, avatar_url as "avatarUrl" FROM users WHERE id=$1`, [id]);
+  const r = await pool.query(`SELECT ${USER_COLUMNS} FROM users WHERE id=$1`, [id]);
+  return r.rows[0] || null;
+}
+// Perfil de juego personalizado: nombre e imagen que el jugador elige
+// mostrar dentro del juego, independientes del nombre/foto real de su
+// cuenta de Google/Discord (esas quedan intactas en name/avatar_url).
+async function updateUserProfile(id, { displayName, avatarImage }) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `UPDATE users SET display_name=$1, avatar_image=$2 WHERE id=$3 RETURNING ${USER_COLUMNS}`,
+    [displayName || null, avatarImage || null, id]
+  );
   return r.rows[0] || null;
 }
 async function recordGameResult(userId, gameType, won) {
@@ -253,7 +271,8 @@ async function getUserStats(userId) {
 async function getLeaderboard(limit = 20) {
   if (!pool) return [];
   const r = await pool.query(
-    `SELECT u.id, u.name, u.avatar_url as "avatarUrl",
+    `SELECT u.id, COALESCE(u.display_name, u.name) as "name",
+            COALESCE(u.avatar_image, u.avatar_url) as "avatarUrl",
             COALESCE(SUM(ps.games_won),0)::int as "totalWon",
             COALESCE(SUM(ps.games_played),0)::int as "totalPlayed"
      FROM users u
@@ -306,7 +325,7 @@ async function deleteAchievement(id) {
 
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics,
-  upsertUser, getUserById, recordGameResult, getUserStats, getLeaderboard,
+  upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };
