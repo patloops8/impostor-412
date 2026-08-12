@@ -225,6 +225,7 @@
   <div class="tab" data-tab="feedback">📬 Buzón <span class="badge" id="badge-feedback">–</span></div>
   <div class="tab" data-tab="analytics">📊 Analytics</div>
   <div class="tab" data-tab="achievements">🏆 Logros</div>
+  <div class="tab" data-tab="users">👤 Usuarios <span class="badge" id="badge-users">–</span></div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -590,6 +591,18 @@
   <div id="achv-list"></div>
 </div>
 
+<!-- Usuarios -->
+<div class="panel" id="panel-users">
+  <div class="panel-header">
+    <h2>👤 Usuarios</h2>
+    <p>Cuentas logueadas con Google o Discord. Borrar una cuenta borra también sus estadísticas, logros e historial (no se puede deshacer).</p>
+  </div>
+  <div class="filter-row">
+    <input type="text" id="search-users" placeholder="Buscar por nombre…">
+  </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-users"></div>
+</div>
+
 <!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
@@ -775,6 +788,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     else if(currentTab === 'feedback'){ loadFeedback(); }
     else if(currentTab === 'analytics'){ loadAnalytics(); }
     else if(currentTab === 'achievements'){ loadAchievements(); }
+    else if(currentTab === 'users'){ loadUsers(); }
     else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
@@ -2191,6 +2205,66 @@ function renderAchvList(){
       </div>`;
   }).join('');
 }
+
+// ============================================================
+// USUARIOS
+// ============================================================
+let _usersItems = [];
+let _usersSearch = '';
+async function loadUsers(){
+  const el = document.getElementById('list-users');
+  el.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
+  try{
+    const q = _usersSearch ? '?search=' + encodeURIComponent(_usersSearch) : '';
+    const r = await fetch('/admin/users' + q, {headers:_authHeaders()});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'error');
+    _usersItems = data;
+    renderUsers();
+  }catch(e){
+    el.innerHTML = `<p style="color:var(--red)">Error al cargar usuarios: ${esc(e.message)}</p>`;
+  }
+}
+function renderUsers(){
+  const el = document.getElementById('list-users');
+  document.getElementById('badge-users').textContent = _usersItems.length;
+  if(!_usersItems.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
+  el.innerHTML = _usersItems.map(u=>{
+    const avatar = u.avatarImage || u.avatarUrl;
+    const avatarHtml = avatar
+      ? `<img src="${esc(avatar)}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">${esc((u.displayName||u.name||'?').charAt(0).toUpperCase())}</div>`;
+    let joined = '';
+    try{ joined = new Date(u.createdAt).toLocaleDateString('es-MX'); }catch(e){}
+    return `
+      <div class="cfg-section" style="display:flex;align-items:center;gap:14px;">
+        ${avatarHtml}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700">${esc(u.displayName||u.name)} ${u.displayName?`<span style="color:var(--soft);font-weight:400;font-size:12px">(${esc(u.name)})</span>`:''}</div>
+          <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas</div>
+        </div>
+        <button class="btn-export" data-del-user="${u.id}" style="color:var(--red);flex-shrink:0">🗑 Borrar</button>
+      </div>`;
+  }).join('');
+}
+document.getElementById('search-users').addEventListener('input', e=>{
+  _usersSearch = e.target.value.trim();
+  clearTimeout(window._usersSearchTimer);
+  window._usersSearchTimer = setTimeout(loadUsers, 300);
+});
+document.getElementById('list-users').addEventListener('click', async e=>{
+  const btn = e.target.closest('[data-del-user]'); if(!btn) return;
+  const id = Number(btn.dataset.delUser);
+  const u = _usersItems.find(x=>x.id===id);
+  if(!confirm(`¿Borrar la cuenta de "${u?.displayName||u?.name}"? Se pierden sus estadísticas, logros e historial. No se puede deshacer.`)) return;
+  try{
+    const r = await fetch('/admin/users/'+id, {method:'DELETE', headers:_authHeaders()});
+    const data = await r.json();
+    if(!r.ok || !data.ok) throw new Error(data.error||'error');
+    toast('✓ Usuario borrado','ok');
+    loadUsers();
+  }catch(e){ toast('Error: '+e.message,'err'); }
+});
 
 // ============================================================
 // INIT

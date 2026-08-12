@@ -121,19 +121,25 @@ function startCurrentGame(r){
 function recordGameStats(r, gameType, winnerIds){
   const winSet = new Set(winnerIds||[]);
   for(const p of r.players.values()){
-    if(p.userId) notifyGameResultAndAchievements(p.id, p.userId, gameType, winSet.has(p.id));
+    if(p.userId){
+      const otherNames = [...r.players.values()].filter(pp=>pp.id!==p.id).map(pp=>pp.name);
+      notifyGameResultAndAchievements(p.id, p.userId, gameType, winSet.has(p.id), otherNames);
+    }
   }
 }
-async function notifyGameResultAndAchievements(socketId, userId, gameType, won){
+async function notifyGameResultAndAchievements(socketId, userId, gameType, won, otherNames){
   try{
     const defs = await store.getAchievements();
-    if(!defs.length) { await store.recordGameResult(userId, gameType, won); return; }
-    const before = auth.computeAchievements(await store.getUserStats(userId), defs);
-    const beforeUnlocked = new Set(before.filter(a=>a.unlocked).map(a=>a.key));
-    await store.recordGameResult(userId, gameType, won);
-    const after = auth.computeAchievements(await store.getUserStats(userId), defs);
-    const newlyUnlocked = after.filter(a=>a.unlocked && !beforeUnlocked.has(a.key));
-    if(newlyUnlocked.length) io.to(socketId).emit('achievements:unlocked', { achievements: newlyUnlocked });
+    if(!defs.length) { await store.recordGameResult(userId, gameType, won); }
+    else{
+      const before = auth.computeAchievements(await store.getUserStats(userId), defs);
+      const beforeUnlocked = new Set(before.filter(a=>a.unlocked).map(a=>a.key));
+      await store.recordGameResult(userId, gameType, won);
+      const after = auth.computeAchievements(await store.getUserStats(userId), defs);
+      const newlyUnlocked = after.filter(a=>a.unlocked && !beforeUnlocked.has(a.key));
+      if(newlyUnlocked.length) io.to(socketId).emit('achievements:unlocked', { achievements: newlyUnlocked });
+    }
+    await store.addGameHistory(userId, gameType, won, otherNames);
   }catch(e){ console.error('[achievements] error notificando logros:', e.message); }
 }
 
@@ -1645,8 +1651,9 @@ app.get('/qr/:code', async (req,res)=>{
 // aparecer en ella). Se recalcula en cada consulta a partir de las
 // estadísticas reales, sin cachear nada — el volumen de tráfico esperado
 // no justifica la complejidad de invalidar un caché.
-app.get('/api/leaderboard', async (_q,res)=>{
-  try{ res.json(await store.getLeaderboard(20)); }
+app.get('/api/leaderboard', async (req,res)=>{
+  const period = ['all','week','month'].includes(req.query.period) ? req.query.period : 'all';
+  try{ res.json(await store.getLeaderboard(20, period)); }
   catch(e){ res.status(500).json({error:'No se pudo cargar la tabla de posiciones.'}); }
 });
 
@@ -1788,6 +1795,23 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
     if(!store.usingDb) return res.status(503).json({error:'Los logros necesitan la base de datos conectada (DATABASE_URL).'});
     try{
       const ok=await store.deleteAchievement(Number(req.params.id));
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+
+  // Gestión de cuentas: solo lectura + borrado (no hay edición de perfil
+  // desde acá, el jugador ya tiene su propio editor de perfil). Borrar un
+  // usuario arrastra sus estadísticas/logros/historial (ON DELETE CASCADE).
+  app.get('/admin/users', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{ res.json(await store.getAllUsersAdmin(String(req.query.search||'').trim())); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.delete('/admin/users/:id', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const ok=await store.deleteUser(Number(req.params.id));
       if(!ok) return res.status(404).json({error:'not found'});
       res.json({ok:true});
     }catch(e){ res.status(500).json({error:e.message}); }

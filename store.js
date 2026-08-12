@@ -85,6 +85,20 @@ async function initStore() {
       games_won INT DEFAULT 0,
       PRIMARY KEY (user_id, game_type)
     )`);
+  // Historial de partidas: una fila por partida jugada por un usuario
+  // logueado. A diferencia de player_stats (solo contadores acumulados),
+  // esto guarda cada partida individual con fecha — lo usan tanto el
+  // historial visible en "Mis estadísticas" como la tabla de posiciones
+  // semanal/mensual (que necesita saber CUÁNDO se jugó cada partida).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS game_history (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      game_type TEXT NOT NULL,
+      won BOOLEAN NOT NULL,
+      other_players TEXT,
+      played_at TIMESTAMPTZ DEFAULT now()
+    )`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS achievements (
       id SERIAL PRIMARY KEY,
@@ -278,8 +292,29 @@ async function getUserStats(userId) {
   );
   return r.rows;
 }
-async function getLeaderboard(limit = 20) {
+// period: 'all' usa los contadores acumulados de player_stats (barato, y es
+// lo único que existe para partidas jugadas antes de que existiera
+// game_history); 'week'/'month' cuentan desde game_history filtrando por
+// fecha, así que solo reflejan partidas jugadas desde que se agregó esa tabla.
+async function getLeaderboard(limit = 20, period = 'all') {
   if (!pool) return [];
+  if (period === 'week' || period === 'month') {
+    const interval = period === 'week' ? '7 days' : '30 days';
+    const r = await pool.query(
+      `SELECT u.id, COALESCE(u.display_name, u.name) as "name",
+              COALESCE(u.avatar_image, u.avatar_url) as "avatarUrl",
+              COALESCE(SUM(gh.won::int),0)::int as "totalWon",
+              COUNT(gh.id)::int as "totalPlayed"
+       FROM users u
+       JOIN game_history gh ON gh.user_id = u.id AND gh.played_at >= now() - $2::interval
+       GROUP BY u.id
+       HAVING COUNT(gh.id) > 0
+       ORDER BY "totalWon" DESC, "totalPlayed" ASC
+       LIMIT $1`,
+      [limit, interval]
+    );
+    return r.rows;
+  }
   const r = await pool.query(
     `SELECT u.id, COALESCE(u.display_name, u.name) as "name",
             COALESCE(u.avatar_image, u.avatar_url) as "avatarUrl",
@@ -294,6 +329,53 @@ async function getLeaderboard(limit = 20) {
     [limit]
   );
   return r.rows;
+}
+
+/* ---- Historial de partidas ---- */
+async function addGameHistory(userId, gameType, won, otherPlayers) {
+  if (!pool || !userId) return;
+  try {
+    await pool.query(
+      `INSERT INTO game_history (user_id,game_type,won,other_players) VALUES ($1,$2,$3,$4)`,
+      [userId, gameType, !!won, (otherPlayers || []).join(', ') || null]
+    );
+  } catch (e) { console.error('[store] addGameHistory falló:', e.message); }
+}
+async function getGameHistory(userId, limit = 20) {
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT game_type as "gameType", won, other_players as "otherPlayers", played_at as "playedAt"
+     FROM game_history WHERE user_id=$1 ORDER BY played_at DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return r.rows;
+}
+
+/* ---- Panel admin: gestión de usuarios ---- */
+async function getAllUsersAdmin(search = '') {
+  if (!pool) return [];
+  const where = search ? `WHERE u.name ILIKE $1 OR u.display_name ILIKE $1` : '';
+  const params = search ? [`%${search}%`] : [];
+  const r = await pool.query(
+    `SELECT u.id, u.provider, u.name, u.avatar_url as "avatarUrl",
+            u.display_name as "displayName", u.avatar_image as "avatarImage",
+            u.created_at as "createdAt",
+            COALESCE(SUM(ps.games_played),0)::int as "totalPlayed",
+            COALESCE(SUM(ps.games_won),0)::int as "totalWon"
+     FROM users u
+     LEFT JOIN player_stats ps ON ps.user_id = u.id
+     ${where}
+     GROUP BY u.id
+     ORDER BY u.created_at DESC
+     LIMIT 200`,
+    params
+  );
+  return r.rows;
+}
+async function deleteUser(id) {
+  if (!pool) return false;
+  const r = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+  return r.rowCount > 0;
 }
 
 /* ---- Logros: CRUD para el panel admin + lectura pública ---- */
@@ -336,6 +418,7 @@ async function deleteAchievement(id) {
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics, resetAnalytics,
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
+  addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

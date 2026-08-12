@@ -312,10 +312,11 @@ $('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/googl
 $('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
 $('btn-auth-logout').addEventListener('click', ()=>{ setAuthToken(null); authUser=null; renderAuthUI(); });
 const GAME_COLORS = {impostor:'#8b54e0', mentiroso:'#ff4d4d', subasta:'#e9b949', wavelength:'#22d3ee', who:'#2563eb'};
+const GAME_EMOJI = {impostor:'🎭', mentiroso:'🎲', subasta:'💰', wavelength:'📡', who:'🕵️'};
 let _lastStatsData = null;
 function renderStats(){
   if(!_lastStatsData) return;
-  const {stats, achievements} = _lastStatsData;
+  const {stats, achievements, history} = _lastStatsData;
   const totalPlayed = stats.reduce((s,x)=>s+x.gamesPlayed,0);
   const totalWon = stats.reduce((s,x)=>s+x.gamesWon,0);
   const winRate = totalPlayed ? Math.round(totalWon/totalPlayed*100) : 0;
@@ -359,7 +360,27 @@ function renderStats(){
       }).join('')}
     </div>` : `<p style="color:var(--text-dim);text-align:center;">${esc(t('statsEmpty'))}</p>`;
 
-  $('stats-body').innerHTML = headerHtml + achvHtml + byGameHtml;
+  const historyHtml = `
+    <h3 class="stats-section-title">${esc(t('historyTitle'))}</h3>
+    ${(history&&history.length) ? `<div class="history-list">
+      ${history.map(h=>{
+        const color = GAME_COLORS[h.gameType]||'var(--neon)';
+        const emoji = GAME_EMOJI[h.gameType]||'⚽';
+        const date = new Date(h.playedAt).toLocaleDateString(currentLang==='en'?'en-US':'es-ES', {day:'numeric', month:'short'});
+        return `
+        <div class="history-row" style="border-left-color:${color}">
+          <div class="history-icon">${emoji}</div>
+          <div class="history-info">
+            <div class="history-game">${esc(t(GAME_TITLE_KEYS[h.gameType]||h.gameType))}</div>
+            ${h.otherPlayers?`<div class="history-vs">${esc(t('historyVs',{names:h.otherPlayers}))}</div>`:''}
+          </div>
+          <div class="history-result ${h.won?'won':'lost'}">${h.won?esc(t('historyWon')):esc(t('historyLost'))}</div>
+          <div class="history-date">${esc(date)}</div>
+        </div>`;
+      }).join('')}
+    </div>` : `<p style="color:var(--text-dim);text-align:center;">${esc(t('historyEmpty'))}</p>`}`;
+
+  $('stats-body').innerHTML = headerHtml + achvHtml + byGameHtml + historyHtml;
 }
 $('btn-my-stats').addEventListener('click', async ()=>{
   const tok=getAuthToken();
@@ -394,18 +415,183 @@ function renderLeaderboard(){
     </div>`).join('');
   $('leaderboard-body').innerHTML = rows;
 }
-$('btn-leaderboard').addEventListener('click', async ()=>{
+let _lbPeriod = 'all';
+async function loadLeaderboard(){
   $('leaderboard-body').innerHTML = `<p style="color:var(--text-dim)">${esc(t('loading'))}</p>`;
-  $('leaderboard-overlay').classList.remove('hidden');
   try{
-    const res = await fetch('/api/leaderboard');
+    const res = await fetch('/api/leaderboard?period='+_lbPeriod);
     _lastLeaderboardData = await res.json();
     renderLeaderboard();
   }catch(e){ $('leaderboard-body').innerHTML = `<p>${esc(t('statsError'))}</p>`; }
+}
+$('btn-leaderboard').addEventListener('click', ()=>{
+  $('leaderboard-overlay').classList.remove('hidden');
+  loadLeaderboard();
+});
+$('lb-period-row').addEventListener('click', e=>{
+  const btn = e.target.closest('.lb-period-btn'); if(!btn) return;
+  if(btn.dataset.period===_lbPeriod) return;
+  _lbPeriod = btn.dataset.period;
+  document.querySelectorAll('.lb-period-btn').forEach(b=>b.classList.toggle('active', b===btn));
+  loadLeaderboard();
 });
 document.addEventListener('langchange', ()=>{ if(!$('leaderboard-overlay').classList.contains('hidden')) renderLeaderboard(); });
 $('btn-leaderboard-close').addEventListener('click',()=>$('leaderboard-overlay').classList.add('hidden'));
 $('leaderboard-overlay').addEventListener('click', e=>{ if(e.target===$('leaderboard-overlay'))$('leaderboard-overlay').classList.add('hidden'); });
+
+/* ===== Compartir tarjeta de perfil (imagen generada en canvas) ===== */
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawEmojiCentered(ctx, emoji, cx, cy, size){
+  const pa=ctx.textAlign, pb=ctx.textBaseline, pf=ctx.font;
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=size+'px sans-serif';
+  ctx.fillText(emoji, cx, cy);
+  ctx.textAlign=pa; ctx.textBaseline=pb; ctx.font=pf;
+}
+// Con crossOrigin='anonymous', si el servidor de la imagen (CDN de Google/
+// Discord, o nuestra propia base64) no permite lectura entre orígenes, la
+// imagen directamente falla a cargar (no "ensucia" el canvas en silencio) —
+// así que basta con caer al avatar de iniciales si esto rechaza.
+function loadImageSafe(src, timeoutMs=4000){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    const timer = setTimeout(()=>reject(new Error('timeout')), timeoutMs);
+    img.onload = () => { clearTimeout(timer); resolve(img); };
+    img.onerror = () => { clearTimeout(timer); reject(new Error('load failed')); };
+    img.src = src;
+  });
+}
+async function buildProfileCardDataUrl(){
+  const {stats, achievements} = _lastStatsData;
+  const totalPlayed = stats.reduce((s,x)=>s+x.gamesPlayed,0);
+  const totalWon = stats.reduce((s,x)=>s+x.gamesWon,0);
+  const winRate = totalPlayed ? Math.round(totalWon/totalPlayed*100) : 0;
+  const unlocked = achievements.filter(a=>a.unlocked);
+
+  const W=1080, H=1080;
+  const canvas = document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  const ctx = canvas.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#0d141d'); grad.addColorStop(1,'#070b10');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+  ctx.textAlign='center';
+  ctx.fillStyle='#b6ff2e';
+  ctx.font='700 44px Oswald, sans-serif';
+  ctx.fillText('412', W/2, 92);
+  ctx.fillStyle='#9fb0ad';
+  ctx.font='600 22px "Libre Franklin", sans-serif';
+  ctx.fillText(t('appTagline').toUpperCase(), W/2, 126);
+
+  const avatarSize=220, avatarY=180;
+  ctx.save();
+  roundRectPath(ctx, W/2-avatarSize/2, avatarY, avatarSize, avatarSize, avatarSize/2);
+  ctx.clip();
+  let avatarDrawn=false;
+  if(authUser.avatar){
+    try{ const img=await loadImageSafe(authUser.avatar); ctx.drawImage(img, W/2-avatarSize/2, avatarY, avatarSize, avatarSize); avatarDrawn=true; }
+    catch(e){}
+  }
+  if(!avatarDrawn){
+    const c=avatarFor(authUser.id||authUser.name||'?');
+    ctx.fillStyle=c.bg; ctx.fillRect(W/2-avatarSize/2, avatarY, avatarSize, avatarSize);
+    ctx.fillStyle=c.fg;
+    drawEmojiCentered(ctx, (authUser.name||'?').trim().charAt(0).toUpperCase(), W/2, avatarY+avatarSize/2+8, 110);
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(W/2, avatarY+avatarSize/2, avatarSize/2, 0, Math.PI*2);
+  ctx.lineWidth=6; ctx.strokeStyle='#b6ff2e'; ctx.stroke();
+
+  ctx.fillStyle='#eef4ee';
+  ctx.font='700 52px Oswald, sans-serif';
+  ctx.fillText(authUser.name||'', W/2, avatarY+avatarSize+66);
+
+  const statsY = avatarY+avatarSize+110;
+  const boxW=290, gap=25, totalBoxW=boxW*3+gap*2, startX=(W-totalBoxW)/2;
+  const statDefs=[
+    {n:String(totalPlayed), lbl:t('statsGamesPlayed')},
+    {n:String(totalWon), lbl:t('statsGamesWon')},
+    {n:winRate+'%', lbl:t('statsWinRate')},
+  ];
+  statDefs.forEach((s,i)=>{
+    const x=startX+i*(boxW+gap);
+    roundRectPath(ctx, x, statsY, boxW, 140, 16);
+    ctx.fillStyle='rgba(182,255,46,0.06)'; ctx.fill();
+    roundRectPath(ctx, x, statsY, boxW, 140, 16);
+    ctx.strokeStyle='#2a3d4f'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#b6ff2e';
+    ctx.font='800 56px Oswald, sans-serif';
+    ctx.fillText(s.n, x+boxW/2, statsY+72);
+    ctx.fillStyle='#9fb0ad';
+    ctx.font='600 20px "Libre Franklin", sans-serif';
+    ctx.fillText(s.lbl.toUpperCase(), x+boxW/2, statsY+108);
+  });
+
+  const achY = statsY+195;
+  ctx.fillStyle='#eef4ee';
+  ctx.font='700 30px Oswald, sans-serif';
+  ctx.fillText(`🏆 ${t('achievementsUnlockedOf',{n:unlocked.length,total:achievements.length})}`, W/2, achY);
+
+  const badgeSize=92, badgeGap=22, maxBadges=6;
+  const shown = unlocked.slice(0,maxBadges);
+  const rowW = shown.length*badgeSize + Math.max(0,shown.length-1)*badgeGap;
+  let bx = (W-rowW)/2;
+  const by = achY+40;
+  for(const a of shown){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(bx+badgeSize/2, by+badgeSize/2, badgeSize/2, 0, Math.PI*2); ctx.clip();
+    ctx.fillStyle='#111b26'; ctx.fillRect(bx,by,badgeSize,badgeSize);
+    let drawn=false;
+    if(a.iconImage){
+      try{ const img=await loadImageSafe(a.iconImage); ctx.drawImage(img,bx,by,badgeSize,badgeSize); drawn=true; }
+      catch(e){}
+    }
+    if(!drawn) drawEmojiCentered(ctx, a.iconEmoji||'🏆', bx+badgeSize/2, by+badgeSize/2, 50);
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(bx+badgeSize/2, by+badgeSize/2, badgeSize/2, 0, Math.PI*2);
+    ctx.strokeStyle='#e9b949'; ctx.lineWidth=3; ctx.stroke();
+    bx += badgeSize+badgeGap;
+  }
+
+  ctx.fillStyle='#9fb0ad';
+  ctx.font='600 24px "Libre Franklin", sans-serif';
+  ctx.fillText(location.origin.replace(/^https?:\/\//,''), W/2, H-46);
+
+  return canvas.toDataURL('image/png');
+}
+$('btn-share-card').addEventListener('click', async function(){
+  if(!_lastStatsData || !authUser) return;
+  const btn = this; const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = t('loading');
+  try{
+    const dataUrl = await buildProfileCardDataUrl();
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], '412-perfil.png', {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:'412', text:t('shareCardText')}); btn.disabled=false; btn.textContent=orig; return; }
+      catch(e){ if(e.name==='AbortError'){ btn.disabled=false; btn.textContent=orig; return; } }
+    }
+    const a=document.createElement('a'); a.href=dataUrl; a.download='412-perfil.png'; document.body.appendChild(a); a.click(); a.remove();
+    btn.textContent=t('shareCardSaved');
+    setTimeout(()=>{ btn.textContent=orig; },2500);
+  }catch(e){
+    btn.textContent=t('shareCardError');
+    setTimeout(()=>{ btn.textContent=orig; },2500);
+  }
+  btn.disabled = false;
+});
 
 /* ===== Perfil de juego (nombre e imagen personalizados, aparte de la cuenta OAuth) ===== */
 // 'unchanged': no tocar el avatar guardado; 'clear': volver a la foto original de la

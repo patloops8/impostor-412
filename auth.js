@@ -157,11 +157,12 @@ function registerAuthRoutes(app) {
     if (!dbUser) return res.status(401).json({ ok: false });
     const stats = await store.getUserStats(decoded.uid);
     const defs = await store.getAchievements();
+    const history = await store.getGameHistory(decoded.uid, 20);
     // Reemitimos el JWT con el perfil actual: si el nombre/foto se editó
     // desde otro dispositivo, este también queda al día (el token viejo
     // guardado en localStorage es lo que viaja al crear/unirse a una sala).
     const token = signToken({ ...dbUser, provider: decoded.provider });
-    res.json({ ok: true, user: profileView(dbUser, decoded.provider), stats, achievements: computeAchievements(stats, defs), token });
+    res.json({ ok: true, user: profileView(dbUser, decoded.provider), stats, achievements: computeAchievements(stats, defs), history, token });
   });
 
   // Perfil de juego personalizado: el jugador puede elegir un nombre y una
