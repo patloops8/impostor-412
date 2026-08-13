@@ -226,6 +226,7 @@
   <div class="tab" data-tab="analytics">📊 Analytics</div>
   <div class="tab" data-tab="achievements">🏆 Logros</div>
   <div class="tab" data-tab="users">👤 Usuarios <span class="badge" id="badge-users">–</span></div>
+  <div class="tab" data-tab="reports">🚩 Reportes <span class="badge" id="badge-reports">–</span></div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -603,6 +604,22 @@
   <div class="tbl-wrap" style="padding:12px 16px" id="list-users"></div>
 </div>
 
+<!-- Reportes de chat -->
+<div class="panel" id="panel-reports">
+  <div class="panel-header">
+    <h2>🚩 Reportes</h2>
+    <p>Mensajes de chat reportados por otros jugadores en salas públicas. "Vetar" resuelve el reporte y le pone un veto de salas públicas a la cuenta reportada (elegí la duración); "Desestimar" lo descarta sin tocar la cuenta.</p>
+  </div>
+  <div class="filter-row">
+    <select id="reports-status-filter">
+      <option value="pending">Pendientes</option>
+      <option value="actioned">Vetados</option>
+      <option value="dismissed">Desestimados</option>
+    </select>
+  </div>
+  <div class="tbl-wrap" style="padding:12px 16px" id="list-reports"></div>
+</div>
+
 <!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
@@ -789,6 +806,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     else if(currentTab === 'analytics'){ loadAnalytics(); }
     else if(currentTab === 'achievements'){ loadAchievements(); }
     else if(currentTab === 'users'){ loadUsers(); }
+    else if(currentTab === 'reports'){ loadReports(); }
     else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
@@ -2236,20 +2254,52 @@ function renderUsers(){
       : `<div style="width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;">${esc((u.displayName||u.name||'?').charAt(0).toUpperCase())}</div>`;
     let joined = '';
     try{ joined = new Date(u.createdAt).toLocaleDateString('es-MX'); }catch(e){}
+    const isBanned = u.bannedUntil && new Date(u.bannedUntil) > new Date();
+    let bannedLabel = '';
+    if(isBanned){
+      const farFuture = new Date(u.bannedUntil).getFullYear() >= 9999;
+      bannedLabel = ` · <span style="color:var(--red)">🚫 vetado ${farFuture?'permanentemente':'hasta '+new Date(u.bannedUntil).toLocaleDateString('es-MX')}</span>`;
+    }
     return `
       <div class="cfg-section" style="display:flex;align-items:center;gap:14px;">
         ${avatarHtml}
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700">${esc(u.displayName||u.name)} ${u.displayName?`<span style="color:var(--soft);font-weight:400;font-size:12px">(${esc(u.name)})</span>`:''}</div>
-          <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas</div>
+          <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas${bannedLabel}</div>
         </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
+        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
           <button class="btn-export" data-reset-name="${u.id}" title="Reemplaza el nombre por uno genérico (UserNNNN)">🔤 Nombre</button>
           <button class="btn-export" data-clear-avatar="${u.id}" ${u.avatarImage?'':'disabled style="opacity:0.4;"'} title="Saca la foto de perfil personalizada">🖼 Foto</button>
+          ${isBanned
+            ? `<button class="btn-export" data-unban="${u.id}" style="color:#8f8" title="Quita el veto de salas públicas">✅ Quitar veto</button>`
+            : `<button class="btn-export" data-ban="${u.id}" style="color:var(--gold,#e9b949)" title="Veta la cuenta de las salas públicas">🚫 Vetar</button>`}
           <button class="btn-export" data-del-user="${u.id}" style="color:var(--red);">🗑 Borrar</button>
         </div>
       </div>`;
   }).join('');
+}
+async function banUserPrompt(id, name){
+  const input = prompt(`¿Por cuántos días vetar a "${name}" de las salas públicas?\nDejá vacío o poné 0 para veto permanente.`, '7');
+  if(input === null) return;
+  const trimmed = input.trim();
+  const days = (trimmed==='' || Number(trimmed)===0) ? null : Number(trimmed);
+  if(days !== null && (!Number.isInteger(days) || days < 1 || days > 3650)){ toast('Cantidad de días inválida','err'); return; }
+  try{
+    const r = await fetch(`/admin/users/${id}/ban`, {method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({days})});
+    const data = await r.json();
+    if(!r.ok || !data.ok) throw new Error(data.error||'error');
+    const until = data.user.bannedUntil ? new Date(data.user.bannedUntil).toLocaleDateString('es-MX') : '?';
+    toast(days===null ? '✓ Vetado permanentemente' : `✓ Vetado hasta ${until}`,'ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
+}
+async function unbanUserPrompt(id, name){
+  if(!confirm(`¿Quitar el veto de salas públicas a "${name}"?`)) return;
+  try{
+    const r = await fetch(`/admin/users/${id}/unban`, {method:'POST', headers:_authHeaders()});
+    const data = await r.json();
+    if(!r.ok || !data.ok) throw new Error(data.error||'error');
+    toast('✓ Veto retirado','ok');
+  }catch(e){ toast('Error: '+e.message,'err'); }
 }
 document.getElementById('search-users').addEventListener('input', e=>{
   _usersSearch = e.target.value.trim();
@@ -2260,6 +2310,22 @@ document.getElementById('list-users').addEventListener('click', async e=>{
   const delBtn = e.target.closest('[data-del-user]');
   const nameBtn = e.target.closest('[data-reset-name]');
   const avatarBtn = e.target.closest('[data-clear-avatar]');
+  const banBtn = e.target.closest('[data-ban]');
+  const unbanBtn = e.target.closest('[data-unban]');
+  if(banBtn){
+    const id = Number(banBtn.dataset.ban);
+    const u = _usersItems.find(x=>x.id===id);
+    await banUserPrompt(id, u?.displayName||u?.name);
+    loadUsers();
+    return;
+  }
+  if(unbanBtn){
+    const id = Number(unbanBtn.dataset.unban);
+    const u = _usersItems.find(x=>x.id===id);
+    await unbanUserPrompt(id, u?.displayName||u?.name);
+    loadUsers();
+    return;
+  }
   if(delBtn){
     const id = Number(delBtn.dataset.delUser);
     const u = _usersItems.find(x=>x.id===id);
@@ -2296,6 +2362,82 @@ document.getElementById('list-users').addEventListener('click', async e=>{
       if(!r.ok || !data.ok) throw new Error(data.error||'error');
       toast('✓ Foto de perfil quitada','ok');
       loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+  }
+});
+
+// ============================================================
+// REPORTES
+// ============================================================
+let _reportsItems = [];
+async function loadReports(){
+  const el = document.getElementById('list-reports');
+  el.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
+  try{
+    const status = document.getElementById('reports-status-filter').value;
+    const r = await fetch('/admin/reports?status='+status, {headers:_authHeaders()});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'error');
+    _reportsItems = data;
+    renderReports();
+  }catch(e){
+    el.innerHTML = `<p style="color:var(--red)">Error al cargar reportes: ${esc(e.message)}</p>`;
+  }
+}
+function renderReports(){
+  const el = document.getElementById('list-reports');
+  const status = document.getElementById('reports-status-filter').value;
+  document.getElementById('badge-reports').textContent = status==='pending' ? _reportsItems.length : '–';
+  if(!_reportsItems.length){ el.innerHTML = '<div class="empty-state">Sin resultados</div>'; return; }
+  el.innerHTML = _reportsItems.map(rp=>{
+    let when = '';
+    try{ when = new Date(rp.createdAt).toLocaleString('es-MX'); }catch(e){}
+    const actions = rp.status==='pending' ? `
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn-export" data-ban-report="${rp.id}" style="color:var(--gold,#e9b949)">🚫 Vetar</button>
+        <button class="btn-export" data-dismiss-report="${rp.id}">Desestimar</button>
+      </div>` : `<div style="color:var(--soft);font-size:12px;flex-shrink:0;text-transform:uppercase;">${rp.status==='actioned'?'✓ vetado':'descartado'}</div>`;
+    return `
+      <div class="cfg-section" style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700">${esc(rp.reportedName||'?')} <span style="color:var(--soft);font-weight:400;font-size:12px">reportado por ${esc(rp.reporterName||'?')}</span></div>
+          <div style="color:var(--text);font-size:13px;margin-top:6px;background:var(--bg3);border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word;">${esc(rp.messageText||'')}</div>
+          <div style="color:var(--soft);font-size:12px;margin-top:6px">sala ${esc(rp.roomCode||'?')} · ${when}</div>
+        </div>
+        ${actions}
+      </div>`;
+  }).join('');
+}
+document.getElementById('reports-status-filter').addEventListener('change', loadReports);
+document.getElementById('list-reports').addEventListener('click', async e=>{
+  const banBtn = e.target.closest('[data-ban-report]');
+  const dismissBtn = e.target.closest('[data-dismiss-report]');
+  if(banBtn){
+    const id = Number(banBtn.dataset.banReport);
+    const rp = _reportsItems.find(x=>x.id===id);
+    const input = prompt(`¿Por cuántos días vetar a "${rp?.reportedName}" de las salas públicas?\nDejá vacío o poné 0 para veto permanente.`, '7');
+    if(input === null) return;
+    const trimmed = input.trim();
+    const days = (trimmed==='' || Number(trimmed)===0) ? null : Number(trimmed);
+    if(days !== null && (!Number.isInteger(days) || days < 1 || days > 3650)){ toast('Cantidad de días inválida','err'); return; }
+    try{
+      const r = await fetch(`/admin/reports/${id}/ban`, {method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({days})});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Cuenta vetada','ok');
+      loadReports();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(dismissBtn){
+    const id = Number(dismissBtn.dataset.dismissReport);
+    if(!confirm('¿Desestimar este reporte sin tomar ninguna acción?')) return;
+    try{
+      const r = await fetch(`/admin/reports/${id}/dismiss`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Reporte desestimado','ok');
+      loadReports();
     }catch(e){ toast('Error: '+e.message,'err'); }
   }
 });

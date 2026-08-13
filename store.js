@@ -77,6 +77,12 @@ async function initStore() {
   // EXISTS porque la tabla `users` ya existe en producción desde antes.
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_image TEXT`);
+  // Veto de salas públicas: banned_until NULL = sin veto; con fecha futura,
+  // no puede crear ni unirse a salas públicas hasta esa fecha (las salas
+  // privadas no se tocan — el veto es específico de la convivencia entre
+  // desconocidos, no un castigo general de la cuenta).
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS player_stats (
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,6 +121,20 @@ async function initStore() {
       sort_order INT DEFAULT 0,
       active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMPTZ DEFAULT now()
+    )`);
+  // Reportes de mensajes de chat: quien reporta y a quién, con el texto del
+  // mensaje tal cual estaba en ese momento (el chat de la sala es efímero,
+  // no queda guardado en ningún otro lado una vez que la sala se borra).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reports (
+      id SERIAL PRIMARY KEY,
+      reporter_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+      reported_user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      room_code TEXT,
+      message_text TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT now(),
+      reviewed_at TIMESTAMPTZ
     )`);
   await seedDefaultAchievements();
   console.log('[store] Postgres conectado — feedback, analytics, cuentas y logros persisten entre redeploys.');
@@ -245,7 +265,7 @@ async function resetAnalytics() {
    tiene sentido si persiste de verdad. Sin DATABASE_URL, el login queda
    deshabilitado (authEnabled=false) en vez de simular algo que se
    perdería en el próximo redeploy. */
-const USER_COLUMNS = `id, provider, name, avatar_url as "avatarUrl", display_name as "displayName", avatar_image as "avatarImage"`;
+const USER_COLUMNS = `id, provider, name, avatar_url as "avatarUrl", display_name as "displayName", avatar_image as "avatarImage", banned_until as "bannedUntil", ban_reason as "banReason"`;
 async function upsertUser({ provider, providerId, name, avatarUrl }) {
   if (!pool) return null;
   const r = await pool.query(
@@ -359,7 +379,7 @@ async function getAllUsersAdmin(search = '') {
   const r = await pool.query(
     `SELECT u.id, u.provider, u.name, u.avatar_url as "avatarUrl",
             u.display_name as "displayName", u.avatar_image as "avatarImage",
-            u.created_at as "createdAt",
+            u.created_at as "createdAt", u.banned_until as "bannedUntil",
             COALESCE(SUM(ps.games_played),0)::int as "totalPlayed",
             COALESCE(SUM(ps.games_won),0)::int as "totalWon"
      FROM users u
@@ -401,6 +421,62 @@ async function adminClearUserAvatar(id) {
     [id]
   );
   return r.rows[0] || null;
+}
+// Veto de salas públicas. days=null es permanente (fecha muy lejana, para no
+// tener que manejar "NULL pero igual baneado" como un tercer estado aparte).
+async function banUser(id, days, reason) {
+  if (!pool) return null;
+  const until = days ? `now() + interval '${Number(days)} days'` : `'9999-12-31'::timestamptz`;
+  const r = await pool.query(
+    `UPDATE users SET banned_until=${until}, ban_reason=$1 WHERE id=$2 RETURNING ${USER_COLUMNS}`,
+    [reason || null, id]
+  );
+  return r.rows[0] || null;
+}
+async function unbanUser(id) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `UPDATE users SET banned_until=NULL, ban_reason=NULL WHERE id=$1 RETURNING ${USER_COLUMNS}`,
+    [id]
+  );
+  return r.rows[0] || null;
+}
+
+/* ---- Reportes de chat (salas públicas) ---- */
+async function addReport({ reporterUserId, reportedUserId, roomCode, messageText }) {
+  if (!pool) return null;
+  const r = await pool.query(
+    `INSERT INTO reports (reporter_user_id,reported_user_id,room_code,message_text) VALUES ($1,$2,$3,$4) RETURNING id`,
+    [reporterUserId, reportedUserId, roomCode, messageText]
+  );
+  return r.rows[0];
+}
+async function getReports(status = 'pending') {
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT rp.id, rp.room_code as "roomCode", rp.message_text as "messageText", rp.status, rp.created_at as "createdAt",
+            reporter.id as "reporterId", COALESCE(reporter.display_name, reporter.name) as "reporterName",
+            reported.id as "reportedId", COALESCE(reported.display_name, reported.name) as "reportedName",
+            reported.banned_until as "reportedBannedUntil"
+     FROM reports rp
+     LEFT JOIN users reporter ON reporter.id = rp.reporter_user_id
+     LEFT JOIN users reported ON reported.id = rp.reported_user_id
+     WHERE rp.status = $1
+     ORDER BY rp.created_at DESC
+     LIMIT 200`,
+    [status]
+  );
+  return r.rows;
+}
+async function getReportById(id) {
+  if (!pool) return null;
+  const r = await pool.query(`SELECT id, reported_user_id as "reportedUserId" FROM reports WHERE id=$1`, [id]);
+  return r.rows[0] || null;
+}
+async function setReportStatus(id, status) {
+  if (!pool) return false;
+  const r = await pool.query(`UPDATE reports SET status=$1, reviewed_at=now() WHERE id=$2`, [status, id]);
+  return r.rowCount > 0;
 }
 
 /* ---- Logros: CRUD para el panel admin + lectura pública ---- */
@@ -444,6 +520,7 @@ module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics, resetAnalytics,
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
+  banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

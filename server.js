@@ -196,6 +196,10 @@ const connected = r => playersArr(r).filter(p=>p.connected);
 function publicPlayers(r){
   return playersArr(r).map(p=>({ id:p.id, name:p.name, avatar:p.avatarUrl||null, score:p.score, alive:p.alive, connected:p.connected, isHost: p.id===r.hostId }));
 }
+// userId viaja en los mensajes guardados server-side (hace falta para
+// reportarlos), pero el cliente no tiene ningún uso para ese dato.
+function publicChatMsg(m){ const {userId, ...rest} = m; return rest; }
+function publicChat(r){ return r.chat.map(publicChatMsg); }
 
 function emitRoom(r){
   io.to(r.code).emit('room:update', {
@@ -1251,13 +1255,35 @@ io.on('connection', socket => {
     const decoded = authToken ? auth.verifyToken(authToken) : null;
     return decoded ? (decoded.avatar || null) : null;
   }
+  // Las salas públicas exigen sesión iniciada (así el sistema de reportes
+  // tiene a quién responsabilizar) y bloquean a quien tenga un veto activo.
+  // Las salas privadas no pasan por acá — siguen funcionando como invitado.
+  async function checkPublicGate(userId){
+    if(!userId) return { ok:false, error:'Necesitás iniciar sesión con Google o Discord para crear o unirte a salas públicas.' };
+    try{
+      const user = await store.getUserById(userId);
+      if(user && user.bannedUntil && new Date(user.bannedUntil) > new Date()){
+        const until = new Date(user.bannedUntil).toLocaleDateString('es-AR');
+        return { ok:false, error:`Tu cuenta está vetada de las salas públicas hasta el ${until}.` };
+      }
+      return { ok:true };
+    }catch(e){
+      console.error('[public-gate] error verificando la cuenta:', e.message);
+      return { ok:false, error:'No se pudo verificar tu cuenta. Intenta de nuevo en un momento.' };
+    }
+  }
 
-  socket.on('player:create_room', ({ name, authToken, isTest, testToken, isPublic, gameType }, cb) => {
+  socket.on('player:create_room', async ({ name, authToken, isTest, testToken, isPublic, gameType }, cb) => {
     if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(isPublic && !['impostor','mentiroso','subasta','wavelength','who'].includes(gameType)){
       cb({ok:false,error:'Elegí un modo de juego para la sala pública.'});return;
+    }
+    const uid = userIdFromToken(authToken);
+    if(isPublic){
+      const gate = await checkPublicGate(uid);
+      if(!gate.ok){ cb({ok:false,error:gate.error}); return; }
     }
     const code=genCode();
     const room=newRoom(code,socket.id);
@@ -1270,16 +1296,16 @@ io.on('connection', socket => {
       // pueden ser desconocidos que ni se estén escuchando.
       room.mentirosoConfig.mode = 'texto';
     }
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
-    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:room.chat});
+    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined'); }
   });
 
-  socket.on('player:join_room', ({ code, name, authToken }, cb) => {
+  socket.on('player:join_room', async ({ code, name, authToken }, cb) => {
     const room=rooms.get((code||'').toUpperCase());
     if(!room){cb({ok:false,error:'Sala no encontrada.'});return;}
     if(room.status!=='lobby'){cb({ok:false,error:'La partida ya empezó.'});return;}
@@ -1287,9 +1313,14 @@ io.on('connection', socket => {
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
+    const uid = userIdFromToken(authToken);
+    if(room.isPublic){
+      const gate = await checkPublicGate(uid);
+      if(!gate.ok){ cb({ok:false,error:gate.error}); return; }
+    }
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken)});
     socket.join(room.code); socket.data.roomCode=room.code;
-    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:room.chat});
+    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest) trackEvent('player_joined');
@@ -1302,14 +1333,33 @@ io.on('connection', socket => {
     const r=rooms.get(code); if(!r||!r.chatEnabled)return;
     const p=r.players.get(socket.id); if(!p)return;
     const clean=(text||'').trim().slice(0,200); if(!clean)return;
-    const msg={ id:Date.now()+'-'+Math.random().toString(36).slice(2,8), playerId:socket.id, name:p.name, avatar:p.avatarUrl||null, text:clean, ts:Date.now() };
+    // userId viaja en el mensaje guardado server-side (hace falta para poder
+    // reportarlo), pero no se lo mandamos al cliente: no tiene ningún uso ahí.
+    const msg={ id:Date.now()+'-'+Math.random().toString(36).slice(2,8), playerId:socket.id, userId:p.userId||null, name:p.name, avatar:p.avatarUrl||null, text:clean, ts:Date.now() };
     r.chat.push(msg); if(r.chat.length>100) r.chat.shift();
-    io.to(r.code).emit('chat:message', msg);
+    io.to(r.code).emit('chat:message', publicChatMsg(msg));
   });
   socket.on('host:toggle_chat', ({code,enabled}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.isPublic)return;
     r.chatEnabled = !!enabled;
     emitRoom(r);
+  });
+  // Reportar un mensaje de chat: solo tiene sentido si ambos (quien reporta
+  // y quien mandó el mensaje) tienen cuenta — en la práctica siempre es así
+  // en salas públicas, que ya exigen sesión iniciada para entrar.
+  socket.on('player:report_message', async ({code,messageId}, cb) => {
+    const r=rooms.get(code); if(!r){cb&&cb({ok:false,error:'Sala no encontrada.'});return;}
+    const reporter=r.players.get(socket.id); if(!reporter){cb&&cb({ok:false,error:'No sos parte de esta sala.'});return;}
+    const msg=r.chat.find(m=>m.id===messageId); if(!msg){cb&&cb({ok:false,error:'Ese mensaje ya no está disponible.'});return;}
+    if(msg.playerId===socket.id){cb&&cb({ok:false,error:'No podés reportar tu propio mensaje.'});return;}
+    if(!msg.userId||!reporter.userId){cb&&cb({ok:false,error:'Este reporte necesita que ambos tengan sesión iniciada.'});return;}
+    try{
+      await store.addReport({ reporterUserId:reporter.userId, reportedUserId:msg.userId, roomCode:r.code, messageText:msg.text });
+      cb&&cb({ok:true});
+    }catch(e){
+      console.error('[report] error guardando reporte:', e.message);
+      cb&&cb({ok:false,error:'No se pudo enviar el reporte. Intenta de nuevo.'});
+    }
   });
 
   // Buscador de salas públicas: el cliente se suma a este "cuarto" meta de
@@ -1649,7 +1699,7 @@ io.on('connection', socket => {
       if(r.hostId===socket.id) clearHostTimer(r.code);
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
-      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:r.chat});
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(r)});
       emitRoom(r);
       sendResumeState(r, socket);
     } else { cb&&cb({ok:false}); }
@@ -1916,6 +1966,55 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
     try{
       const updated=await store.adminClearUserAvatar(Number(req.params.id));
       if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  // Veto de salas públicas: days=null (o ausente) es permanente.
+  app.post('/admin/users/:id/ban', adminAuth, express.json({limit:'2kb'}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    const { days, reason } = req.body||{};
+    if(days!=null && (!Number.isInteger(days)||days<1||days>3650)) return res.status(400).json({error:'La cantidad de días debe ser un entero entre 1 y 3650.'});
+    try{
+      const updated=await store.banUser(Number(req.params.id), days||null, reason);
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/users/:id/unban', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const updated=await store.unbanUser(Number(req.params.id));
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+
+  // Reportes de mensajes de chat (salas públicas). "ban" resuelve el
+  // reporte Y aplica el veto en un solo paso; "dismiss" lo descarta sin
+  // tocar la cuenta reportada.
+  app.get('/admin/reports', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los reportes necesitan la base de datos conectada (DATABASE_URL).'});
+    const status = ['pending','dismissed','actioned'].includes(req.query.status) ? req.query.status : 'pending';
+    try{ res.json(await store.getReports(status)); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/reports/:id/dismiss', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los reportes necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const ok=await store.setReportStatus(Number(req.params.id), 'dismissed');
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/reports/:id/ban', adminAuth, express.json({limit:'2kb'}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Los reportes necesitan la base de datos conectada (DATABASE_URL).'});
+    const { days } = req.body||{};
+    if(days!=null && (!Number.isInteger(days)||days<1||days>3650)) return res.status(400).json({error:'La cantidad de días debe ser un entero entre 1 y 3650.'});
+    try{
+      const report=await store.getReportById(Number(req.params.id));
+      if(!report) return res.status(404).json({error:'not found'});
+      const updated=await store.banUser(report.reportedUserId, days||null, 'Reporte de chat #'+report.id);
+      await store.setReportStatus(report.id, 'actioned');
       res.json({ok:true, user:updated});
     }catch(e){ res.status(500).json({error:e.message}); }
   });

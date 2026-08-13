@@ -261,13 +261,25 @@ function setChatHistory(msgs){
 function renderChatMessages(){
   const box = $('chat-messages');
   if(!_chatMessages.length){ box.innerHTML = `<p class="chat-empty">${esc(t('chatEmpty'))}</p>`; return; }
-  box.innerHTML = _chatMessages.map(m=>`
-    <div class="chat-msg${m.playerId===myId?' me':''}">
-      <div class="chat-msg-name">${esc(m.name)}</div>
+  box.innerHTML = _chatMessages.map(m=>{
+    const isMe = m.playerId===myId;
+    const reportBtn = isMe ? '' : `<button class="chat-report-btn" data-msg-id="${esc(m.id)}" title="${esc(t('chatReportBtn'))}">🚩</button>`;
+    return `
+    <div class="chat-msg${isMe?' me':''}">
+      <div class="chat-msg-name">${esc(m.name)}${reportBtn}</div>
       <div class="chat-msg-bubble">${esc(m.text)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   box.scrollTop = box.scrollHeight;
 }
+$('chat-messages').addEventListener('click', e=>{
+  const btn = e.target.closest('.chat-report-btn'); if(!btn) return;
+  if(!confirm(t('chatReportConfirm'))) return;
+  socket.emit('player:report_message', { code:roomCode, messageId:btn.dataset.msgId }, (res)=>{
+    if(res && res.ok) showToast(t('chatReportSent'), false);
+    else showToast((res&&res.error)||t('chatReportError'), true);
+  });
+});
 function renderChatUnread(){
   const badge = $('chat-unread-badge');
   badge.textContent = _chatUnread>9 ? '9+' : _chatUnread;
@@ -298,6 +310,35 @@ document.addEventListener('langchange', ()=>{ if(!_chatMessages.length) renderCh
 
 /* ===== Crear sala: privada o pública ===== */
 let _createPublicGameType = null;
+/* ===== Guardia de acceso a salas públicas: exige sesión iniciada (para que
+   el sistema de reportes tenga a quién responsabilizar) y muestra el aviso
+   de buena convivencia una vez por día antes de entrar. ===== */
+const PUBLIC_GUIDELINES_KEY = '412_public_guidelines_seen';
+let _pendingPublicProceed = null;
+function guardPublicEntry(proceedFn){
+  if(!authUser){
+    $('create-room-overlay').classList.add('hidden');
+    closePublicRoomsOverlay();
+    showHomeError(t('publicRequiresLogin'));
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  let lastShown = null;
+  try{ lastShown = localStorage.getItem(PUBLIC_GUIDELINES_KEY); }catch(e){}
+  if(lastShown===today){ proceedFn(); return; }
+  _pendingPublicProceed = proceedFn;
+  $('public-guidelines-overlay').classList.remove('hidden');
+}
+$('btn-guidelines-accept').addEventListener('click', ()=>{
+  try{ localStorage.setItem(PUBLIC_GUIDELINES_KEY, new Date().toISOString().slice(0,10)); }catch(e){}
+  $('public-guidelines-overlay').classList.add('hidden');
+  const fn = _pendingPublicProceed; _pendingPublicProceed = null;
+  if(fn) fn();
+});
+$('btn-guidelines-cancel').addEventListener('click', ()=>{
+  _pendingPublicProceed = null;
+  $('public-guidelines-overlay').classList.add('hidden');
+});
 function openCreateRoomOverlay(){
   $('create-room-step-type').classList.remove('hidden');
   $('create-room-step-game').classList.add('hidden');
@@ -314,8 +355,10 @@ $('btn-create-private').addEventListener('click', ()=>{
   socket.emit('player:create_room', { name, authToken:getAuthToken() }, onJoined);
 });
 $('btn-create-public').addEventListener('click', ()=>{
-  $('create-room-step-type').classList.add('hidden');
-  $('create-room-step-game').classList.remove('hidden');
+  guardPublicEntry(()=>{
+    $('create-room-step-type').classList.add('hidden');
+    $('create-room-step-game').classList.remove('hidden');
+  });
 });
 $('btn-create-back').addEventListener('click', ()=>{
   $('create-room-step-type').classList.remove('hidden');
@@ -368,7 +411,7 @@ function renderPublicRooms(){
 $('btn-browse-public').addEventListener('click', ()=>{
   const name = $('inp-name').value.trim();
   if(!name){ showHomeError(t('enterYourName')); return; }
-  openPublicRoomsOverlay();
+  guardPublicEntry(()=>openPublicRoomsOverlay());
 });
 $('btn-public-rooms-close').addEventListener('click', closePublicRoomsOverlay);
 $('public-rooms-overlay').addEventListener('click', e=>{ if(e.target===$('public-rooms-overlay'))closePublicRoomsOverlay(); });
