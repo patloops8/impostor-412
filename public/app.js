@@ -237,15 +237,21 @@ function onJoined(res){
   show('s-lobby');
 }
 
-/* ===== Chat en vivo de la sala (por ahora solo salas públicas) ===== */
+/* ===== Chat en vivo de la sala: siempre disponible en públicas; en
+   privadas el anfitrión lo prende/apaga (ej. si están en una llamada) ===== */
 let _chatMessages = [];
 let _chatUnread = 0;
 let _roomIsPublic = false;
+let _chatEnabled = false;
 function updateChatVisibility(){
-  const shouldShow = !!(roomCode && _roomIsPublic);
+  const shouldShow = !!(roomCode && _chatEnabled);
   $('btn-chat-toggle').classList.toggle('hidden', !shouldShow);
   if(!shouldShow) $('chat-panel').classList.add('hidden');
 }
+$('btn-toggle-chat-enabled').addEventListener('click', ()=>{
+  if(!roomCode) return;
+  socket.emit('host:toggle_chat', { code:roomCode, enabled:!_chatEnabled });
+});
 function setChatHistory(msgs){
   _chatMessages = msgs || [];
   _chatUnread = 0;
@@ -985,7 +991,11 @@ socket.on('room:update', (st) => {
   if(st.formations) formationsData = st.formations;
   _checkDisconnectToasts(st);
   _roomIsPublic = !!st.isPublic;
+  _chatEnabled = !!st.chatEnabled;
   updateChatVisibility();
+  $('chat-toggle-row').classList.toggle('hidden', !isHost || _roomIsPublic);
+  $('btn-toggle-chat-enabled').textContent = t(_chatEnabled ? 'chatEnableOn' : 'chatEnableOff');
+  $('btn-toggle-chat-enabled').classList.toggle('chip-danger', !_chatEnabled);
 
   if(st.status==='lobby'){
     renderLobby(st);

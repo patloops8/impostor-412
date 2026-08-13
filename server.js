@@ -162,6 +162,7 @@ function newRoom(code, hostId) {
     isTest: false,                // true en salas creadas por scripts/smoke-test.js: no suman a Analytics
     isPublic: false,               // true = aparece en "Unirse a sala pública"; el modo queda fijo desde la creación
     chat: [],                      // últimos mensajes del chat en vivo (se manda como historial al entrar/reconectar)
+    chatEnabled: true,             // en salas privadas el anfitrión lo puede apagar (ej. si están en una llamada); en públicas queda siempre prendido
     impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
@@ -203,6 +204,7 @@ function emitRoom(r){
     status: r.status,
     gameType: r.gameType,
     isPublic: r.isPublic,
+    chatEnabled: r.chatEnabled,
     hostId: r.hostId,
     impostorConfig: r.impostorConfig,
     mentirosoConfig: r.mentirosoConfig,
@@ -1293,16 +1295,21 @@ io.on('connection', socket => {
     if(!room.isTest) trackEvent('player_joined');
   });
 
-  // Chat en vivo de la sala: pensado sobre todo para salas públicas (gente
-  // que no se conoce y no tiene otro canal para hablar), pero no hay motivo
-  // técnico para no permitirlo también en privadas si alguna vez se pide.
+  // Chat en vivo de la sala: siempre prendido en públicas (es el único canal
+  // entre desconocidos); en privadas el anfitrión lo puede apagar, por
+  // ejemplo si el grupo ya está hablando por una llamada aparte.
   socket.on('player:chat_message', ({code,text}) => {
-    const r=rooms.get(code); if(!r)return;
+    const r=rooms.get(code); if(!r||!r.chatEnabled)return;
     const p=r.players.get(socket.id); if(!p)return;
     const clean=(text||'').trim().slice(0,200); if(!clean)return;
     const msg={ id:Date.now()+'-'+Math.random().toString(36).slice(2,8), playerId:socket.id, name:p.name, avatar:p.avatarUrl||null, text:clean, ts:Date.now() };
     r.chat.push(msg); if(r.chat.length>100) r.chat.shift();
     io.to(r.code).emit('chat:message', msg);
+  });
+  socket.on('host:toggle_chat', ({code,enabled}) => {
+    const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.isPublic)return;
+    r.chatEnabled = !!enabled;
+    emitRoom(r);
   });
 
   // Buscador de salas públicas: el cliente se suma a este "cuarto" meta de

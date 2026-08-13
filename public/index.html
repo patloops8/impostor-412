@@ -247,6 +247,9 @@
       <img id="qr-img" src="" alt="QR para unirse" width="180" height="180" />
       <p data-i18n="scanToJoin">Escanea para unirte</p>
     </div>
+    <div class="chip-btn-row hidden" id="chat-toggle-row" style="margin-top:8px;">
+      <button class="chip-btn" id="btn-toggle-chat-enabled" data-i18n="chatEnableOn">💬 Chat: activado</button>
+    </div>
     <div class="chip-btn-row" style="margin-top:8px;">
       <button class="chip-btn chip-danger" id="btn-leave-room" data-i18n="leaveRoom">Salir de esta sala</button>
     </div>
@@ -777,7 +780,7 @@
   </div>
 </div>
 
-<!-- Chat en vivo de la sala (por ahora solo en salas públicas) -->
+<!-- Chat en vivo de la sala: siempre activo en públicas; en privadas el anfitrión lo puede apagar -->
 <button id="btn-chat-toggle" class="chat-toggle hidden" aria-label="Chat">
   💬<span id="chat-unread-badge" class="chat-badge hidden">0</span>
 </button>
