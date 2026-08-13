@@ -1260,7 +1260,13 @@ io.on('connection', socket => {
     const room=newRoom(code,socket.id);
     room.isTest = !!isTest && testToken===SMOKE_TEST_TOKEN;
     room.isPublic = !!isPublic;
-    if(room.isPublic) room.gameType = gameType;
+    if(room.isPublic){
+      room.gameType = gameType;
+      // Fuerza modo texto aunque el admin haya configurado "voz" por defecto:
+      // no hay chat de voz en el juego, y en una sala pública los jugadores
+      // pueden ser desconocidos que ni se estén escuchando.
+      room.mentirosoConfig.mode = 'texto';
+    }
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
@@ -1324,7 +1330,10 @@ io.on('connection', socket => {
   socket.on('host:update_mentiroso_config', ({code,roundCount,mode,namingSeconds}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
     if(Number.isInteger(roundCount))r.mentirosoConfig.roundCount=Math.min(Math.max(1,roundCount),20);
-    if(mode==='voz'||mode==='texto')r.mentirosoConfig.mode=mode;
+    // El modo "voz" necesita que los jugadores se escuchen entre sí y no hay
+    // chat de voz en el juego: en una sala pública (con desconocidos) queda
+    // fijo en "texto" para que se pueda jugar completo sin hablar.
+    if((mode==='voz'||mode==='texto') && !(r.isPublic && mode==='voz'))r.mentirosoConfig.mode=mode;
     if(Number.isInteger(namingSeconds))r.mentirosoConfig.namingSeconds=Math.min(Math.max(10,namingSeconds),30);
     emitRoom(r);
   });

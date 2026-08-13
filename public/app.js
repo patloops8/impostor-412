@@ -963,6 +963,16 @@ function renderLobby(st){
   $('host-controls').classList.toggle('hidden',!isHost);
   $('guest-wait').classList.toggle('hidden',isHost);
 
+  // El modo "voz" de Mentiroso necesita que los jugadores se escuchen entre
+  // sí; sin chat de voz en el juego, una sala pública (con desconocidos)
+  // no lo puede ofrecer — se oculta la opción y se fuerza "texto".
+  $('lie-mode-voz').classList.toggle('hidden', !!st.isPublic);
+  if(st.isPublic && !document.querySelector('input[name=lm][value=texto]').checked){
+    document.querySelector('input[name=lm][value=texto]').checked = true;
+    $('lie-mode-texto').classList.add('checked');
+    $('lie-mode-voz').classList.remove('checked');
+  }
+
   if(isHost){
     renderGamePicker(st.gameType);
     const opts = st.gameOptions || {};
