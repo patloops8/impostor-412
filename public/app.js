@@ -210,7 +210,7 @@ $('btn-lang').addEventListener('click', () => {
 $('btn-create').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
   if(!name){ showHomeError(t('enterYourName')); return; }
-  socket.emit('player:create_room', { name, authToken:getAuthToken() }, onJoined);
+  openCreateRoomOverlay();
 });
 $('btn-join').addEventListener('click', () => {
   const name = $('inp-name').value.trim();
@@ -222,6 +222,10 @@ $('btn-join').addEventListener('click', () => {
 $('inp-code').addEventListener('keydown', e=>{ if(e.key==='Enter')$('btn-join').click(); });
 function showHomeError(m){ $('home-error').textContent=m; $('home-error').classList.remove('hidden'); }
 function onJoined(res){
+  // Cerrar los modales de creación/búsqueda antes que nada: si falla, el
+  // error tiene que verse en la pantalla principal, no quedar tapado atrás.
+  $('create-room-overlay').classList.add('hidden');
+  closePublicRoomsOverlay();
   if(!res.ok){ showHomeError(res.error); return; }
   myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
   ALL_CATEGORIES=res.categories||[]; ALL_FORMATIONS=res.formations||[];
@@ -229,6 +233,97 @@ function onJoined(res){
   saveSession();
   show('s-lobby');
 }
+
+/* ===== Crear sala: privada o pública ===== */
+let _createPublicGameType = null;
+function openCreateRoomOverlay(){
+  $('create-room-step-type').classList.remove('hidden');
+  $('create-room-step-game').classList.add('hidden');
+  _createPublicGameType = null;
+  document.querySelectorAll('#create-public-game-grid .game-pick-card').forEach(c=>c.classList.remove('selected'));
+  $('btn-create-public-confirm').disabled = true;
+  $('create-room-overlay').classList.remove('hidden');
+}
+$('btn-create-room-close').addEventListener('click', ()=>$('create-room-overlay').classList.add('hidden'));
+$('create-room-overlay').addEventListener('click', e=>{ if(e.target===$('create-room-overlay'))$('create-room-overlay').classList.add('hidden'); });
+$('btn-create-private').addEventListener('click', ()=>{
+  const name = $('inp-name').value.trim();
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  socket.emit('player:create_room', { name, authToken:getAuthToken() }, onJoined);
+});
+$('btn-create-public').addEventListener('click', ()=>{
+  $('create-room-step-type').classList.add('hidden');
+  $('create-room-step-game').classList.remove('hidden');
+});
+$('btn-create-back').addEventListener('click', ()=>{
+  $('create-room-step-type').classList.remove('hidden');
+  $('create-room-step-game').classList.add('hidden');
+});
+$('create-public-game-grid').addEventListener('click', e=>{
+  const card = e.target.closest('.game-pick-card'); if(!card) return;
+  _createPublicGameType = card.dataset.game;
+  document.querySelectorAll('#create-public-game-grid .game-pick-card').forEach(c=>c.classList.toggle('selected', c===card));
+  $('btn-create-public-confirm').disabled = false;
+});
+$('btn-create-public-confirm').addEventListener('click', ()=>{
+  const name = $('inp-name').value.trim();
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  if(!_createPublicGameType) return;
+  socket.emit('player:create_room', { name, authToken:getAuthToken(), isPublic:true, gameType:_createPublicGameType }, onJoined);
+});
+
+/* ===== Unirse a sala pública ===== */
+let _pubRoomsData = [];
+let _pubFilter = 'all';
+let _watchingPublic = false;
+function openPublicRoomsOverlay(){
+  $('public-rooms-body').innerHTML = `<p style="color:var(--text-dim)">${esc(t('loading'))}</p>`;
+  $('public-rooms-overlay').classList.remove('hidden');
+  _watchingPublic = true;
+  socket.emit('lobby:watch_public', {}, (res)=>{
+    if(res && res.ok){ _pubRoomsData = res.rooms || []; renderPublicRooms(); }
+  });
+}
+function closePublicRoomsOverlay(){
+  if(!_watchingPublic) return;
+  _watchingPublic = false;
+  socket.emit('lobby:unwatch_public');
+  $('public-rooms-overlay').classList.add('hidden');
+}
+function renderPublicRooms(){
+  const list = _pubFilter==='all' ? _pubRoomsData : _pubRoomsData.filter(r=>r.gameType===_pubFilter);
+  if(!list.length){ $('public-rooms-body').innerHTML = `<p style="color:var(--text-dim);text-align:center;">${esc(t('publicRoomsEmpty'))}</p>`; return; }
+  $('public-rooms-body').innerHTML = list.map(r=>`
+    <div class="pub-room-row">
+      <div class="pub-room-icon">${GAME_EMOJI[r.gameType]||'⚽'}</div>
+      <div class="pub-room-info">
+        <div class="pub-room-game">${esc(t(GAME_TITLE_KEYS[r.gameType]||r.gameType))}</div>
+        <div class="pub-room-meta">${esc(t('publicRoomsHost',{name:r.hostName}))} · ${esc(t('publicRoomsPlayers',{n:r.playerCount}))}</div>
+      </div>
+      <button class="chip-btn pub-room-join" data-code="${esc(r.code)}" data-i18n="publicRoomsJoin">${esc(t('publicRoomsJoin'))}</button>
+    </div>`).join('');
+}
+$('btn-browse-public').addEventListener('click', ()=>{
+  const name = $('inp-name').value.trim();
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  openPublicRoomsOverlay();
+});
+$('btn-public-rooms-close').addEventListener('click', closePublicRoomsOverlay);
+$('public-rooms-overlay').addEventListener('click', e=>{ if(e.target===$('public-rooms-overlay'))closePublicRoomsOverlay(); });
+$('pub-filter-row').addEventListener('click', e=>{
+  const btn = e.target.closest('.pub-filter-btn'); if(!btn) return;
+  _pubFilter = btn.dataset.filter;
+  document.querySelectorAll('.pub-filter-btn').forEach(b=>b.classList.toggle('active', b===btn));
+  renderPublicRooms();
+});
+$('public-rooms-body').addEventListener('click', e=>{
+  const btn = e.target.closest('.pub-room-join'); if(!btn) return;
+  const name = $('inp-name').value.trim();
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  socket.emit('player:join_room', { code:btn.dataset.code, name, authToken:getAuthToken() }, onJoined);
+});
+socket.on('publicRooms:update', (rooms)=>{ _pubRoomsData = rooms||[]; if(_watchingPublic) renderPublicRooms(); });
+document.addEventListener('langchange', ()=>{ if(_watchingPublic) renderPublicRooms(); });
 
 /* ===== Login (Google/Discord) — opcional, la app funciona igual como invitado ===== */
 const AUTH_KEY = '412_auth';
@@ -860,6 +955,10 @@ function renderLobby(st){
     btn.addEventListener('click',()=>socket.emit('host:kick_player',{code:roomCode,targetId:btn.dataset.id}));
   });
   $('player-count').textContent=st.players.length;
+
+  $('lobby-public-badge').classList.toggle('hidden',!st.isPublic);
+  $('lobby-game-pick-grid').classList.toggle('locked',!!st.isPublic);
+  $('game-pick-locked-note').classList.toggle('hidden',!st.isPublic);
 
   $('host-controls').classList.toggle('hidden',!isHost);
   $('guest-wait').classList.toggle('hidden',isHost);

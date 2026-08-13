@@ -117,6 +117,63 @@
   </div>
 </div>
 
+<!-- Modal: elegir sala privada o pública al crear -->
+<div id="create-room-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="createRoomTitle">Crear sala</h2>
+      <button class="rules-close" id="btn-create-room-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body">
+      <div id="create-room-step-type">
+        <p class="stats-section-sub" style="text-align:center;margin-bottom:14px;" data-i18n="createRoomTypeHint">Elegí qué tipo de sala querés crear.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="chip-btn" id="btn-create-private" style="padding:16px;height:auto;">
+            <span style="display:block;font-weight:800;" data-i18n="createPrivateRoom">🔒 Sala privada</span>
+            <span style="display:block;font-weight:400;font-size:0.78rem;color:var(--text-dim);margin-top:4px;white-space:normal;" data-i18n="createPrivateRoomDesc">Compartís un código con tus amigos para que se unan.</span>
+          </button>
+          <button class="chip-btn" id="btn-create-public" style="padding:16px;height:auto;">
+            <span style="display:block;font-weight:800;" data-i18n="createPublicRoom">🌐 Sala pública</span>
+            <span style="display:block;font-weight:400;font-size:0.78rem;color:var(--text-dim);margin-top:4px;white-space:normal;" data-i18n="createPublicRoomDesc">Cualquiera la encuentra y se une desde la lista de salas públicas.</span>
+          </button>
+        </div>
+      </div>
+      <div id="create-room-step-game" class="hidden">
+        <button class="chip-btn" id="btn-create-back" style="margin-bottom:14px;" data-i18n="backBtn">← Atrás</button>
+        <h3 style="font-size:1.05rem;margin-bottom:12px;" data-i18n="whatToPlay">¿Qué van a jugar?</h3>
+        <div class="game-pick-grid" id="create-public-game-grid">
+          <button class="game-pick-card g-impostor" data-game="impostor"><span class="game-pick-title" data-i18n="gameImpostorTitle">El Impostor</span><span class="game-pick-desc" data-i18n="gameImpostorDesc">Todos conocen al jugador... excepto uno.</span></button>
+          <button class="game-pick-card g-subasta" data-game="subasta"><span class="game-pick-title" data-i18n="gameSubastaTitle">Subasta Futbolera</span><span class="game-pick-desc" data-i18n="gameSubastaDesc">Construye el mejor equipo con presupuesto limitado.</span></button>
+          <button class="game-pick-card g-mentiroso" data-game="mentiroso"><span class="game-pick-title" data-i18n="gameMentirosoTitle">Mentiroso Futbolero</span><span class="game-pick-desc" data-i18n="gameMentirosoDesc">Convence a todos de que tu respuesta es real.</span></button>
+          <button class="game-pick-card g-wavelength" data-game="wavelength"><span class="game-pick-title" data-i18n="gameWavelengthTitle">La Frecuencia</span><span class="game-pick-desc" data-i18n="gameWavelengthDesc">Sintoniza con el grupo en el debate futbolero.</span></button>
+          <button class="game-pick-card g-who" data-game="who"><span class="game-pick-title" data-i18n="gameWhoTitle">¿Quién Soy?</span><span class="game-pick-desc" data-i18n="gameWhoDesc">Todos ven tu identidad menos tú.</span></button>
+          <div class="game-pick-spacer"></div>
+        </div>
+        <button class="btn-primary" id="btn-create-public-confirm" style="width:100%;margin-top:16px;" disabled data-i18n="btnCreatePublicRoom">Crear sala pública</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: buscador de salas públicas -->
+<div id="public-rooms-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="publicRoomsTitle">Salas públicas</h2>
+      <button class="rules-close" id="btn-public-rooms-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="chip-btn-row" id="pub-filter-row" style="padding:14px 20px 0;flex-wrap:wrap;">
+      <button class="chip-btn pub-filter-btn active" data-filter="all" data-i18n="publicRoomsFilterAll">Todos</button>
+      <button class="chip-btn pub-filter-btn" data-filter="impostor" data-i18n="gameImpostorTitle">El Impostor</button>
+      <button class="chip-btn pub-filter-btn" data-filter="subasta" data-i18n="gameSubastaTitle">Subasta Futbolera</button>
+      <button class="chip-btn pub-filter-btn" data-filter="mentiroso" data-i18n="gameMentirosoTitle">Mentiroso Futbolero</button>
+      <button class="chip-btn pub-filter-btn" data-filter="wavelength" data-i18n="gameWavelengthTitle">La Frecuencia</button>
+      <button class="chip-btn pub-filter-btn" data-filter="who" data-i18n="gameWhoTitle">¿Quién Soy?</button>
+    </div>
+    <div class="rules-body" id="public-rooms-body"></div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <!-- ===== HOME: crear o unirse ===== -->
@@ -133,6 +190,7 @@
         <input type="text" id="inp-code" placeholder="Código" maxlength="4" style="text-transform:uppercase;flex:1;" data-i18n-placeholder="code" />
         <button class="btn-secondary" id="btn-join" data-i18n="join">Unirme</button>
       </div>
+      <button class="chip-btn" id="btn-browse-public" style="width:100%;margin-top:10px;" data-i18n="browsePublicRooms">🌐 Unirse a sala pública</button>
       <p class="error-text hidden" id="home-error" style="margin-top:10px;" aria-live="assertive"></p>
     </div>
 
@@ -178,6 +236,9 @@
   <section id="s-lobby" class="hidden">
     <p class="eyebrow" data-i18n="shareCode">Comparte este código</p>
     <div class="code-display" id="lobby-code">----</div>
+    <div style="text-align:center;margin-top:8px;">
+      <span class="pill host hidden" id="lobby-public-badge" data-i18n="publicRoomBadge">🌐 Sala pública</span>
+    </div>
     <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;" data-i18n="shareCode">📋 Copiar / compartir código</button>
     <div class="chip-btn-row" style="margin-top:8px;">
       <button class="chip-btn" id="btn-toggle-qr" data-i18n="showQr">📱 Mostrar código QR</button>
@@ -200,8 +261,9 @@
     <!-- Solo el anfitrión ve esto -->
     <div id="host-controls" class="hidden">
       <div class="divider"></div>
-      <h2 style="font-size:1.3rem;margin-bottom:12px;" data-i18n="whatToPlay">¿Qué van a jugar?</h2>
-      <div class="game-pick-grid">
+      <h2 style="font-size:1.3rem;margin-bottom:4px;" data-i18n="whatToPlay">¿Qué van a jugar?</h2>
+      <p class="stats-section-sub hidden" id="game-pick-locked-note" style="margin-bottom:8px;" data-i18n="publicGameLocked">El modo de esta sala pública quedó fijo desde que se creó.</p>
+      <div class="game-pick-grid" id="lobby-game-pick-grid">
         <button class="game-pick-card g-impostor" id="pick-impostor"><span class="game-pick-title" data-i18n="gameImpostorTitle">El Impostor</span><span class="game-pick-desc" data-i18n="gameImpostorDesc">Todos conocen al jugador... excepto uno.</span></button>
         <button class="game-pick-card g-subasta" id="pick-subasta"><span class="game-pick-title" data-i18n="gameSubastaTitle">Subasta Futbolera</span><span class="game-pick-desc" data-i18n="gameSubastaDesc">Construye el mejor equipo con presupuesto limitado.</span></button>
         <button class="game-pick-card g-mentiroso" id="pick-mentiroso"><span class="game-pick-title" data-i18n="gameMentirosoTitle">Mentiroso Futbolero</span><span class="game-pick-desc" data-i18n="gameMentirosoDesc">Convence a todos de que tu respuesta es real.</span></button>

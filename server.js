@@ -160,6 +160,7 @@ function newRoom(code, hostId) {
     gameType: null,
     status: 'lobby',
     isTest: false,                // true en salas creadas por scripts/smoke-test.js: no suman a Analytics
+    isPublic: false,               // true = aparece en "Unirse a sala pública"; el modo queda fijo desde la creación
     impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
@@ -200,6 +201,7 @@ function emitRoom(r){
     players: publicPlayers(r),
     status: r.status,
     gameType: r.gameType,
+    isPublic: r.isPublic,
     hostId: r.hostId,
     impostorConfig: r.impostorConfig,
     mentirosoConfig: r.mentirosoConfig,
@@ -211,6 +213,25 @@ function emitRoom(r){
     gameOptions: SETTINGS.opciones || DEFAULT_SETTINGS.opciones,
     formations: FORMATIONS_DATA,
   });
+}
+
+// Sala pública ("Unirse a sala pública", tipo Among Us): la lista se
+// recalcula al vuelo a partir de `rooms` (nada de tablas nuevas) y se
+// empuja en vivo a quien tenga abierto el buscador, en vez de que el
+// cliente esté sondeando (polling) el servidor.
+const PUBLIC_BROWSE_ROOM = 'public-browse';
+function publicRoomsList(){
+  return [...rooms.values()]
+    .filter(r=>r.isPublic && r.status==='lobby' && r.players.size<10)
+    .map(r=>({
+      code: r.code,
+      gameType: r.gameType,
+      playerCount: r.players.size,
+      hostName: r.players.get(r.hostId)?.name || '?',
+    }));
+}
+function broadcastPublicRooms(){
+  io.to(PUBLIC_BROWSE_ROOM).emit('publicRooms:update', publicRoomsList());
 }
 
 function reassignHostIfNeeded(r){
@@ -1151,11 +1172,14 @@ function sendResumeState(r, socket){
 // Cubre el caso donde el último jugador se desconecta a mitad de partida
 // (el handler de disconnect solo marca connected=false, no borra la sala).
 setInterval(()=>{
+  let sweptPublic=false;
   for(const [code,r] of rooms.entries()){
     if(connected(r).length===0){
+      if(r.isPublic) sweptPublic=true;
       clearSubTimer(r); clearLieTimer(r); clearHostTimer(code); rooms.delete(code);
     }
   }
+  if(sweptPublic) broadcastPublicRooms();
 }, 15*60*1000); // cada 15 minutos
 
 /* ===================== SOCKET.IO ===================== */
@@ -1225,18 +1249,24 @@ io.on('connection', socket => {
     return decoded ? (decoded.avatar || null) : null;
   }
 
-  socket.on('player:create_room', ({ name, authToken, isTest, testToken }, cb) => {
+  socket.on('player:create_room', ({ name, authToken, isTest, testToken, isPublic, gameType }, cb) => {
     if(rooms.size>=100){cb({ok:false,error:'Servidor lleno, intenta en unos minutos.'});return;}
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
+    if(isPublic && !['impostor','mentiroso','subasta','wavelength','who'].includes(gameType)){
+      cb({ok:false,error:'Elegí un modo de juego para la sala pública.'});return;
+    }
     const code=genCode();
     const room=newRoom(code,socket.id);
     room.isTest = !!isTest && testToken===SMOKE_TEST_TOKEN;
+    room.isPublic = !!isPublic;
+    if(room.isPublic) room.gameType = gameType;
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
+    if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined'); }
   });
 
@@ -1252,7 +1282,19 @@ io.on('connection', socket => {
     socket.join(room.code); socket.data.roomCode=room.code;
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
     emitRoom(room);
+    if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest) trackEvent('player_joined');
+  });
+
+  // Buscador de salas públicas: el cliente se suma a este "cuarto" meta de
+  // Socket.IO mientras tenga el modal abierto, así recibe la lista
+  // actualizada en vivo sin tener que sondear (polling) al servidor.
+  socket.on('lobby:watch_public', (_data, cb) => {
+    socket.join(PUBLIC_BROWSE_ROOM);
+    cb && cb({ ok:true, rooms: publicRoomsList() });
+  });
+  socket.on('lobby:unwatch_public', () => {
+    socket.leave(PUBLIC_BROWSE_ROOM);
   });
 
   socket.on('host:kick_player', ({code,targetId}) => {
@@ -1268,6 +1310,7 @@ io.on('connection', socket => {
 
   socket.on('host:select_game', ({code,gameType}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||r.status!=='lobby')return;
+    if(r.isPublic)return; // el modo de una sala pública queda fijo desde que se creó
     if(!['impostor','mentiroso','subasta','wavelength','who'].includes(gameType))return;
     r.gameType=gameType; emitRoom(r);
   });
@@ -1306,7 +1349,8 @@ io.on('connection', socket => {
 
   socket.on('host:start_match', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId||!r.gameType)return;
-    startCurrentGame(r);
+    const started=startCurrentGame(r);
+    if(started && r.isPublic) broadcastPublicRooms(); // deja de listarse: ya no está en lobby
   });
 
   // El Impostor
@@ -1536,8 +1580,14 @@ io.on('connection', socket => {
 
   socket.on('host:new_session', ({code}) => {
     const r=rooms.get(code); if(!r||socket.id!==r.hostId)return;
+    // En una sala pública el modo quedó fijo desde la creación: resetRoomToLobby
+    // limpia gameType, pero acá se lo devolvemos para no dejarla sin modo (y sin
+    // forma de elegir uno, porque host:select_game está bloqueado para isPublic).
+    const keepGameType = r.isPublic ? r.gameType : null;
     resetRoomToLobby(r, code);
+    if(keepGameType) r.gameType = keepGameType;
     emitRoom(r);
+    if(r.isPublic) broadcastPublicRooms(); // vuelve a listarse: está de nuevo en lobby
   });
 
   // "Jugar de nuevo": vuelve al lobby y arranca directo el mismo juego con
@@ -1551,6 +1601,7 @@ io.on('connection', socket => {
     if(prevGameType){ r.gameType = prevGameType; }
     emitRoom(r);
     if(prevGameType) startCurrentGame(r);
+    if(r.isPublic) broadcastPublicRooms(); // vuelve a listarse (lobby) o desaparece (arrancó directo)
   });
 
   socket.on('player:rejoin', ({code,playerId}, cb) => {
@@ -1593,8 +1644,13 @@ io.on('connection', socket => {
         if(r.status==='who_turn'&&whoActiveId(r)===socket.id)whoAdvanceTurn(r);
       }
       emitRoom(r);
+      if(r.isPublic) broadcastPublicRooms(); // cambió la cantidad de jugadores (o el lobby)
     }
-    if(r.players.size===0){clearSubTimer(r);clearLieTimer(r);clearHostTimer(code);rooms.delete(code);}
+    if(r.players.size===0){
+      const wasPublic=r.isPublic;
+      clearSubTimer(r);clearLieTimer(r);clearHostTimer(code);rooms.delete(code);
+      if(wasPublic) broadcastPublicRooms();
+    }
   });
 });
 

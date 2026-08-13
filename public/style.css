@@ -245,6 +245,16 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .lb-period-btn{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:999px;color:var(--text-dim);font-family:var(--body);font-size:0.76rem;font-weight:700;padding:8px 6px;cursor:pointer;transition:border-color .15s,color .15s,background .15s;}
 .lb-period-btn.active{border-color:var(--neon);color:var(--neon);background:rgba(182,255,46,0.08);}
 
+/* ===== Multijugador al azar (salas públicas) ===== */
+#lobby-game-pick-grid.locked{opacity:0.55;pointer-events:none;}
+.pub-filter-btn.active{border-color:var(--neon);color:var(--neon);background:rgba(182,255,46,0.08);}
+.pub-room-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-left:4px solid var(--neon);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
+.pub-room-icon{font-size:1.5rem;flex-shrink:0;width:1.8rem;text-align:center;}
+.pub-room-info{flex:1;min-width:0;}
+.pub-room-game{font-weight:700;font-size:0.9rem;}
+.pub-room-meta{font-size:0.72rem;color:var(--text-dim);margin-top:2px;}
+.pub-room-join{flex-shrink:0;}
+
 /* ===== Perfil de juego ===== */
 .profile-avatar-preview{width:88px;height:88px;border-radius:50%;object-fit:cover;background:var(--bg2);border:2px solid var(--line2);}
 
