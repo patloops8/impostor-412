@@ -1057,7 +1057,7 @@ function emitWhoState(r){
   // La vista TV no es un jugador (no recibe los emits privados de arriba). Le
   // mandamos un estado aparte, pero SIN revelar ninguna identidad todavia no
   // adivinada: la TV suele estar a la vista de todos, y mostrar ahi los
-  // nombres arruinaria el "no sabes quien sos" para cualquiera que mire.
+  // nombres arruinaria el "no sabes quién eres" para cualquiera que mire.
   const activeId=whoActiveId(r);
   io.to(r.code).emit('who:tv_state', {
     activePlayerName: r.players.get(activeId)?.name,
@@ -1349,9 +1349,9 @@ io.on('connection', socket => {
   // en salas públicas, que ya exigen sesión iniciada para entrar.
   socket.on('player:report_message', async ({code,messageId}, cb) => {
     const r=rooms.get(code); if(!r){cb&&cb({ok:false,error:'Sala no encontrada.'});return;}
-    const reporter=r.players.get(socket.id); if(!reporter){cb&&cb({ok:false,error:'No sos parte de esta sala.'});return;}
+    const reporter=r.players.get(socket.id); if(!reporter){cb&&cb({ok:false,error:'No formas parte de esta sala.'});return;}
     const msg=r.chat.find(m=>m.id===messageId); if(!msg){cb&&cb({ok:false,error:'Ese mensaje ya no está disponible.'});return;}
-    if(msg.playerId===socket.id){cb&&cb({ok:false,error:'No podés reportar tu propio mensaje.'});return;}
+    if(msg.playerId===socket.id){cb&&cb({ok:false,error:'No puedes reportar tu propio mensaje.'});return;}
     if(!msg.userId||!reporter.userId){cb&&cb({ok:false,error:'Este reporte necesita que ambos tengan sesión iniciada.'});return;}
     try{
       await store.addReport({ reporterUserId:reporter.userId, reportedUserId:msg.userId, roomCode:r.code, messageText:msg.text });

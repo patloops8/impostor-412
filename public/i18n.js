@@ -90,7 +90,7 @@ es: {
   join: 'Unirme',
   browsePublicRooms: '🌐 Unirse a sala pública',
   createRoomTitle: 'Crear sala',
-  createRoomTypeHint: 'Elegí qué tipo de sala querés crear.',
+  createRoomTypeHint: 'Elige qué tipo de sala quieres crear.',
   createPrivateRoom: '🔒 Sala privada',
   createPrivateRoomDesc: 'Compartís un código con tus amigos para que se unan.',
   createPublicRoom: '🌐 Sala pública',
