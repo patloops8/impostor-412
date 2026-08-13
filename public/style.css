@@ -51,6 +51,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 /* Boton secundario: contorno neon */
 .btn-secondary{background:rgba(182,255,46,0.04);color:var(--neon);border:2px solid var(--neon);padding:14px 26px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;}
 .btn-secondary:hover{background:rgba(182,255,46,0.12);}
+/* Boton "sala publica": mismo peso que el secundario, en cian para distinguirlo
+   de crear/unirse (verde neon) sin restarle protagonismo. */
+.btn-public{background:rgba(34,211,238,0.06);color:var(--cyan);border:2px solid var(--cyan);padding:14px 26px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;}
+.btn-public:hover{background:rgba(34,211,238,0.16);}
 /* Botones de login OAuth: logo real + texto, sin perder el look de la app */
 .btn-oauth{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 20px;font-size:0.86rem;}
 .btn-oauth-icon{width:18px;height:18px;flex-shrink:0;}
