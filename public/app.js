@@ -143,6 +143,7 @@ socket.on('connect', () => {
         if(res.categories) ALL_CATEGORIES=res.categories;
         if(res.formations) ALL_FORMATIONS=res.formations;
         applyRoomCode(res.code);
+        setChatHistory(res.chat);
         saveSession();
       } else {
         // La sala ya no existe o el jugador no está: volver a home y avisar,
@@ -150,6 +151,7 @@ socket.on('connect', () => {
         clearSession(); roomCode=null; myStoredId=null;
         show('s-home');
         showHomeError(t('roomGoneMsg'));
+        updateChatVisibility();
       }
     });
   }
@@ -230,9 +232,63 @@ function onJoined(res){
   myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
   ALL_CATEGORIES=res.categories||[]; ALL_FORMATIONS=res.formations||[];
   applyRoomCode(res.code);
+  setChatHistory(res.chat);
   saveSession();
   show('s-lobby');
 }
+
+/* ===== Chat en vivo de la sala (por ahora solo salas públicas) ===== */
+let _chatMessages = [];
+let _chatUnread = 0;
+let _roomIsPublic = false;
+function updateChatVisibility(){
+  const shouldShow = !!(roomCode && _roomIsPublic);
+  $('btn-chat-toggle').classList.toggle('hidden', !shouldShow);
+  if(!shouldShow) $('chat-panel').classList.add('hidden');
+}
+function setChatHistory(msgs){
+  _chatMessages = msgs || [];
+  _chatUnread = 0;
+  renderChatUnread();
+  renderChatMessages();
+}
+function renderChatMessages(){
+  const box = $('chat-messages');
+  if(!_chatMessages.length){ box.innerHTML = `<p class="chat-empty">${esc(t('chatEmpty'))}</p>`; return; }
+  box.innerHTML = _chatMessages.map(m=>`
+    <div class="chat-msg${m.playerId===myId?' me':''}">
+      <div class="chat-msg-name">${esc(m.name)}</div>
+      <div class="chat-msg-bubble">${esc(m.text)}</div>
+    </div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+function renderChatUnread(){
+  const badge = $('chat-unread-badge');
+  badge.textContent = _chatUnread>9 ? '9+' : _chatUnread;
+  badge.classList.toggle('hidden', _chatUnread===0);
+}
+$('btn-chat-toggle').addEventListener('click', ()=>{
+  $('chat-panel').classList.remove('hidden');
+  _chatUnread = 0; renderChatUnread();
+  $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+  $('inp-chat').focus();
+});
+$('btn-chat-close').addEventListener('click', ()=>$('chat-panel').classList.add('hidden'));
+function sendChatMessage(){
+  const val = $('inp-chat').value.trim();
+  if(!val || !roomCode) return;
+  socket.emit('player:chat_message', { code:roomCode, text:val });
+  $('inp-chat').value = '';
+}
+$('btn-chat-send').addEventListener('click', sendChatMessage);
+$('inp-chat').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChatMessage(); });
+socket.on('chat:message', (msg)=>{
+  _chatMessages.push(msg);
+  if(_chatMessages.length>100) _chatMessages.shift();
+  renderChatMessages();
+  if($('chat-panel').classList.contains('hidden')){ _chatUnread++; renderChatUnread(); }
+});
+document.addEventListener('langchange', ()=>{ if(!_chatMessages.length) renderChatMessages(); });
 
 /* ===== Crear sala: privada o pública ===== */
 let _createPublicGameType = null;
@@ -928,6 +984,8 @@ socket.on('room:update', (st) => {
   maxImpostors = st.maxImpostors; minPlayers = st.minPlayers;
   if(st.formations) formationsData = st.formations;
   _checkDisconnectToasts(st);
+  _roomIsPublic = !!st.isPublic;
+  updateChatVisibility();
 
   if(st.status==='lobby'){
     renderLobby(st);

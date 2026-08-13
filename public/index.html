@@ -777,6 +777,22 @@
   </div>
 </div>
 
+<!-- Chat en vivo de la sala (por ahora solo en salas públicas) -->
+<button id="btn-chat-toggle" class="chat-toggle hidden" aria-label="Chat">
+  💬<span id="chat-unread-badge" class="chat-badge hidden">0</span>
+</button>
+<div id="chat-panel" class="chat-panel hidden" role="dialog" aria-label="Chat">
+  <div class="chat-panel-head">
+    <span data-i18n="chatTitle">💬 Chat de la sala</span>
+    <button id="btn-chat-close" class="chat-panel-close" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="inp-chat" maxlength="200" data-i18n-placeholder="chatPlaceholder" placeholder="Escribe un mensaje..." />
+    <button id="btn-chat-send" aria-label="Enviar" data-i18n-aria="chatSend">➤</button>
+  </div>
+</div>
+
 <script src="/i18n.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/app.js"></script>

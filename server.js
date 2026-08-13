@@ -161,6 +161,7 @@ function newRoom(code, hostId) {
     status: 'lobby',
     isTest: false,                // true en salas creadas por scripts/smoke-test.js: no suman a Analytics
     isPublic: false,               // true = aparece en "Unirse a sala pública"; el modo queda fijo desde la creación
+    chat: [],                      // últimos mensajes del chat en vivo (se manda como historial al entrar/reconectar)
     impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
     mangaNumber: 0, concept: null, impostorIds: new Set(),
     usedClues: [], clueOrder: [], clueTurnIndex: 0, cluePhaseEnding: false,
@@ -1270,7 +1271,7 @@ io.on('connection', socket => {
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
-    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames()});
+    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:room.chat});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined'); }
@@ -1286,10 +1287,22 @@ io.on('connection', socket => {
     if(playersArr(room).some(p=>p.name.toLowerCase()===trimmed.toLowerCase())){cb({ok:false,error:'Ese nombre ya está en uso.'});return;}
     room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:userIdFromToken(authToken),avatarUrl:avatarFromToken(authToken)});
     socket.join(room.code); socket.data.roomCode=room.code;
-    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames()});
+    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:room.chat});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest) trackEvent('player_joined');
+  });
+
+  // Chat en vivo de la sala: pensado sobre todo para salas públicas (gente
+  // que no se conoce y no tiene otro canal para hablar), pero no hay motivo
+  // técnico para no permitirlo también en privadas si alguna vez se pide.
+  socket.on('player:chat_message', ({code,text}) => {
+    const r=rooms.get(code); if(!r)return;
+    const p=r.players.get(socket.id); if(!p)return;
+    const clean=(text||'').trim().slice(0,200); if(!clean)return;
+    const msg={ id:Date.now()+'-'+Math.random().toString(36).slice(2,8), playerId:socket.id, name:p.name, avatar:p.avatarUrl||null, text:clean, ts:Date.now() };
+    r.chat.push(msg); if(r.chat.length>100) r.chat.shift();
+    io.to(r.code).emit('chat:message', msg);
   });
 
   // Buscador de salas públicas: el cliente se suma a este "cuarto" meta de
@@ -1629,7 +1642,7 @@ io.on('connection', socket => {
       if(r.hostId===socket.id) clearHostTimer(r.code);
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
-      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames()});
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:r.chat});
       emitRoom(r);
       sendResumeState(r, socket);
     } else { cb&&cb({ok:false}); }
