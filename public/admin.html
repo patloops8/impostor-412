@@ -2279,7 +2279,7 @@ function renderUsers(){
   }).join('');
 }
 async function banUserPrompt(id, name){
-  const input = prompt(`¿Por cuántos días vetar a "${name}" de las salas públicas?\nDejá vacío o poné 0 para veto permanente.`, '7');
+  const input = prompt(`¿Por cuántos días vetar a "${name}" de las salas públicas?\nDeja vacío o pon 0 para veto permanente.`, '7');
   if(input === null) return;
   const trimmed = input.trim();
   const days = (trimmed==='' || Number(trimmed)===0) ? null : Number(trimmed);
@@ -2397,12 +2397,23 @@ function renderReports(){
         <button class="btn-export" data-ban-report="${rp.id}" style="color:var(--gold,#e9b949)">🚫 Vetar</button>
         <button class="btn-export" data-dismiss-report="${rp.id}">Desestimar</button>
       </div>` : `<div style="color:var(--soft);font-size:12px;flex-shrink:0;text-transform:uppercase;">${rp.status==='actioned'?'✓ vetado':'descartado'}</div>`;
+    const typeTag = rp.reportType==='conduct'
+      ? `<span class="badge" style="background:rgba(233,185,73,0.15);color:var(--gold,#e9b949)">🎮 conducta</span>`
+      : `<span class="badge" style="background:rgba(88,101,242,0.15);color:#8ea1ff">💬 chat</span>`;
+    const body = rp.messageText
+      ? esc(rp.messageText)
+      : `<span style="color:var(--soft);font-style:italic">Reporte por conducta en el juego (sin mensaje puntual — ej. pistas o respuestas sin sentido a propósito)</span>`;
+    const repeatFlag = rp.reportedTotalCount > 1
+      ? ` <span style="color:var(--red);font-weight:700">⚠️ ${rp.reportedTotalCount} reportes en total</span>` : '';
     return `
       <div class="cfg-section" style="display:flex;align-items:flex-start;gap:14px;">
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700">${esc(rp.reportedName||'?')} <span style="color:var(--soft);font-weight:400;font-size:12px">reportado por ${esc(rp.reporterName||'?')}</span></div>
-          <div style="color:var(--text);font-size:13px;margin-top:6px;background:var(--bg3);border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word;">${esc(rp.messageText||'')}</div>
-          <div style="color:var(--soft);font-size:12px;margin-top:6px">sala ${esc(rp.roomCode||'?')} · ${when}</div>
+          <div style="font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${esc(rp.reportedName||'?')} ${typeTag}
+            <span style="color:var(--soft);font-weight:400;font-size:12px">reportado por ${esc(rp.reporterName||'?')}</span>
+          </div>
+          <div style="color:var(--text);font-size:13px;margin-top:6px;background:var(--bg3);border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word;">${body}</div>
+          <div style="color:var(--soft);font-size:12px;margin-top:6px">sala ${esc(rp.roomCode||'?')}${rp.gameType?' · '+esc(GAME_NAMES[rp.gameType]||rp.gameType):''} · ${when}${repeatFlag}</div>
         </div>
         ${actions}
       </div>`;
@@ -2415,7 +2426,7 @@ document.getElementById('list-reports').addEventListener('click', async e=>{
   if(banBtn){
     const id = Number(banBtn.dataset.banReport);
     const rp = _reportsItems.find(x=>x.id===id);
-    const input = prompt(`¿Por cuántos días vetar a "${rp?.reportedName}" de las salas públicas?\nDejá vacío o poné 0 para veto permanente.`, '7');
+    const input = prompt(`¿Por cuántos días vetar a "${rp?.reportedName}" de las salas públicas?\nDeja vacío o pon 0 para veto permanente.`, '7');
     if(input === null) return;
     const trimmed = input.trim();
     const days = (trimmed==='' || Number(trimmed)===0) ? null : Number(trimmed);

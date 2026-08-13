@@ -122,9 +122,10 @@ async function initStore() {
       active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMPTZ DEFAULT now()
     )`);
-  // Reportes de mensajes de chat: quien reporta y a quién, con el texto del
-  // mensaje tal cual estaba en ese momento (el chat de la sala es efímero,
-  // no queda guardado en ningún otro lado una vez que la sala se borra).
+  // Reportes: de mensajes de chat (con el texto del mensaje tal cual estaba
+  // en ese momento, ya que el chat de la sala es efímero) o de conducta en
+  // el juego (alguien que arruina la partida a propósito — sin mensaje
+  // puntual asociado, message_text queda NULL en ese caso).
   await pool.query(`
     CREATE TABLE IF NOT EXISTS reports (
       id SERIAL PRIMARY KEY,
@@ -136,6 +137,8 @@ async function initStore() {
       created_at TIMESTAMPTZ DEFAULT now(),
       reviewed_at TIMESTAMPTZ
     )`);
+  await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS report_type TEXT NOT NULL DEFAULT 'chat'`);
+  await pool.query(`ALTER TABLE reports ADD COLUMN IF NOT EXISTS game_type TEXT`);
   await seedDefaultAchievements();
   console.log('[store] Postgres conectado — feedback, analytics, cuentas y logros persisten entre redeploys.');
 }
@@ -443,21 +446,26 @@ async function unbanUser(id) {
 }
 
 /* ---- Reportes de chat (salas públicas) ---- */
-async function addReport({ reporterUserId, reportedUserId, roomCode, messageText }) {
+async function addReport({ reporterUserId, reportedUserId, roomCode, messageText, reportType, gameType }) {
   if (!pool) return null;
   const r = await pool.query(
-    `INSERT INTO reports (reporter_user_id,reported_user_id,room_code,message_text) VALUES ($1,$2,$3,$4) RETURNING id`,
-    [reporterUserId, reportedUserId, roomCode, messageText]
+    `INSERT INTO reports (reporter_user_id,reported_user_id,room_code,message_text,report_type,game_type) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+    [reporterUserId, reportedUserId, roomCode, messageText || null, reportType || 'chat', gameType || null]
   );
   return r.rows[0];
 }
 async function getReports(status = 'pending') {
   if (!pool) return [];
+  // reportedTotalCount: cuántos reportes tiene esa cuenta en total (cualquier
+  // estado), para que el admin note enseguida a quién ya reportaron antes —
+  // varios reportes acumulados son la señal de que conviene vetar, no uno solo.
   const r = await pool.query(
-    `SELECT rp.id, rp.room_code as "roomCode", rp.message_text as "messageText", rp.status, rp.created_at as "createdAt",
+    `SELECT rp.id, rp.room_code as "roomCode", rp.message_text as "messageText",
+            rp.report_type as "reportType", rp.game_type as "gameType", rp.status, rp.created_at as "createdAt",
             reporter.id as "reporterId", COALESCE(reporter.display_name, reporter.name) as "reporterName",
             reported.id as "reportedId", COALESCE(reported.display_name, reported.name) as "reportedName",
-            reported.banned_until as "reportedBannedUntil"
+            reported.banned_until as "reportedBannedUntil",
+            (SELECT COUNT(*) FROM reports r2 WHERE r2.reported_user_id = rp.reported_user_id)::int as "reportedTotalCount"
      FROM reports rp
      LEFT JOIN users reporter ON reporter.id = rp.reporter_user_id
      LEFT JOIN users reported ON reported.id = rp.reported_user_id

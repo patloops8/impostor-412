@@ -1252,7 +1252,7 @@ socket.on('imp:manga_over',({result,concept,impostorNames,mangaNumber,mangaCount
   $('imp-over-eyebrow').textContent=(result==='impostors_caught'?t('impostorsCaught'):t('impostorsWon'))+' · '+t('roundOf',{n:mangaNumber,c:mangaCount});
   $('imp-over-title').textContent=t('impWereImpostor',{names:impostorNames.join(', '),verb:impostorNames.length>1?t('impWereVerb'):t('impWasVerb')});
   $('imp-over-sub').textContent=t('impConceptSummary',{name:concept.name,cat:concept.category});
-  renderScores('imp-scoreboard',scores);
+  renderScores('imp-scoreboard',scores,isLastManga);
   $('btn-imp-next').textContent=isLastManga?t('backToStart'):t('nextRound');
   $('btn-imp-next').classList.toggle('hidden',!isHost);
   $('imp-over-wait').classList.toggle('hidden',isHost);
@@ -1266,7 +1266,30 @@ let _impWinner='';
 $('btn-imp-next').addEventListener('click',()=>{ if(impLastFinal)socket.emit('host:new_session',{code:roomCode}); else socket.emit('host:next_manga',{code:roomCode}); });
 $('btn-share-imp').addEventListener('click',()=>doShareResult($('btn-share-imp'), _impWinner, 'gameImpostorTitle'));
 $('btn-rematch-imp').addEventListener('click',()=>socket.emit('host:rematch',{code:roomCode}));
-function renderScores(elId,scores){ const b=$(elId); b.innerHTML=''; scores.forEach((p,i)=>{ const r=document.createElement('div'); r.className='score-row'; r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}</span><span class="points">${p.score} pts</span>`; b.appendChild(r); }); }
+// reportable: true solo en la pantalla de posiciones FINALES (no en marcadores
+// de mitad de partida) — ahí se puede reportar a un jugador por arruinar el
+// juego a propósito (pistas/respuestas sin sentido), no solo por chat.
+function renderScores(elId,scores,reportable){
+  const b=$(elId); b.innerHTML='';
+  scores.forEach((p,i)=>{
+    const r=document.createElement('div'); r.className='score-row';
+    const canReport = reportable && _roomIsPublic && p.id!==myId;
+    const reportBtn = canReport ? `<button class="score-report-btn" data-player-id="${esc(p.id)}" title="${esc(t('scoreReportBtn'))}">🚩</button>` : '';
+    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(p.name)}${reportBtn}</span><span class="points">${p.score} pts</span>`;
+    b.appendChild(r);
+  });
+}
+function handleScoreReportClick(e){
+  const btn = e.target.closest('.score-report-btn'); if(!btn) return;
+  if(!confirm(t('scoreReportConfirm'))) return;
+  socket.emit('player:report_player', { code:roomCode, targetPlayerId:btn.dataset.playerId }, (res)=>{
+    if(res && res.ok) showToast(t('chatReportSent'), false);
+    else showToast((res&&res.error)||t('chatReportError'), true);
+  });
+}
+['imp-scoreboard','lie-scoreboard','wave-scoreboard','who-scoreboard','force-over-scoreboard','sub-scoreboard'].forEach(id=>{
+  $(id).addEventListener('click', handleScoreReportClick);
+});
 
 /* ===== Compartir resultado final ===== */
 async function doShareResult(btn, winnerName, gameLabelKey){
@@ -1343,7 +1366,7 @@ socket.on('lie:resolved',({success,reason,accusedName,accuserName,roundNumber,ro
   $('lie-over-eyebrow').textContent=isLastRound?t('finalResult'):t('roundOf',{n:roundNumber,c:roundCount});
   $('lie-over-title').textContent=success?t('liarSucceeded',{name:accusedName}):(reason==='timeout'?t('liarTimeout',{name:accusedName}):t('liarFailed',{name:accusedName}));
   $('lie-over-sub').textContent=success?t('accuserLosesPoint',{name:accuserName}):t('accuserGainsPoint',{name:accuserName});
-  renderScores('lie-scoreboard', scores);
+  renderScores('lie-scoreboard', scores, isLastRound);
   $('btn-lie-next').textContent=isLastRound?t('backToStart'):t('nextRound');
   $('btn-lie-next').classList.toggle('hidden',!isHost);
   $('lie-over-wait').classList.toggle('hidden',isHost);
@@ -1719,8 +1742,10 @@ socket.on('sub:game_over',({mode,scores,matchups,formation,formationSlots,champi
   scores.forEach((s,i)=>{
     const r=document.createElement('div'); r.className='score-row sub-score-clickable'+(s.id===myId?' me':'');
     const detail=mode==='votacion'?(i===0?t('champion'):''):t('ptsValue',{p:s.points??'?'});
-    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?esc(t('youSuffix')):''}</span><span class="points">${detail}</span>`;
-    r.addEventListener('click', ()=>showSubPitchFor(s.id, s.id===myId));
+    const canReport = _roomIsPublic && s.id!==myId;
+    const reportBtn = canReport ? `<button class="score-report-btn" data-player-id="${esc(s.id)}" title="${esc(t('scoreReportBtn'))}">🚩</button>` : '';
+    r.innerHTML=`<span class="rank">${rankLabel(i)}</span><span style="flex:1;margin-left:8px;">${esc(s.name)}${s.id===myId?esc(t('youSuffix')):''}${reportBtn}</span><span class="points">${detail}</span>`;
+    r.addEventListener('click', (e)=>{ if(e.target.closest('.score-report-btn')) return; showSubPitchFor(s.id, s.id===myId); });
     sb.appendChild(r);
   });
   $('btn-sub-new').classList.toggle('hidden',!isHost);
@@ -1969,7 +1994,7 @@ socket.on('wave:reveal', ({target,left,right,psychicName,psychicScore,guesses,ro
   psyRow.innerHTML=`<span>${esc(t('psychicSuffix',{name:psychicName}))}</span><span class="who">${esc(t('ptsPlus',{p:psychicScore}))}</span>`;
   list.appendChild(psyRow);
   guesses.forEach(g=>{ const it=document.createElement('div'); it.className='clue-item'; it.innerHTML=`<span>${esc(g.name)}</span><span class="who">${esc(t('ptsPlus',{p:g.score}))}</span>`; list.appendChild(it); });
-  renderScores('wave-scoreboard', scores);
+  renderScores('wave-scoreboard', scores, isLastRound);
   waveLastRound=isLastRound;
   $('btn-wave-next').textContent = isLastRound ? t('backToStart') : t('nextRound');
   $('btn-wave-next').classList.toggle('hidden', !isHost);
@@ -2113,7 +2138,7 @@ socket.on('who:round_over', ({roundNumber,roundCount,scores,assigns})=>{
 $('btn-who-next-round').addEventListener('click',()=>socket.emit('host:who_next_round',{code:roomCode}));
 
 socket.on('who:game_over', ({scores,assigns})=>{
-  renderScores('who-scoreboard', scores);
+  renderScores('who-scoreboard', scores, true);
   $('btn-who-new').classList.toggle('hidden', !isHost);
   $('btn-rematch-who').classList.toggle('hidden', !isHost);
   $('who-over-wait').classList.toggle('hidden', isHost);
@@ -2175,7 +2200,7 @@ function showWinnerThen(scores, cb, delaySec) {
 function _refreshForceBtn(){ const show=isHost&&_currentSection&&SCORE_SECTIONS.has(_currentSection); $('btn-force-end').classList.toggle('hidden',!show); }
 $('btn-force-end').addEventListener('click',()=>{ if(confirm(t('endMatchConfirm'))) socket.emit('host:force_end',{code:roomCode}); });
 socket.on('game:force_over',({scores})=>{
-  renderScores('force-over-scoreboard', scores);
+  renderScores('force-over-scoreboard', scores, true);
   $('btn-force-over-new').classList.toggle('hidden',!isHost);
   $('force-over-wait').classList.toggle('hidden',isHost);
   showWinnerThen(scores,()=>show('s-force-over'));

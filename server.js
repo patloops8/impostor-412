@@ -1354,10 +1354,28 @@ io.on('connection', socket => {
     if(msg.playerId===socket.id){cb&&cb({ok:false,error:'No puedes reportar tu propio mensaje.'});return;}
     if(!msg.userId||!reporter.userId){cb&&cb({ok:false,error:'Este reporte necesita que ambos tengan sesión iniciada.'});return;}
     try{
-      await store.addReport({ reporterUserId:reporter.userId, reportedUserId:msg.userId, roomCode:r.code, messageText:msg.text });
+      await store.addReport({ reporterUserId:reporter.userId, reportedUserId:msg.userId, roomCode:r.code, messageText:msg.text, reportType:'chat', gameType:r.gameType });
       cb&&cb({ok:true});
     }catch(e){
       console.error('[report] error guardando reporte:', e.message);
+      cb&&cb({ok:false,error:'No se pudo enviar el reporte. Intenta de nuevo.'});
+    }
+  });
+
+  // Reportar la CONDUCTA de un jugador en la partida (ej. escribir pistas o
+  // respuestas sin sentido a propósito para arruinar el juego a los demás),
+  // no un mensaje puntual — se usa desde la pantalla de posiciones finales.
+  socket.on('player:report_player', async ({code,targetPlayerId}, cb) => {
+    const r=rooms.get(code); if(!r){cb&&cb({ok:false,error:'Sala no encontrada.'});return;}
+    const reporter=r.players.get(socket.id); if(!reporter){cb&&cb({ok:false,error:'No formas parte de esta sala.'});return;}
+    const target=r.players.get(targetPlayerId); if(!target){cb&&cb({ok:false,error:'Ese jugador ya no está en la sala.'});return;}
+    if(targetPlayerId===socket.id){cb&&cb({ok:false,error:'No puedes reportarte a ti mismo.'});return;}
+    if(!target.userId||!reporter.userId){cb&&cb({ok:false,error:'Este reporte necesita que ambos tengan sesión iniciada.'});return;}
+    try{
+      await store.addReport({ reporterUserId:reporter.userId, reportedUserId:target.userId, roomCode:r.code, messageText:null, reportType:'conduct', gameType:r.gameType });
+      cb&&cb({ok:true});
+    }catch(e){
+      console.error('[report] error guardando reporte de conducta:', e.message);
       cb&&cb({ok:false,error:'No se pudo enviar el reporte. Intenta de nuevo.'});
     }
   });
