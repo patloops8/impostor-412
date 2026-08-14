@@ -143,6 +143,7 @@ function registerPresence(){
 socket.on('connect', () => {
   connBanner.classList.add('hidden');
   registerPresence();
+  loadFriends(); // precarga la lista para que "Invitar amigos" no arranque vacío
   // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
   if (roomCode && myStoredId) {
     socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId }, (res) => {
@@ -489,7 +490,7 @@ function renderAuthUI(){
   const tok = getAuthToken();
   if(tok){
     const payload = decodeJwtPayload(tok);
-    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; registerPresence(); }
+    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; registerPresence(); loadFriends(); }
     else setAuthToken(null);
   }
   try{
@@ -919,6 +920,61 @@ socket.on('friend:presence', ({userId,online})=>{
 socket.on('friend:list_changed', ()=>{ if(authUser) loadFriends(); });
 document.addEventListener('langchange', ()=>{ if(!$('friends-overlay').classList.contains('hidden')) renderFriends(); });
 
+/* ===== Invitar amigos en línea directo a la sala (sin código) ===== */
+function renderInviteFriends(){
+  const online = _friendsData.friends.filter(f=>f.online);
+  if(!online.length){
+    $('invite-friends-body').innerHTML = `<p style="color:var(--text-dim);text-align:center;">${esc(t('inviteFriendsEmpty'))}</p>`;
+    return;
+  }
+  $('invite-friends-body').innerHTML = online.map(f=>`
+    <div class="invite-friend-row">
+      ${f.avatar ? `<img class="friend-avatar" src="${esc(f.avatar)}" alt=""/>` : `<div class="friend-avatar"></div>`}
+      <div class="friend-info"><div class="friend-name">${esc(f.name)}</div></div>
+      <button class="chip-btn" data-invite-friend="${f.id}">${esc(t('inviteFriendsSend'))}</button>
+    </div>`).join('');
+}
+$('btn-invite-friends').addEventListener('click', ()=>{
+  renderInviteFriends();
+  $('invite-friends-overlay').classList.remove('hidden');
+});
+$('btn-invite-friends-close').addEventListener('click', ()=>$('invite-friends-overlay').classList.add('hidden'));
+$('invite-friends-overlay').addEventListener('click', e=>{ if(e.target===$('invite-friends-overlay'))$('invite-friends-overlay').classList.add('hidden'); });
+$('invite-friends-body').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-invite-friend]'); if(!btn || btn.disabled) return;
+  const friendUserId = Number(btn.dataset.inviteFriend);
+  socket.emit('player:invite_friend', { code:roomCode, friendUserId }, (res)=>{
+    if(res && res.ok){ btn.disabled=true; btn.textContent=t('inviteFriendsSent'); showToast(t('inviteFriendsSentToast'), false); }
+    else showToast((res&&res.error)||t('friendsError'), true);
+  });
+});
+
+/* ===== Recibir una invitación de amigo a su sala ===== */
+let _pendingInvite = null;
+let _inviteBannerTimer = null;
+function hideInviteBanner(){
+  $('room-invite-banner').classList.remove('show');
+  clearTimeout(_inviteBannerTimer);
+  _pendingInvite = null;
+}
+socket.on('friend:room_invite', ({code,hostName,gameType,isPublic})=>{
+  _pendingInvite = { code, isPublic };
+  $('room-invite-text').textContent = t('inviteReceivedText', { name:hostName, game:t(GAME_TITLE_KEYS[gameType]||gameType) });
+  $('room-invite-banner').classList.add('show');
+  clearTimeout(_inviteBannerTimer);
+  _inviteBannerTimer = setTimeout(hideInviteBanner, 30000);
+});
+$('btn-invite-accept').addEventListener('click', ()=>{
+  const invite = _pendingInvite; hideInviteBanner();
+  if(!invite) return;
+  if(roomCode){ showHomeError(t('inviteAlreadyInRoom')); return; }
+  const name = ($('inp-name').value.trim()) || authUser?.name || '';
+  if(!name){ showHomeError(t('enterYourName')); return; }
+  $('inp-name').value = name;
+  socket.emit('player:join_room', { code:invite.code, name, authToken:getAuthToken() }, onJoined);
+});
+$('btn-invite-decline').addEventListener('click', hideInviteBanner);
+
 /* ===== Perfil de juego (nombre e imagen personalizados, aparte de la cuenta OAuth) ===== */
 // 'unchanged': no tocar el avatar guardado; 'clear': volver a la foto original de la
 // cuenta; 'new': subir _profileAvatarData como nueva foto personalizada.
@@ -1165,6 +1221,7 @@ socket.on('room:update', (st) => {
   $('chat-toggle-row').classList.toggle('hidden', !isHost || _roomIsPublic);
   $('btn-toggle-chat-enabled').textContent = t(_chatEnabled ? 'chatEnableOn' : 'chatEnableOff');
   $('btn-toggle-chat-enabled').classList.toggle('chip-danger', !_chatEnabled);
+  $('invite-friends-row').classList.toggle('hidden', !isHost || !authUser);
 
   if(st.status==='lobby'){
     renderLobby(st);

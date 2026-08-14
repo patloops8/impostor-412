@@ -218,6 +218,26 @@
   </div>
 </div>
 
+<!-- Modal: invitar amigos en línea a la sala actual -->
+<div id="invite-friends-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="inviteFriendsTitle">📨 Invitar amigos</h2>
+      <button class="rules-close" id="btn-invite-friends-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body" id="invite-friends-body"></div>
+  </div>
+</div>
+
+<!-- Banner: invitación de amigo recibida (aparece encima de cualquier pantalla) -->
+<div id="room-invite-banner" class="hidden">
+  <div class="room-invite-text" id="room-invite-text"></div>
+  <div class="chip-btn-row">
+    <button class="chip-btn" id="btn-invite-accept" data-i18n="inviteAccept">Unirme</button>
+    <button class="chip-btn chip-danger" id="btn-invite-decline" data-i18n="inviteDecline">Ignorar</button>
+  </div>
+</div>
+
 <div class="wrap">
 
   <!-- ===== HOME: crear o unirse ===== -->
@@ -287,6 +307,9 @@
     <button class="btn-secondary" id="btn-share" style="width:100%;margin-top:10px;" data-i18n="shareCode">📋 Copiar / compartir código</button>
     <div class="chip-btn-row" style="margin-top:8px;">
       <button class="chip-btn" id="btn-toggle-qr" data-i18n="showQr">📱 Mostrar código QR</button>
+    </div>
+    <div class="chip-btn-row hidden" id="invite-friends-row" style="margin-top:8px;">
+      <button class="chip-btn" id="btn-invite-friends" data-i18n="inviteFriendsBtn">📨 Invitar amigos</button>
     </div>
     <div id="qr-box" class="hidden qr-box">
       <img id="qr-img" src="" alt="QR para unirse" width="180" height="180" />

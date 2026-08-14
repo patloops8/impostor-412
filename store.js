@@ -398,6 +398,17 @@ async function getFriendIds(userId){
   );
   return r.rows.map(x=>x.friendId);
 }
+// Usado por las invitaciones a sala: nunca hay que confiar en que el
+// cliente mande un userId "de amigo" sin verificarlo server-side, o
+// cualquiera podría invitar (spammear) a cualquier usuario en línea.
+async function areFriends(userId, otherId){
+  if (!pool) return false;
+  const r = await pool.query(
+    `SELECT 1 FROM friendships WHERE status='accepted' AND ((requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1))`,
+    [userId, otherId]
+  );
+  return r.rowCount > 0;
+}
 
 async function recordGameResult(userId, gameType, won) {
   if (!pool || !userId) return;
@@ -633,7 +644,7 @@ module.exports = {
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
   banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
-  getOrCreateFriendCode, sendFriendRequest, respondFriendRequest, removeFriend, getFriendsData, getFriendIds,
+  getOrCreateFriendCode, sendFriendRequest, respondFriendRequest, removeFriend, getFriendsData, getFriendIds, areFriends,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

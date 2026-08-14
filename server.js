@@ -1311,7 +1311,7 @@ io.on('connection', socket => {
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed){cb({ok:false,error:'Ingresa tu nombre.'});return;}
     if(isPublic && !['impostor','mentiroso','subasta','wavelength','who'].includes(gameType)){
-      cb({ok:false,error:'Elegí un modo de juego para la sala pública.'});return;
+      cb({ok:false,error:'Elige un modo de juego para la sala pública.'});return;
     }
     const uid = userIdFromToken(authToken);
     if(isPublic){
@@ -1433,6 +1433,26 @@ io.on('connection', socket => {
     const ts=io.sockets.sockets.get(targetId);
     if(ts){ts.leave(r.code);ts.data.roomCode=null;}
     emitRoom(r);
+  });
+
+  // Invitar a un amigo en línea, directo a la sala (sin código): solo el
+  // anfitrión puede invitar, y solo a alguien que de verdad esté en su
+  // lista de amigos (se verifica server-side, nunca alcanza con mandar
+  // cualquier userId "en línea" para poder spamear invitaciones).
+  socket.on('player:invite_friend', async ({code,friendUserId}, cb) => {
+    const r=rooms.get(code); if(!r){cb&&cb({ok:false,error:'Sala no encontrada.'});return;}
+    if(socket.id!==r.hostId){cb&&cb({ok:false,error:'Solo el anfitrión puede invitar amigos.'});return;}
+    if(r.status!=='lobby'){cb&&cb({ok:false,error:'La partida ya empezó.'});return;}
+    const uid=socket.data.userId;
+    if(!uid){cb&&cb({ok:false,error:'Necesitas iniciar sesión para invitar amigos.'});return;}
+    if(!ONLINE_USERS.has(friendUserId)){cb&&cb({ok:false,error:'Ese amigo ya no está en línea.'});return;}
+    try{
+      const ok=await store.areFriends(uid, friendUserId);
+      if(!ok){cb&&cb({ok:false,error:'Esa persona no está en tu lista de amigos.'});return;}
+      const inviter=r.players.get(socket.id);
+      io.to('user:'+friendUserId).emit('friend:room_invite', { code:r.code, hostName:inviter?.name||'?', gameType:r.gameType, isPublic:r.isPublic });
+      cb&&cb({ok:true});
+    }catch(e){ cb&&cb({ok:false,error:'No se pudo enviar la invitación.'}); }
   });
 
   socket.on('host:select_game', ({code,gameType}) => {
