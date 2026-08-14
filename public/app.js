@@ -953,14 +953,18 @@ $('invite-friends-body').addEventListener('click', e=>{
 let _pendingInvite = null;
 let _inviteBannerTimer = null;
 function hideInviteBanner(){
-  $('room-invite-banner').classList.remove('show');
+  const el = $('room-invite-banner');
+  el.classList.remove('show');
+  el.classList.add('hidden');
   clearTimeout(_inviteBannerTimer);
   _pendingInvite = null;
 }
 socket.on('friend:room_invite', ({code,hostName,gameType,isPublic})=>{
   _pendingInvite = { code, isPublic };
   $('room-invite-text').textContent = t('inviteReceivedText', { name:hostName, game:t(GAME_TITLE_KEYS[gameType]||gameType) });
-  $('room-invite-banner').classList.add('show');
+  const el = $('room-invite-banner');
+  el.classList.remove('hidden');
+  el.classList.add('show');
   clearTimeout(_inviteBannerTimer);
   _inviteBannerTimer = setTimeout(hideInviteBanner, 30000);
 });
