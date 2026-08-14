@@ -259,6 +259,20 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .pub-room-meta{font-size:0.72rem;color:var(--text-dim);margin-top:2px;}
 .pub-room-join{flex-shrink:0;}
 
+/* ===== Amigos ===== */
+.friends-code-box{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;text-align:center;margin-bottom:16px;}
+.friends-code-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;}
+.friends-code{font-family:var(--display);font-weight:800;font-size:1.3rem;letter-spacing:0.2em;color:var(--neon);}
+.friends-add-row{display:flex;gap:8px;margin-bottom:8px;}
+.friend-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
+.friend-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--line2);}
+.friend-info{flex:1;min-width:0;}
+.friend-name{font-weight:700;font-size:0.9rem;}
+.friend-status{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--text-dim);margin-top:2px;}
+.friend-status-dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);flex-shrink:0;}
+.friend-status-dot.online{background:var(--neon);box-shadow:0 0 6px rgba(182,255,46,0.6);}
+.friend-actions{flex-shrink:0;display:flex;gap:6px;}
+
 /* ===== Perfil de juego ===== */
 .profile-avatar-preview{width:88px;height:88px;border-radius:50%;object-fit:cover;background:var(--bg2);border:2px solid var(--line2);}
 

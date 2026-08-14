@@ -133,8 +133,16 @@ function applyRoomCode(code){
 }
 let _qrLoaded=false;
 
+// Presencia de amigos: le avisa al servidor "estoy en línea" apenas hay
+// conexión de socket Y sesión iniciada — no hace falta estar en una sala.
+function registerPresence(){
+  const tok = getAuthToken();
+  if(!tok) return;
+  socket.emit('auth:presence', { authToken: tok });
+}
 socket.on('connect', () => {
   connBanner.classList.add('hidden');
+  registerPresence();
   // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
   if (roomCode && myStoredId) {
     socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId }, (res) => {
@@ -481,7 +489,7 @@ function renderAuthUI(){
   const tok = getAuthToken();
   if(tok){
     const payload = decodeJwtPayload(tok);
-    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; }
+    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; registerPresence(); }
     else setAuthToken(null);
   }
   try{
@@ -504,13 +512,20 @@ function renderAuthUI(){
         authUser = { id:meJson.user.id, name:meJson.user.name, avatar:meJson.user.avatar, provider:meJson.user.provider, hasCustomAvatar:meJson.user.hasCustomAvatar };
         if(meJson.token) setAuthToken(meJson.token);
         renderAuthUI();
+        registerPresence();
       }
     }catch(e){}
   }
 })();
 $('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/google/start'; });
 $('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
-$('btn-auth-logout').addEventListener('click', ()=>{ setAuthToken(null); authUser=null; renderAuthUI(); });
+$('btn-auth-logout').addEventListener('click', ()=>{
+  setAuthToken(null); authUser=null; renderAuthUI();
+  // Fuerza una desconexión/reconexión del socket para que el servidor deje
+  // de contarnos como "en línea" con la identidad vieja (solo pasa desde la
+  // pantalla principal, donde este botón vive — no hay sala activa que perder).
+  if(socket.connected){ socket.disconnect(); socket.connect(); }
+});
 const GAME_COLORS = {impostor:'#8b54e0', mentiroso:'#ff4d4d', subasta:'#e9b949', wavelength:'#22d3ee', who:'#2563eb'};
 const GAME_EMOJI = {impostor:'🎭', mentiroso:'🎲', subasta:'💰', wavelength:'📡', who:'🕵️'};
 let _lastStatsData = null;
@@ -792,6 +807,117 @@ $('btn-share-card').addEventListener('click', async function(){
   }
   btn.disabled = false;
 });
+
+/* ===== Amigos: agregar por código, ver quién está en línea ===== */
+let _friendsData = { friendCode:'', friends:[], incoming:[], outgoing:[] };
+async function loadFriends(){
+  const tok = getAuthToken();
+  if(!tok) return;
+  try{
+    const res = await fetch('/friends', { headers:{ Authorization:'Bearer '+tok } });
+    const json = await res.json();
+    if(!json.ok){ $('friends-error').textContent = json.error||t('friendsError'); $('friends-error').classList.remove('hidden'); return; }
+    _friendsData = json;
+    renderFriends();
+  }catch(e){ $('friends-error').textContent = t('friendsError'); $('friends-error').classList.remove('hidden'); }
+}
+function updateFriendsUnreadBadge(){
+  const n = _friendsData.incoming.length;
+  const badge = $('friends-unread-badge');
+  badge.textContent = n>9 ? '9+' : n;
+  badge.classList.toggle('hidden', n===0);
+}
+function renderFriends(){
+  $('friends-my-code').textContent = _friendsData.friendCode || '------';
+  updateFriendsUnreadBadge();
+
+  const inc = _friendsData.incoming;
+  $('friends-incoming-section').classList.toggle('hidden', !inc.length);
+  $('friends-incoming-list').innerHTML = inc.map(r=>`
+    <div class="friend-row">
+      ${r.avatar ? `<img class="friend-avatar" src="${esc(r.avatar)}" alt=""/>` : `<div class="friend-avatar"></div>`}
+      <div class="friend-info"><div class="friend-name">${esc(r.name)}</div></div>
+      <div class="friend-actions">
+        <button class="chip-btn" data-accept-req="${r.id}">${esc(t('friendsAccept'))}</button>
+        <button class="chip-btn chip-danger" data-decline-req="${r.id}">${esc(t('friendsDecline'))}</button>
+      </div>
+    </div>`).join('');
+
+  const list = _friendsData.friends;
+  if(!list.length){
+    $('friends-list').innerHTML = `<p style="color:var(--text-dim);text-align:center;">${esc(t('friendsEmpty'))}</p>`;
+  } else {
+    $('friends-list').innerHTML = list.map(f=>`
+      <div class="friend-row">
+        ${f.avatar ? `<img class="friend-avatar" src="${esc(f.avatar)}" alt=""/>` : `<div class="friend-avatar"></div>`}
+        <div class="friend-info">
+          <div class="friend-name">${esc(f.name)}</div>
+          <div class="friend-status"><span class="friend-status-dot${f.online?' online':''}" data-friend-dot="${f.id}"></span><span data-friend-status-label="${f.id}">${esc(f.online?t('friendsOnline'):t('friendsOffline'))}</span></div>
+        </div>
+        <button class="chip-btn chip-danger friend-actions" data-remove-friend="${f.id}" title="${esc(t('friendsRemove'))}">✕</button>
+      </div>`).join('');
+  }
+}
+function openFriendsOverlay(){
+  if(!authUser){ showHomeError(t('publicRequiresLogin')); return; }
+  $('friends-error').classList.add('hidden');
+  $('inp-friend-code').value = '';
+  $('friends-overlay').classList.remove('hidden');
+  loadFriends();
+}
+$('btn-friends').addEventListener('click', openFriendsOverlay);
+$('btn-friends-close').addEventListener('click', ()=>$('friends-overlay').classList.add('hidden'));
+$('friends-overlay').addEventListener('click', e=>{ if(e.target===$('friends-overlay'))$('friends-overlay').classList.add('hidden'); });
+$('btn-friends-copy-code').addEventListener('click', async function(){
+  if(!_friendsData.friendCode) return;
+  try{ await navigator.clipboard.writeText(_friendsData.friendCode); const orig=this.textContent; this.textContent=t('copied'); setTimeout(()=>{ this.textContent=orig; },1500); }catch(e){}
+});
+$('btn-friends-add').addEventListener('click', async ()=>{
+  const code = $('inp-friend-code').value.trim().toUpperCase();
+  $('friends-error').classList.add('hidden');
+  if(!code){ $('friends-error').textContent=t('friendsEnterCode'); $('friends-error').classList.remove('hidden'); return; }
+  try{
+    const res = await fetch('/friends/request', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body:JSON.stringify({code}) });
+    const json = await res.json();
+    if(!res.ok || !json.ok){ $('friends-error').textContent = json.error||t('friendsError'); $('friends-error').classList.remove('hidden'); return; }
+    $('inp-friend-code').value = '';
+    showToast(t('friendsRequestSent'), false);
+  }catch(e){ $('friends-error').textContent = t('friendsError'); $('friends-error').classList.remove('hidden'); }
+});
+$('inp-friend-code').addEventListener('keydown', e=>{ if(e.key==='Enter') $('btn-friends-add').click(); });
+$('friends-incoming-list').addEventListener('click', async e=>{
+  const acceptBtn = e.target.closest('[data-accept-req]');
+  const declineBtn = e.target.closest('[data-decline-req]');
+  if(!acceptBtn && !declineBtn) return;
+  const requestId = acceptBtn ? acceptBtn.dataset.acceptReq : declineBtn.dataset.declineReq;
+  try{
+    const res = await fetch('/friends/respond', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body:JSON.stringify({ requestId:Number(requestId), accept:!!acceptBtn }) });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error||'error');
+    loadFriends();
+  }catch(e){ showToast(t('friendsError'), true); }
+});
+$('friends-list').addEventListener('click', async e=>{
+  const btn = e.target.closest('[data-remove-friend]'); if(!btn) return;
+  if(!confirm(t('friendsRemoveConfirm'))) return;
+  try{
+    const res = await fetch('/friends/'+btn.dataset.removeFriend, { method:'DELETE', headers:{ Authorization:'Bearer '+getAuthToken() } });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error||'error');
+    loadFriends();
+  }catch(e){ showToast(t('friendsError'), true); }
+});
+socket.on('friend:presence', ({userId,online})=>{
+  const f = _friendsData.friends.find(x=>x.id===userId);
+  if(!f) return;
+  f.online = online;
+  const dot = document.querySelector(`[data-friend-dot="${userId}"]`);
+  const label = document.querySelector(`[data-friend-status-label="${userId}"]`);
+  if(dot) dot.classList.toggle('online', online);
+  if(label) label.textContent = online ? t('friendsOnline') : t('friendsOffline');
+});
+socket.on('friend:list_changed', ()=>{ if(authUser) loadFriends(); });
+document.addEventListener('langchange', ()=>{ if(!$('friends-overlay').classList.contains('hidden')) renderFriends(); });
 
 /* ===== Perfil de juego (nombre e imagen personalizados, aparte de la cuenta OAuth) ===== */
 // 'unchanged': no tocar el avatar guardado; 'clear': volver a la foto original de la

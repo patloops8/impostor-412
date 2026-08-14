@@ -83,6 +83,17 @@ async function initStore() {
   // desconocidos, no un castigo general de la cuenta).
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_until TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT`);
+  // Código de amigo: se genera la primera vez que hace falta (getOrCreateFriendCode),
+  // no acá — así no hay que backfillear todas las cuentas existentes de una.
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS friend_code TEXT UNIQUE`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS friendships (
+      id SERIAL PRIMARY KEY,
+      requester_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      addressee_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT now()
+    )`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS player_stats (
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -295,6 +306,99 @@ async function updateUserProfile(id, { displayName, avatarImage }) {
   );
   return r.rows[0] || null;
 }
+
+/* ---- Amigos ----
+   Se agregan por "código de amigo" (6 caracteres, como los códigos de sala)
+   en vez de buscar por nombre, porque los nombres no son únicos y esto
+   evita cualquier ambigüedad o suplantación al agregar a alguien. */
+const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function genFriendCode(){
+  let c=''; for(let i=0;i<6;i++) c+=FRIEND_CODE_CHARS[Math.floor(Math.random()*FRIEND_CODE_CHARS.length)];
+  return c;
+}
+async function getOrCreateFriendCode(userId){
+  if (!pool) return null;
+  const existing = await pool.query(`SELECT friend_code as "friendCode" FROM users WHERE id=$1`, [userId]);
+  if (existing.rows[0]?.friendCode) return existing.rows[0].friendCode;
+  // Reintenta si el código al azar choca con uno ya existente (poco probable
+  // con 33^6 combinaciones, pero la columna es UNIQUE así que hay que cubrirlo).
+  for (let i=0;i<10;i++){
+    try{
+      const r = await pool.query(`UPDATE users SET friend_code=$1 WHERE id=$2 RETURNING friend_code as "friendCode"`, [genFriendCode(), userId]);
+      return r.rows[0]?.friendCode || null;
+    }catch(e){ if (e.code !== '23505') throw e; }
+  }
+  throw new Error('no se pudo generar un código de amigo único');
+}
+async function sendFriendRequest(requesterId, code){
+  if (!pool) return { error:'no-db' };
+  const target = await pool.query(`SELECT id FROM users WHERE friend_code=$1`, [String(code||'').trim().toUpperCase()]);
+  if (!target.rows[0]) return { error:'not-found' };
+  const addresseeId = target.rows[0].id;
+  if (addresseeId === requesterId) return { error:'self' };
+  const existing = await pool.query(
+    `SELECT status FROM friendships WHERE (requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1)`,
+    [requesterId, addresseeId]
+  );
+  if (existing.rows[0]) return { error: existing.rows[0].status==='accepted' ? 'already-friends' : 'already-pending' };
+  await pool.query(`INSERT INTO friendships (requester_id,addressee_id,status) VALUES ($1,$2,'pending')`, [requesterId, addresseeId]);
+  return { ok:true, addresseeId };
+}
+async function respondFriendRequest(userId, requestId, accept){
+  if (!pool) return null;
+  const req = await pool.query(
+    `SELECT requester_id as "requesterId", addressee_id as "addresseeId" FROM friendships WHERE id=$1 AND addressee_id=$2 AND status='pending'`,
+    [requestId, userId]
+  );
+  if (!req.rows[0]) return null;
+  if (accept) await pool.query(`UPDATE friendships SET status='accepted' WHERE id=$1`, [requestId]);
+  else await pool.query(`DELETE FROM friendships WHERE id=$1`, [requestId]);
+  return req.rows[0];
+}
+async function removeFriend(userId, friendId){
+  if (!pool) return false;
+  const r = await pool.query(
+    `DELETE FROM friendships WHERE status='accepted' AND ((requester_id=$1 AND addressee_id=$2) OR (requester_id=$2 AND addressee_id=$1))`,
+    [userId, friendId]
+  );
+  return r.rowCount > 0;
+}
+async function getFriendsData(userId){
+  if (!pool) return { friends:[], incoming:[], outgoing:[] };
+  const friends = await pool.query(
+    `SELECT u.id, COALESCE(u.display_name,u.name) as "name", COALESCE(u.avatar_image,u.avatar_url) as "avatar"
+     FROM friendships f
+     JOIN users u ON u.id = CASE WHEN f.requester_id=$1 THEN f.addressee_id ELSE f.requester_id END
+     WHERE f.status='accepted' AND (f.requester_id=$1 OR f.addressee_id=$1)
+     ORDER BY u.name`,
+    [userId]
+  );
+  const incoming = await pool.query(
+    `SELECT f.id, u.id as "userId", COALESCE(u.display_name,u.name) as "name", COALESCE(u.avatar_image,u.avatar_url) as "avatar", f.created_at as "createdAt"
+     FROM friendships f JOIN users u ON u.id = f.requester_id
+     WHERE f.addressee_id=$1 AND f.status='pending' ORDER BY f.created_at DESC`,
+    [userId]
+  );
+  const outgoing = await pool.query(
+    `SELECT f.id, u.id as "userId", COALESCE(u.display_name,u.name) as "name", COALESCE(u.avatar_image,u.avatar_url) as "avatar", f.created_at as "createdAt"
+     FROM friendships f JOIN users u ON u.id = f.addressee_id
+     WHERE f.requester_id=$1 AND f.status='pending' ORDER BY f.created_at DESC`,
+    [userId]
+  );
+  return { friends: friends.rows, incoming: incoming.rows, outgoing: outgoing.rows };
+}
+// Solo los ids (sin datos de perfil) — lo usa la notificación de presencia en
+// vivo, que corre en cada conexión/desconexión y no necesita más que esto.
+async function getFriendIds(userId){
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT CASE WHEN requester_id=$1 THEN addressee_id ELSE requester_id END as "friendId"
+     FROM friendships WHERE status='accepted' AND (requester_id=$1 OR addressee_id=$1)`,
+    [userId]
+  );
+  return r.rows.map(x=>x.friendId);
+}
+
 async function recordGameResult(userId, gameType, won) {
   if (!pool || !userId) return;
   try {
@@ -529,6 +633,7 @@ module.exports = {
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
   banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
+  getOrCreateFriendCode, sendFriendRequest, respondFriendRequest, removeFriend, getFriendsData, getFriendIds,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },
 };

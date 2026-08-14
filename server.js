@@ -241,6 +241,18 @@ function broadcastPublicRooms(){
   io.to(PUBLIC_BROWSE_ROOM).emit('publicRooms:update', publicRoomsList());
 }
 
+// Presencia de amigos: quién está conectado ahora mismo, en memoria (no
+// hace falta que sobreviva un redeploy). Un usuario puede tener más de un
+// socket (varias pestañas/dispositivos), por eso es un Set por userId —
+// recién se lo considera "offline" cuando se queda sin ninguno.
+const ONLINE_USERS = new Map(); // userId -> Set<socket.id>
+async function notifyFriendsPresence(userId, online){
+  try{
+    const friendIds = await store.getFriendIds(userId);
+    for(const fid of friendIds) io.to('user:'+fid).emit('friend:presence', { userId, online });
+  }catch(e){ console.error('[friends] error notificando presencia:', e.message); }
+}
+
 function reassignHostIfNeeded(r){
   if (!r.players.has(r.hostId)) {
     const first = connected(r)[0] || playersArr(r)[0];
@@ -1234,6 +1246,27 @@ io.on('connection', socket => {
     if(c<=0) IP_CONN.delete(clientIp); else IP_CONN.set(clientIp,c);
   });
 
+  // Presencia de amigos: el cliente manda su JWT apenas se conecta (si tiene
+  // sesión iniciada), no hace falta estar en una sala para figurar "en línea".
+  socket.on('auth:presence', ({authToken}) => {
+    const decoded = authToken ? auth.verifyToken(authToken) : null;
+    if(!decoded) return;
+    const uid = decoded.uid;
+    socket.data.userId = uid;
+    if(!ONLINE_USERS.has(uid)) ONLINE_USERS.set(uid, new Set());
+    const set = ONLINE_USERS.get(uid);
+    const wasOffline = set.size===0;
+    set.add(socket.id);
+    socket.join('user:'+uid);
+    if(wasOffline) notifyFriendsPresence(uid, true);
+  });
+  socket.on('disconnect', ()=>{
+    const uid = socket.data.userId; if(!uid) return;
+    const set = ONLINE_USERS.get(uid); if(!set) return;
+    set.delete(socket.id);
+    if(set.size===0){ ONLINE_USERS.delete(uid); notifyFriendsPresence(uid, false); }
+  });
+
   socket.on('tv:watch', ({ code }, cb) => {
     const r=rooms.get((code||'').toUpperCase());
     if(!r){cb&&cb({ok:false});return;}
@@ -1808,6 +1841,61 @@ app.get('/api/leaderboard', async (req,res)=>{
   const period = ['all','week','month'].includes(req.query.period) ? req.query.period : 'all';
   try{ res.json(await store.getLeaderboard(20, period)); }
   catch(e){ res.status(500).json({error:'No se pudo cargar la tabla de posiciones.'}); }
+});
+
+/* ---- Amigos ---- */
+function bearerUserId(req){
+  const decoded = auth.verifyToken((req.headers.authorization||'').replace(/^Bearer\s+/i,''));
+  return decoded ? decoded.uid : null;
+}
+app.get('/friends', async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los amigos necesitan la base de datos conectada (DATABASE_URL).'});
+  try{
+    const [friendCode, data] = await Promise.all([store.getOrCreateFriendCode(uid), store.getFriendsData(uid)]);
+    const friends = data.friends.map(f=>({ ...f, online: ONLINE_USERS.has(f.id) }));
+    res.json({ ok:true, friendCode, friends, incoming:data.incoming, outgoing:data.outgoing });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+app.post('/friends/request', express.json({limit:'1kb'}), async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los amigos necesitan la base de datos conectada (DATABASE_URL).'});
+  const code = String(req.body?.code||'').trim();
+  if(!code) return res.status(400).json({error:'Ingresa un código de amigo.'});
+  try{
+    const result = await store.sendFriendRequest(uid, code);
+    if(result.error==='not-found') return res.status(404).json({error:'No se encontró ningún jugador con ese código.'});
+    if(result.error==='self') return res.status(400).json({error:'No puedes agregarte a ti mismo.'});
+    if(result.error==='already-friends') return res.status(400).json({error:'Ya son amigos.'});
+    if(result.error==='already-pending') return res.status(400).json({error:'Ya hay una solicitud pendiente con ese jugador.'});
+    if(result.error) return res.status(503).json({error:'No se pudo enviar la solicitud.'});
+    io.to('user:'+result.addresseeId).emit('friend:list_changed');
+    res.json({ok:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+app.post('/friends/respond', express.json({limit:'1kb'}), async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los amigos necesitan la base de datos conectada (DATABASE_URL).'});
+  try{
+    const result = await store.respondFriendRequest(uid, Number(req.body?.requestId), !!req.body?.accept);
+    if(!result) return res.status(404).json({error:'Esa solicitud ya no existe.'});
+    io.to('user:'+result.requesterId).emit('friend:list_changed');
+    res.json({ok:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+app.delete('/friends/:friendId', async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los amigos necesitan la base de datos conectada (DATABASE_URL).'});
+  try{
+    const ok = await store.removeFriend(uid, Number(req.params.friendId));
+    if(!ok) return res.status(404).json({error:'not found'});
+    io.to('user:'+req.params.friendId).emit('friend:list_changed');
+    res.json({ok:true});
+  }catch(e){ res.status(500).json({error:e.message}); }
 });
 
 // Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin

@@ -181,9 +181,39 @@
       <h2 class="rules-box-title" data-i18n="guidelinesTitle">🤝 Antes de entrar...</h2>
     </div>
     <div class="rules-body">
-      <p data-i18n="guidelinesBody">Vas a jugar con desconocidos. Tratá a los demás con respeto: nada de insultos, acoso ni contenido inapropiado en el chat. Podés reportar cualquier mensaje que rompa esta regla — los reportes los revisa el equipo de 412, y las cuentas que no respeten esto pueden quedar vetadas de las salas públicas.</p>
+      <p data-i18n="guidelinesBody">Vas a jugar con desconocidos. Trata a los demás con respeto: nada de insultos, acoso ni contenido inapropiado en el chat. Además, juega de la forma correcta: escribe pistas, respuestas o conceptos reales, sin arruinar la partida a los demás con cosas sin sentido. Puedes reportar cualquier mensaje o jugador que rompa estas reglas — los reportes los revisa el equipo de 412, y las cuentas que no las respeten pueden quedar vetadas de las salas públicas.</p>
       <button class="btn-primary" id="btn-guidelines-accept" style="width:100%;margin-top:16px;" data-i18n="guidelinesAccept">Entendido, continuar</button>
       <button class="chip-btn" id="btn-guidelines-cancel" style="width:100%;margin-top:8px;" data-i18n="backBtn">← Atrás</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: amigos -->
+<div id="friends-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="friendsTitle">👥 Amigos</h2>
+      <button class="rules-close" id="btn-friends-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body">
+      <div class="friends-code-box">
+        <p class="stats-section-sub" data-i18n="friendsYourCode">Tu código de amigo</p>
+        <div class="friends-code-row">
+          <span class="friends-code" id="friends-my-code">------</span>
+          <button class="chip-btn" id="btn-friends-copy-code" data-i18n="friendsCopyCode">Copiar</button>
+        </div>
+      </div>
+      <div class="friends-add-row">
+        <input type="text" id="inp-friend-code" maxlength="6" placeholder="Código de 6 caracteres" data-i18n-placeholder="friendsCodePlaceholder" style="text-transform:uppercase;" />
+        <button class="chip-btn" id="btn-friends-add" data-i18n="friendsAddBtn">Agregar</button>
+      </div>
+      <p class="error-text hidden" id="friends-error" style="margin-top:8px;" aria-live="assertive"></p>
+      <div id="friends-incoming-section" class="hidden">
+        <h3 class="stats-section-title" data-i18n="friendsIncomingTitle">Solicitudes recibidas</h3>
+        <div id="friends-incoming-list"></div>
+      </div>
+      <h3 class="stats-section-title" data-i18n="friendsListTitle">Tus amigos</h3>
+      <div id="friends-list"></div>
     </div>
   </div>
 </div>
@@ -233,6 +263,7 @@
           <span style="font-size:0.7rem;color:var(--text-dim);">✏️</span>
         </button>
         <div class="chip-btn-row">
+          <button class="chip-btn" id="btn-friends" style="position:relative;"><span data-i18n="friendsBtn">👥 Amigos</span><span id="friends-unread-badge" class="chat-badge hidden" style="position:absolute;top:-6px;right:-6px;">0</span></button>
           <button class="chip-btn" id="btn-my-stats" data-i18n="myStats">Mis estadísticas</button>
           <button class="chip-btn chip-danger" id="btn-auth-logout" data-i18n="logout">Cerrar sesión</button>
         </div>
