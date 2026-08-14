@@ -246,6 +246,28 @@ function broadcastPublicRooms(){
 // socket (varias pestañas/dispositivos), por eso es un Set por userId —
 // recién se lo considera "offline" cuando se queda sin ninguno.
 const ONLINE_USERS = new Map(); // userId -> Set<socket.id>
+
+// Invitaciones a sala pendientes de entrega: si el destinatario tenía la
+// pestaña en segundo plano (celular con la pantalla apagada, por ejemplo)
+// el socket puede quedar "zombie" varios segundos del lado del navegador
+// aunque el servidor todavía lo vea conectado — el emit se pierde en el
+// camino. Por eso además de emitir en el momento, guardamos la invitación
+// un rato y se la reenviamos apenas ese usuario vuelve a registrar
+// presencia (auth:presence), típicamente al reconectar.
+const PENDING_INVITES = new Map(); // userId -> [{code,hostName,gameType,isPublic,expiresAt}]
+const PENDING_INVITE_TTL_MS = 2 * 60 * 1000;
+function addPendingInvite(userId, invite){
+  const list = PENDING_INVITES.get(userId) || [];
+  list.push({ ...invite, expiresAt: Date.now() + PENDING_INVITE_TTL_MS });
+  PENDING_INVITES.set(userId, list);
+}
+function flushPendingInvites(userId, socket){
+  const list = PENDING_INVITES.get(userId); if(!list || !list.length) return;
+  const now = Date.now();
+  const stillValid = list.filter(inv => inv.expiresAt > now && rooms.get(inv.code)?.status==='lobby');
+  PENDING_INVITES.delete(userId);
+  for(const inv of stillValid) socket.emit('friend:room_invite', inv);
+}
 async function notifyFriendsPresence(userId, online){
   try{
     const friendIds = await store.getFriendIds(userId);
@@ -1259,6 +1281,7 @@ io.on('connection', socket => {
     set.add(socket.id);
     socket.join('user:'+uid);
     if(wasOffline) notifyFriendsPresence(uid, true);
+    flushPendingInvites(uid, socket);
   });
   socket.on('disconnect', ()=>{
     const uid = socket.data.userId; if(!uid) return;
@@ -1450,7 +1473,9 @@ io.on('connection', socket => {
       const ok=await store.areFriends(uid, friendUserId);
       if(!ok){cb&&cb({ok:false,error:'Esa persona no está en tu lista de amigos.'});return;}
       const inviter=r.players.get(socket.id);
-      io.to('user:'+friendUserId).emit('friend:room_invite', { code:r.code, hostName:inviter?.name||'?', gameType:r.gameType, isPublic:r.isPublic });
+      const invite = { code:r.code, hostName:inviter?.name||'?', gameType:r.gameType, isPublic:r.isPublic };
+      io.to('user:'+friendUserId).emit('friend:room_invite', invite);
+      addPendingInvite(friendUserId, invite);
       cb&&cb({ok:true});
     }catch(e){ cb&&cb({ok:false,error:'No se pudo enviar la invitación.'}); }
   });
