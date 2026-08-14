@@ -43,7 +43,7 @@ const DEFAULT_SETTINGS = {
   mentiroso: { roundCount: 5, mode: 'texto', namingSeconds: 15 },
   frecuencia: { roundCount: 5 },
   quienSoy:   { roundCount: 1 },
-  subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5 }, defaultBudget: 1000, defaultSkipLimit: 5, minPrice: 10, maxPrice: 150 },
+  subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5, moments: 1.5 }, defaultBudget: 1000, defaultSkipLimit: 5, minPrice: 10, maxPrice: 150 },
   opciones:  { impMangaOptions:[1,3,5,7,10], lieRoundOptions:[3,5,8,10], waveRoundOptions:[3,5,8,10], whoRoundOptions:[1,2,3,5], subBudgetOptions:[500,750,1000,1500,2000,3000,5000], subSkipOptions:[0,2,3,5,8,10] },
 };
 let SETTINGS = (() => {
@@ -2209,6 +2209,7 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
           top:     Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.top)||6),
           leyenda: Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.leyenda)||2),
           troll:   Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.troll)||1.5),
+          moments: Math.max(0.1, parseFloat(s.subasta?.rarezaPesos?.moments)||1.5),
         },
         defaultBudget:    Math.min(99999, Math.max(100, parseInt(s.subasta?.defaultBudget)||1000)),
         defaultSkipLimit: Math.min(20, Math.max(0, parseInt(s.subasta?.defaultSkipLimit)||5)),

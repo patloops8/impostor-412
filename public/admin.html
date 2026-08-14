@@ -132,7 +132,7 @@
   .cfg-rareza-row{display:grid;grid-template-columns:90px 1fr 70px;align-items:center;gap:10px}
   .cfg-rar-label{font-size:13px;font-weight:600;text-align:right}
   .cfg-rareza-row input[type=range]{width:100%}
-  .rareza-mediano{color:#aaa}.rareza-top{color:#4fc3f7}.rareza-leyenda{color:#ffd700}.rareza-troll{color:var(--red)}
+  .rareza-mediano{color:#aaa}.rareza-top{color:#4fc3f7}.rareza-leyenda{color:#ffd700}.rareza-troll{color:var(--red)}.rareza-moments{color:#a78bfa}
   .cfg-prob-preview{margin-top:16px}
   .cfg-prob-bars{display:flex;gap:4px;height:28px;border-radius:6px;overflow:hidden}
   .cfg-prob-bar{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;transition:flex .3s;min-width:0;overflow:hidden;white-space:nowrap}
@@ -362,6 +362,7 @@
       <option value="top">Top</option>
       <option value="leyenda">Leyenda</option>
       <option value="troll">Troll</option>
+      <option value="moments">Moments</option>
     </select>
     <span id="sub-filter-count" style="white-space:nowrap;color:var(--soft);font-size:13px;font-weight:600"></span>
   </div>
@@ -415,6 +416,7 @@
       <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-top">Top</span><input type="range" id="cfg-rar-top" min="0.5" max="30" step="0.5" value="6"><input type="number" id="cfg-rar-top-num" min="0.5" max="30" step="0.5" value="6" style="width:62px"></div>
       <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-leyenda">Leyenda</span><input type="range" id="cfg-rar-leyenda" min="0.5" max="30" step="0.5" value="2"><input type="number" id="cfg-rar-leyenda-num" min="0.5" max="30" step="0.5" value="2" style="width:62px"></div>
       <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-troll">Troll</span><input type="range" id="cfg-rar-troll" min="0.5" max="30" step="0.5" value="1.5"><input type="number" id="cfg-rar-troll-num" min="0.5" max="30" step="0.5" value="1.5" style="width:62px"></div>
+      <div class="cfg-rareza-row"><span class="cfg-rar-label rareza-moments">Moments</span><input type="range" id="cfg-rar-moments" min="0.5" max="30" step="0.5" value="1.5"><input type="number" id="cfg-rar-moments-num" min="0.5" max="30" step="0.5" value="1.5" style="width:62px"></div>
     </div>
     <div class="cfg-prob-preview">
       <p style="font-size:12px;color:var(--soft);margin-bottom:6px">Probabilidad relativa estimada:</p>
@@ -608,7 +610,7 @@
 <div class="panel" id="panel-reports">
   <div class="panel-header">
     <h2>🚩 Reportes</h2>
-    <p>Mensajes de chat reportados por otros jugadores en salas públicas. "Vetar" resuelve el reporte y le pone un veto de salas públicas a la cuenta reportada (elegí la duración); "Desestimar" lo descarta sin tocar la cuenta.</p>
+    <p>Mensajes de chat reportados por otros jugadores en salas públicas. "Vetar" resuelve el reporte y le pone un veto de salas públicas a la cuenta reportada (elige la duración); "Desestimar" lo descarta sin tocar la cuenta.</p>
   </div>
   <div class="filter-row">
     <select id="reports-status-filter">
@@ -663,6 +665,7 @@
             <option value="top">Top</option>
             <option value="leyenda">Leyenda</option>
             <option value="troll">Troll</option>
+            <option value="moments">Moments</option>
           </select>
         </div>
         <div class="cm-field-group" style="max-width:80px">
@@ -1266,8 +1269,8 @@ document.getElementById('filter-sub-rar').addEventListener('change', e=>{ subast
 // ============================================================
 // CONFIG TAB
 // ============================================================
-const RAREZA_COLORS = { mediano:'#999', top:'#4fc3f7', leyenda:'#ffd700', troll:'#e53935' };
-const RAREZA_ORDER  = ['mediano','top','leyenda','troll'];
+const RAREZA_COLORS = { mediano:'#999', top:'#4fc3f7', leyenda:'#ffd700', troll:'#e53935', moments:'#a78bfa' };
+const RAREZA_ORDER  = ['mediano','top','leyenda','troll','moments'];
 
 function updateProbBars(){
   const vals = {};
@@ -1303,7 +1306,7 @@ function populateConfig(s){
   document.getElementById('cfg-who-round-opts').value = (opts.whoRoundOptions || [1,2,3,5]).join(',');
   // Subasta rareza
   for(const r of RAREZA_ORDER){
-    const v = s.subasta?.rarezaPesos?.[r] ?? {mediano:12,top:6,leyenda:2,troll:1.5}[r];
+    const v = s.subasta?.rarezaPesos?.[r] ?? {mediano:12,top:6,leyenda:2,troll:1.5,moments:1.5}[r];
     document.getElementById('cfg-rar-'+r).value     = v;
     document.getElementById('cfg-rar-'+r+'-num').value = v;
   }
