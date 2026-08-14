@@ -69,6 +69,10 @@ const sfx = (() => {
     rps()     { b(440,0.05,0.2,'square'); b(330,0.08,0.18,'square',0.07); },
     // Punto ganado en matchup de posición
     match()   { b(550,0.07,0.2,'triangle'); b(660,0.14,0.24,'sine',0.09); },
+    // Invitación enviada — chasquido suave y breve
+    inviteSent()     { b(700,0.06,0.16,'sine'); b(950,0.09,0.18,'sine',0.06); },
+    // Invitación recibida — timbre de 3 notas, más llamativo
+    inviteReceived() { b(659,0.09,0.22,'sine'); b(784,0.09,0.24,'sine',0.09); b(988,0.22,0.28,'sine',0.18); },
   };
 })();
 
@@ -944,7 +948,7 @@ $('invite-friends-body').addEventListener('click', e=>{
   const btn = e.target.closest('[data-invite-friend]'); if(!btn || btn.disabled) return;
   const friendUserId = Number(btn.dataset.inviteFriend);
   socket.emit('player:invite_friend', { code:roomCode, friendUserId }, (res)=>{
-    if(res && res.ok){ btn.disabled=true; btn.textContent=t('inviteFriendsSent'); showToast(t('inviteFriendsSentToast'), false); }
+    if(res && res.ok){ btn.disabled=true; btn.textContent=t('inviteFriendsSent'); showToast(t('inviteFriendsSentToast'), false); sfx.inviteSent(); }
     else showToast((res&&res.error)||t('friendsError'), true);
   });
 });
@@ -961,12 +965,16 @@ function hideInviteBanner(){
 }
 socket.on('friend:room_invite', ({code,hostName,gameType,isPublic})=>{
   _pendingInvite = { code, isPublic };
-  $('room-invite-text').textContent = t('inviteReceivedText', { name:hostName, game:t(GAME_TITLE_KEYS[gameType]||gameType) });
+  const gameLabel = gameType ? t(GAME_TITLE_KEYS[gameType]||gameType) : null;
+  $('room-invite-text').textContent = gameLabel
+    ? t('inviteReceivedText', { name:hostName, game:gameLabel })
+    : t('inviteReceivedTextNoGame', { name:hostName });
   const el = $('room-invite-banner');
   el.classList.remove('hidden');
   el.classList.add('show');
   clearTimeout(_inviteBannerTimer);
   _inviteBannerTimer = setTimeout(hideInviteBanner, 30000);
+  sfx.inviteReceived(); vib([60,40,60]);
 });
 $('btn-invite-accept').addEventListener('click', ()=>{
   const invite = _pendingInvite; hideInviteBanner();
