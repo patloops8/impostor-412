@@ -2344,6 +2344,17 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
       res.json({ok:true});
     }catch(e){ res.status(500).json({error:e.message}); }
   });
+  // Reinicia partidas jugadas/ganadas, historial y logros (calculados a
+  // partir de eso) a cero — a diferencia de borrar la cuenta, no toca
+  // amigos, puntos, álbum, nombre ni foto.
+  app.post('/admin/users/:id/reset-stats', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const ok = await store.resetUserStats(Number(req.params.id));
+      if(!ok) return res.status(404).json({error:'not found'});
+      res.json({ok:true});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
   // Moderación de perfil: le pone un nombre genérico ("UserNNNN") o le
   // saca la foto personalizada, sin borrar la cuenta ni sus estadísticas.
   app.post('/admin/users/:id/reset-name', adminAuth, async (req,res)=>{

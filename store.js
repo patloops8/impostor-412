@@ -574,6 +574,18 @@ async function deleteUser(id) {
   const r = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
   return r.rowCount > 0;
 }
+// Reinicia partidas jugadas/ganadas e historial (y por lo tanto los logros,
+// que se calculan a partir de esto — no se guardan aparte). A diferencia de
+// deleteUser, la cuenta sigue existiendo tal cual: amigos, puntos, álbum,
+// nombre y foto no se tocan.
+async function resetUserStats(id) {
+  if (!pool) return false;
+  const exists = await pool.query(`SELECT 1 FROM users WHERE id=$1`, [id]);
+  if (!exists.rowCount) return false;
+  await pool.query(`DELETE FROM player_stats WHERE user_id=$1`, [id]);
+  await pool.query(`DELETE FROM game_history WHERE user_id=$1`, [id]);
+  return true;
+}
 // Moderación: le pone un nombre genérico ("User1234"), tanto si lo
 // inapropiado era el nombre personalizado como el original de la cuenta
 // OAuth (display_name manda sobre name, así que esto lo tapa para siempre,
@@ -867,7 +879,7 @@ async function deleteAchievement(id) {
 module.exports = {
   initStore, addFeedback, getFeedback, markFeedbackRead, deleteFeedback, trackEvent, getAnalytics, resetAnalytics,
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
-  addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
+  addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, resetUserStats, adminResetUserName, adminClearUserAvatar,
   banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
   awardPoints, spendPoints, setPoints, getPointsEarnedToday, getOwnedStickers, addSticker, resetAlbum, setAlbumBeta,
   getPreviousPeriodBounds, getPeriodRanking, isPeriodProcessed, markPeriodProcessed,

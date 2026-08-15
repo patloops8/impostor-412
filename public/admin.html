@@ -2531,6 +2531,7 @@ function renderUsers(){
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
           <button class="btn-export" data-reset-name="${u.id}" title="Reemplaza el nombre por uno genérico (UserNNNN)">🔤 Nombre</button>
           <button class="btn-export" data-clear-avatar="${u.id}" ${u.avatarImage?'':'disabled style="opacity:0.4;"'} title="Saca la foto de perfil personalizada">🖼 Foto</button>
+          <button class="btn-export" data-reset-stats="${u.id}" title="Reinicia partidas jugadas/ganadas, historial y logros a 0 — no borra la cuenta ni sus amigos">📊 Reiniciar estadísticas</button>
           ${isBanned
             ? `<button class="btn-export" data-unban="${u.id}" style="color:#8f8" title="Quita el veto de salas públicas">✅ Quitar veto</button>`
             : `<button class="btn-export" data-ban="${u.id}" style="color:var(--gold,#e9b949)" title="Veta la cuenta de las salas públicas">🚫 Vetar</button>`}
@@ -2575,6 +2576,7 @@ document.getElementById('list-users').addEventListener('click', async e=>{
   const delBtn = e.target.closest('[data-del-user]');
   const nameBtn = e.target.closest('[data-reset-name]');
   const avatarBtn = e.target.closest('[data-clear-avatar]');
+  const statsBtn = e.target.closest('[data-reset-stats]');
   const banBtn = e.target.closest('[data-ban]');
   const unbanBtn = e.target.closest('[data-unban]');
   if(banBtn){
@@ -2684,6 +2686,19 @@ document.getElementById('list-users').addEventListener('click', async e=>{
       const data = await r.json();
       if(!r.ok || !data.ok) throw new Error(data.error||'error');
       toast('✓ Foto de perfil quitada','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(statsBtn){
+    const id = Number(statsBtn.dataset.resetStats);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Reiniciar a 0 las partidas jugadas/ganadas, el historial y los logros de "${u?.displayName||u?.name}"? La cuenta, sus amigos, puntos y álbum no se tocan. No se puede deshacer.`)) return;
+    try{
+      const r = await fetch(`/admin/users/${id}/reset-stats`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Estadísticas reiniciadas','ok');
       loadUsers();
     }catch(e){ toast('Error: '+e.message,'err'); }
   }
