@@ -2109,7 +2109,7 @@ async function resolvePackOpen(userId, pack){
       scrapAwarded = SETTINGS.album.scrapValue[rareza]||0;
       if(scrapAwarded>0) await store.awardPoints(userId, scrapAwarded, 'scrap_dup');
     }
-    results.push({ cardId:card.id, name:card.name, rareza, isNew, scrapAwarded, imgPosY: card.imgPosY ?? 20 });
+    results.push({ cardId:card.id, name:card.name, rareza, isNew, scrapAwarded, imgPosY: card.imgPosY ?? 20, imgFit: card.imgFit || 'contain' });
   }
   return results;
 }
