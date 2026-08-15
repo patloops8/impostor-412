@@ -1113,7 +1113,7 @@ socket.on('player:points_earned', ({amount, newBalance})=>{
 const TIER_LABELS = { top50:'Top 50%', top20:'Top 20%', top10:'Top 10%', top5:'Top 5%', first:'#1' };
 const PERIOD_LABELS = { weekly:'semanal', monthly:'mensual' };
 socket.on('rewards:granted', ({periodType, tier, reward, exclusiveGranted})=>{
-  const rewardText = Object.entries(reward||{}).map(([k,n])=>`${n} ${(PACK_LABELS[k]||{}).name||k}`).join(', ');
+  const rewardText = reward ? `${reward.count} ${(PACK_LABELS[reward.packType]||{}).name||reward.packType}` : '';
   // Un solo toast (showToast no encola, un segundo llamado inmediato pisaría
   // el primero) — si viene la exclusiva, se agrega como segunda línea.
   let msg = `🏆 ${TIER_LABELS[tier]||tier} ${PERIOD_LABELS[periodType]||periodType} — ${t('rewardsGotToast',{reward:rewardText})}`;

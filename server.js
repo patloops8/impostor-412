@@ -68,6 +68,11 @@ const DEFAULT_SETTINGS = {
       oro:    { cost: 350, stickers: 4, odds: { mediano:.25, top:.35, leyenda:.25 } },
     },
     scrapValue: { mediano: 5, top: 15, leyenda: 40 },
+    // Cada escalón da un solo tipo de sobre — ver checkAndGrantPeriodRewards.
+    rankingRewards: {
+      weekly:  { top50:{packType:'bronce',count:2}, top20:{packType:'plata',count:3}, top10:{packType:'oro',count:2}, top5:{packType:'oro',count:4}, first:{packType:'oro',count:8} },
+      monthly: { top50:{packType:'plata',count:5}, top20:{packType:'oro',count:6}, top10:{packType:'oro',count:12}, top5:{packType:'oro',count:20}, first:{packType:'oro',count:30} },
+    },
   },
 };
 let SETTINGS = (() => {
@@ -78,6 +83,9 @@ let SETTINGS = (() => {
 // "album" (o de antes de que se agregara alguna rareza nueva) — sin este
 // merge quedaría undefined hasta el próximo guardado manual desde el admin.
 if (!SETTINGS.album) SETTINGS.album = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.album));
+// Mismo caso, pero para una subsección agregada después de que "album" ya
+// existiera en disco (ej. rankingRewards, agregado en la Fase 2).
+if (!SETTINGS.album.rankingRewards) SETTINGS.album.rankingRewards = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.album.rankingRewards));
 
 /* ===================== FEEDBACK + ANALYTICS ===================== */
 // La persistencia real vive en store.js (Postgres si hay DATABASE_URL,
@@ -230,10 +238,8 @@ async function awardGamePoints(r, gameType, winnerIds){
 // Sobres de premio por percentil — cada quien recibe solo el mejor escalón
 // que alcanza (no se acumulan). El percentil es sobre el total de gente que
 // ganó algún punto en ese período, no sobre toda la base de usuarios.
-const REWARD_TIERS = {
-  weekly:  { top50:{bronce:2}, top20:{plata:3}, top10:{oro:2}, top5:{oro:4}, first:{oro:8} },
-  monthly: { top50:{plata:5}, top20:{oro:6}, top10:{oro:12}, top5:{oro:20}, first:{oro:30} },
-};
+// Los valores en sí viven en SETTINGS.album.rankingRewards (editables desde
+// el admin), no acá.
 function tierForRank(rank, total){
   if(rank===1) return 'first';
   if(rank<=Math.ceil(total*0.05)) return 'top5';
@@ -261,8 +267,9 @@ async function checkAndGrantPeriodRewards(){
         const rank = i+1;
         const tier = tierForRank(rank, total);
         if(!tier) continue;
-        const reward = REWARD_TIERS[periodType][tier];
-        for(const packType in reward) await store.grantPackCredit(ranking[i].userId, packType, reward[packType]);
+        const cfg = SETTINGS.album || DEFAULT_SETTINGS.album;
+        const reward = cfg.rankingRewards[periodType][tier];
+        await store.grantPackCredit(ranking[i].userId, reward.packType, reward.count);
         let exclusiveGranted = null;
         if(periodType==='monthly' && tier==='first'){
           const excl = EXCLUSIVE_STICKERS.find(s=>s.monthKey===periodKey.slice(0,7));
@@ -2467,6 +2474,17 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
       for(const k of ['mediano','top','leyenda']) out[k] = Math.max(0.01, parseFloat(o?.[k])||def[k]);
       return out;
     };
+    // Cada escalón de premio da un solo tipo de sobre (packType) más una
+    // cantidad — ver DEFAULT_SETTINGS.album.rankingRewards para la forma.
+    const cleanRewardPeriod = (period, def) => {
+      const out = {};
+      for(const tier of ['top50','top20','top10','top5','first']){
+        const t = period?.[tier] || {};
+        const packType = ['bronce','plata','oro'].includes(t.packType) ? t.packType : def[tier].packType;
+        out[tier] = { packType, count: Math.max(1, parseInt(t.count)||def[tier].count) };
+      }
+      return out;
+    };
     return {
       impostor: {
         impostorCount: Math.min(5, Math.max(1, parseInt(s.impostor?.impostorCount)||1)),
@@ -2536,6 +2554,10 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
           mediano: Math.max(0, parseInt(s.album?.scrapValue?.mediano)||5),
           top:     Math.max(0, parseInt(s.album?.scrapValue?.top)||15),
           leyenda: Math.max(0, parseInt(s.album?.scrapValue?.leyenda)||40),
+        },
+        rankingRewards: {
+          weekly:  cleanRewardPeriod(s.album?.rankingRewards?.weekly,  DEFAULT_SETTINGS.album.rankingRewards.weekly),
+          monthly: cleanRewardPeriod(s.album?.rankingRewards?.monthly, DEFAULT_SETTINGS.album.rankingRewards.monthly),
         },
       },
     };

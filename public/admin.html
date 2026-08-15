@@ -136,6 +136,12 @@
   .cfg-prob-preview{margin-top:16px}
   .cfg-prob-bars{display:flex;gap:4px;height:28px;border-radius:6px;overflow:hidden}
   .cfg-prob-bar{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;transition:flex .3s;min-width:0;overflow:hidden;white-space:nowrap}
+  .cfg-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .cfg-tbl th,.cfg-tbl td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  .cfg-tbl thead th{color:var(--soft);font-weight:600;font-size:12px;background:var(--bg3)}
+  .cfg-tbl tbody tr:last-child td{border-bottom:none}
+  .cfg-tbl input[type=number]{width:80px;padding:5px 8px;font-size:13px}
+  .cfg-tbl select{padding:5px 8px;font-size:13px}
 
   /* ---- FORMATIONS EDITOR ---- */
   .fpe-slot{position:absolute;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:var(--display,monospace);color:#fff;border:2px solid rgba(255,255,255,0.7);box-shadow:0 2px 6px rgba(0,0,0,0.6);cursor:grab;transform:translate(-50%,-50%);transition:box-shadow .1s;touch-action:none;user-select:none}
@@ -436,12 +442,87 @@
   </div>
 
   <div class="cfg-section">
-    <h3 class="cfg-title">📕 Álbum de estampas</h3>
+    <h3 class="cfg-title">📕 Álbum de estampas — Interruptor</h3>
     <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Mientras esté apagado, solo los usuarios marcados como "beta" (pestaña Usuarios) ganan puntos y pueden abrir sobres — el resto no ve nada del sistema. Antes de prenderlo para todos, conviene reiniciar los puntos/álbum de los beta testers para que todos arranquen parejos.</p>
     <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
       <input type="checkbox" id="cfg-album-enabled" style="width:18px;height:18px;">
       Álbum de estampas activo para todos los jugadores
     </label>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">📕 Álbum — Puntos por partida</h3>
+    <div class="cfg-row"><label>Puntos por minuto (sala pública)</label><input type="number" id="cfg-album-pubrate" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>Puntos por minuto (sala privada)</label><input type="number" id="cfg-album-privrate" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>Bono por ganar (%)</label><input type="number" id="cfg-album-winbonus" min="0" step="1"></div>
+    <div class="cfg-row"><label>Techo de tiempo (x sobre lo esperado)</label><input type="number" id="cfg-album-ceiling" min="1" step="0.1"></div>
+    <div class="cfg-row"><label>Tope diario a tasa completa (pts)</label><input type="number" id="cfg-album-dailycap-full" min="0" step="10"></div>
+    <div class="cfg-row"><label>Tasa reducida tras el tope (%)</label><input type="number" id="cfg-album-dailycap-reduced" min="0" max="100" step="1"></div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">📕 Álbum — Minutos promedio por ronda</h3>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Usado junto con las rondas configuradas en cada sala para calcular cuánto "debería" durar la partida (ver techo de tiempo arriba).</p>
+    <div class="cfg-row"><label>El Impostor (por manga)</label><input type="number" id="cfg-album-min-impostor" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>Mentiroso Futbolero (por ronda)</label><input type="number" id="cfg-album-min-mentiroso" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>La Frecuencia (por ronda)</label><input type="number" id="cfg-album-min-wavelength" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>¿Quién Soy? (por ronda)</label><input type="number" id="cfg-album-min-who" min="0.1" step="0.1"></div>
+    <div class="cfg-row"><label>Subasta Futbolera (duración fija)</label><input type="number" id="cfg-album-min-subasta" min="0.1" step="0.1"></div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">📕 Álbum — Sobres</h3>
+    <div class="tbl-wrap">
+      <table class="cfg-tbl">
+        <thead><tr><th>Sobre</th><th>Precio (pts)</th><th>Estampas</th><th>Prob. Mediano</th><th>Prob. Top</th><th>Prob. Leyenda</th></tr></thead>
+        <tbody>
+          <tr><td>🥉 Bronce</td>
+            <td><input type="number" id="cfg-pack-bronce-cost" min="1" step="1"></td>
+            <td><input type="number" id="cfg-pack-bronce-stickers" min="1" max="20" step="1"></td>
+            <td><input type="number" id="cfg-pack-bronce-odds-mediano" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-bronce-odds-top" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-bronce-odds-leyenda" min="0.01" step="0.01"></td>
+          </tr>
+          <tr><td>🥈 Plata</td>
+            <td><input type="number" id="cfg-pack-plata-cost" min="1" step="1"></td>
+            <td><input type="number" id="cfg-pack-plata-stickers" min="1" max="20" step="1"></td>
+            <td><input type="number" id="cfg-pack-plata-odds-mediano" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-plata-odds-top" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-plata-odds-leyenda" min="0.01" step="0.01"></td>
+          </tr>
+          <tr><td>🥇 Oro</td>
+            <td><input type="number" id="cfg-pack-oro-cost" min="1" step="1"></td>
+            <td><input type="number" id="cfg-pack-oro-stickers" min="1" max="20" step="1"></td>
+            <td><input type="number" id="cfg-pack-oro-odds-mediano" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-oro-odds-top" min="0.01" step="0.01"></td>
+            <td><input type="number" id="cfg-pack-oro-odds-leyenda" min="0.01" step="0.01"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--soft);font-size:13px;margin:10px 0 6px">Puntos que da una estampa repetida, según su rareza:</p>
+    <div class="cfg-row"><label>Mediano repetida</label><input type="number" id="cfg-scrap-mediano" min="0" step="1"></div>
+    <div class="cfg-row"><label>Top repetida</label><input type="number" id="cfg-scrap-top" min="0" step="1"></div>
+    <div class="cfg-row"><label>Leyenda repetida</label><input type="number" id="cfg-scrap-leyenda" min="0" step="1"></div>
+  </div>
+
+  <div class="cfg-section">
+    <h3 class="cfg-title">🏆 Álbum — Recompensas de ranking</h3>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Cada quien recibe solo el mejor escalón que alcanza (no se acumulan). El sobre y la cantidad son ajustables por escalón.</p>
+    <p style="font-weight:700;font-size:13px;margin-bottom:6px">Semanal</p>
+    <div class="tbl-wrap">
+      <table class="cfg-tbl">
+        <thead><tr><th>Escalón</th><th>Sobre</th><th>Cantidad</th></tr></thead>
+        <tbody id="cfg-rewards-weekly-body"></tbody>
+      </table>
+    </div>
+    <p style="font-weight:700;font-size:13px;margin:16px 0 6px">Mensual</p>
+    <div class="tbl-wrap">
+      <table class="cfg-tbl">
+        <thead><tr><th>Escalón</th><th>Sobre</th><th>Cantidad</th></tr></thead>
+        <tbody id="cfg-rewards-monthly-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
@@ -1350,7 +1431,55 @@ function populateConfig(s){
   document.getElementById('cfg-sub-price-min').value   = s.subasta?.minPrice ?? 10;
   document.getElementById('cfg-sub-price-max').value   = s.subasta?.maxPrice ?? 150;
   // Álbum de estampas
-  document.getElementById('cfg-album-enabled').checked = !!s.album?.enabled;
+  const alb = s.album || {};
+  document.getElementById('cfg-album-enabled').checked = !!alb.enabled;
+  document.getElementById('cfg-album-pubrate').value  = alb.pubRate ?? 6;
+  document.getElementById('cfg-album-privrate').value = alb.privRate ?? 3.2;
+  document.getElementById('cfg-album-winbonus').value = Math.round((alb.winBonusPct ?? 0.6)*100);
+  document.getElementById('cfg-album-ceiling').value  = alb.ceilingMult ?? 1.5;
+  document.getElementById('cfg-album-dailycap-full').value    = alb.dailyCapFull ?? 400;
+  document.getElementById('cfg-album-dailycap-reduced').value = Math.round((alb.dailyCapReducedPct ?? 0.15)*100);
+  const avgMin = alb.avgMinPerRound || {};
+  document.getElementById('cfg-album-min-impostor').value   = avgMin.impostor ?? 2.5;
+  document.getElementById('cfg-album-min-mentiroso').value  = avgMin.mentiroso ?? 3;
+  document.getElementById('cfg-album-min-wavelength').value = avgMin.wavelength ?? 1.5;
+  document.getElementById('cfg-album-min-who').value        = avgMin.who ?? 2.5;
+  document.getElementById('cfg-album-min-subasta').value    = alb.subastaFlatMin ?? 20;
+  const packDefaults = { bronce:{cost:50,stickers:3,odds:{mediano:.70,top:.22,leyenda:.05}}, plata:{cost:125,stickers:3,odds:{mediano:.50,top:.32,leyenda:.12}}, oro:{cost:350,stickers:4,odds:{mediano:.25,top:.35,leyenda:.25}} };
+  for(const tier of ['bronce','plata','oro']){
+    const p = alb.packs?.[tier] || packDefaults[tier];
+    document.getElementById('cfg-pack-'+tier+'-cost').value = p.cost;
+    document.getElementById('cfg-pack-'+tier+'-stickers').value = p.stickers;
+    document.getElementById('cfg-pack-'+tier+'-odds-mediano').value = p.odds.mediano;
+    document.getElementById('cfg-pack-'+tier+'-odds-top').value = p.odds.top;
+    document.getElementById('cfg-pack-'+tier+'-odds-leyenda').value = p.odds.leyenda;
+  }
+  const scrap = alb.scrapValue || {};
+  document.getElementById('cfg-scrap-mediano').value = scrap.mediano ?? 5;
+  document.getElementById('cfg-scrap-top').value = scrap.top ?? 15;
+  document.getElementById('cfg-scrap-leyenda').value = scrap.leyenda ?? 40;
+  const rewardDefaults = {
+    weekly:  { top50:{packType:'bronce',count:2}, top20:{packType:'plata',count:3}, top10:{packType:'oro',count:2}, top5:{packType:'oro',count:4}, first:{packType:'oro',count:8} },
+    monthly: { top50:{packType:'plata',count:5}, top20:{packType:'oro',count:6}, top10:{packType:'oro',count:12}, top5:{packType:'oro',count:20}, first:{packType:'oro',count:30} },
+  };
+  renderRewardTierRows('weekly',  alb.rankingRewards?.weekly  || rewardDefaults.weekly);
+  renderRewardTierRows('monthly', alb.rankingRewards?.monthly || rewardDefaults.monthly);
+}
+const REWARD_TIER_LABELS = { top50:'Top 50%', top20:'Top 20%', top10:'Top 10%', top5:'Top 5%', first:'#1' };
+function renderRewardTierRows(period, tiers){
+  const body = document.getElementById('cfg-rewards-'+period+'-body');
+  body.innerHTML = ['top50','top20','top10','top5','first'].map(tier=>{
+    const t = tiers[tier] || {packType:'bronce',count:1};
+    return `<tr>
+      <td>${REWARD_TIER_LABELS[tier]}</td>
+      <td><select id="cfg-reward-${period}-${tier}-packtype">
+        <option value="bronce" ${t.packType==='bronce'?'selected':''}>🥉 Bronce</option>
+        <option value="plata" ${t.packType==='plata'?'selected':''}>🥈 Plata</option>
+        <option value="oro" ${t.packType==='oro'?'selected':''}>🥇 Oro</option>
+      </select></td>
+      <td><input type="number" id="cfg-reward-${period}-${tier}-count" min="1" step="1" value="${t.count}"></td>
+    </tr>`;
+  }).join('');
 }
 
 function parseOpts(str){ return str.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v)&&v>0); }
@@ -1386,22 +1515,64 @@ function buildSettingsPayload(){
       subBudgetOptions: parseOpts(document.getElementById('cfg-sub-budget-opts').value),
       subSkipOptions:   parseNonNegOpts(document.getElementById('cfg-sub-skip-opts').value),
     },
-    // Solo "enabled" tiene UI por ahora — el resto de la economía (tasas,
-    // sobres, topes) se preserva tal como se cargó para no resetearla a los
-    // valores por defecto cada vez que se guarda algo desde esta pantalla.
     album: {
-      ..._lastLoadedSettings?.album,
       enabled: document.getElementById('cfg-album-enabled').checked,
+      pubRate:  parseFloat(document.getElementById('cfg-album-pubrate').value)||6,
+      privRate: parseFloat(document.getElementById('cfg-album-privrate').value)||3.2,
+      winBonusPct: (parseFloat(document.getElementById('cfg-album-winbonus').value)||60)/100,
+      ceilingMult: parseFloat(document.getElementById('cfg-album-ceiling').value)||1.5,
+      dailyCapFull: parseInt(document.getElementById('cfg-album-dailycap-full').value)||400,
+      dailyCapReducedPct: (parseFloat(document.getElementById('cfg-album-dailycap-reduced').value)||15)/100,
+      avgMinPerRound: {
+        impostor:   parseFloat(document.getElementById('cfg-album-min-impostor').value)||2.5,
+        mentiroso:  parseFloat(document.getElementById('cfg-album-min-mentiroso').value)||3,
+        wavelength: parseFloat(document.getElementById('cfg-album-min-wavelength').value)||1.5,
+        who:        parseFloat(document.getElementById('cfg-album-min-who').value)||2.5,
+      },
+      subastaFlatMin: parseFloat(document.getElementById('cfg-album-min-subasta').value)||20,
+      packs: {
+        bronce: buildPackPayload('bronce'),
+        plata:  buildPackPayload('plata'),
+        oro:    buildPackPayload('oro'),
+      },
+      scrapValue: {
+        mediano: parseInt(document.getElementById('cfg-scrap-mediano').value)||5,
+        top:     parseInt(document.getElementById('cfg-scrap-top').value)||15,
+        leyenda: parseInt(document.getElementById('cfg-scrap-leyenda').value)||40,
+      },
+      rankingRewards: {
+        weekly:  buildRewardPeriodPayload('weekly'),
+        monthly: buildRewardPeriodPayload('monthly'),
+      },
     },
   };
 }
+function buildPackPayload(tier){
+  return {
+    cost:     parseInt(document.getElementById('cfg-pack-'+tier+'-cost').value)||1,
+    stickers: parseInt(document.getElementById('cfg-pack-'+tier+'-stickers').value)||1,
+    odds: {
+      mediano: parseFloat(document.getElementById('cfg-pack-'+tier+'-odds-mediano').value)||0.01,
+      top:     parseFloat(document.getElementById('cfg-pack-'+tier+'-odds-top').value)||0.01,
+      leyenda: parseFloat(document.getElementById('cfg-pack-'+tier+'-odds-leyenda').value)||0.01,
+    },
+  };
+}
+function buildRewardPeriodPayload(period){
+  const out = {};
+  ['top50','top20','top10','top5','first'].forEach(tier=>{
+    out[tier] = {
+      packType: document.getElementById('cfg-reward-'+period+'-'+tier+'-packtype').value,
+      count: parseInt(document.getElementById('cfg-reward-'+period+'-'+tier+'-count').value)||1,
+    };
+  });
+  return out;
+}
 
-let _lastLoadedSettings = null;
 async function loadConfig(){
   try{
     const r = await fetch('/admin/data/settings', {headers:_authHeaders()});
     const s = await r.json();
-    _lastLoadedSettings = s;
     populateConfig(s);
   }catch(e){ console.warn('config load error',e); }
 }
