@@ -86,6 +86,12 @@ async function initStore() {
   // Código de amigo: se genera la primera vez que hace falta (getOrCreateFriendCode),
   // no acá — así no hay que backfillear todas las cuentas existentes de una.
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS friend_code TEXT UNIQUE`);
+  // Sistema de puntos/álbum de estampas: points es el saldo gastable (no el
+  // total histórico ganado, eso vive en point_transactions). album_beta da
+  // acceso anticipado antes de que SETTINGS.album.enabled se prenda para
+  // todos — así se puede probar con algunos usuarios sin que el resto lo vea.
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 0`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS album_beta BOOLEAN NOT NULL DEFAULT false`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS friendships (
       id SERIAL PRIMARY KEY,
@@ -115,6 +121,28 @@ async function initStore() {
       won BOOLEAN NOT NULL,
       other_players TEXT,
       played_at TIMESTAMPTZ DEFAULT now()
+    )`);
+  // Ledger de puntos: una fila por cada vez que alguien gana o gasta puntos
+  // (amount negativo = gasto en sobre). Sirve tanto para reconstruir el
+  // saldo (auditoría) como para el tope diario (getPointsEarnedToday) y,
+  // más adelante, para las tablas de posiciones semanal/mensual.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS point_transactions (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      amount INT NOT NULL,
+      reason TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )`);
+  // Estampas del álbum: solo ownership (sin cantidad) — una repetida se
+  // convierte en puntos en el momento de abrir el sobre, nunca se guarda
+  // como fila duplicada acá.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_stickers (
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      card_id TEXT NOT NULL,
+      obtained_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, card_id)
     )`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS achievements (
@@ -279,7 +307,7 @@ async function resetAnalytics() {
    tiene sentido si persiste de verdad. Sin DATABASE_URL, el login queda
    deshabilitado (authEnabled=false) en vez de simular algo que se
    perdería en el próximo redeploy. */
-const USER_COLUMNS = `id, provider, name, avatar_url as "avatarUrl", display_name as "displayName", avatar_image as "avatarImage", banned_until as "bannedUntil", ban_reason as "banReason"`;
+const USER_COLUMNS = `id, provider, name, avatar_url as "avatarUrl", display_name as "displayName", avatar_image as "avatarImage", banned_until as "bannedUntil", ban_reason as "banReason", points, album_beta as "albumBeta"`;
 async function upsertUser({ provider, providerId, name, avatarUrl }) {
   if (!pool) return null;
   const r = await pool.query(
@@ -498,8 +526,10 @@ async function getAllUsersAdmin(search = '') {
     `SELECT u.id, u.provider, u.name, u.avatar_url as "avatarUrl",
             u.display_name as "displayName", u.avatar_image as "avatarImage",
             u.created_at as "createdAt", u.banned_until as "bannedUntil",
+            u.points, u.album_beta as "albumBeta",
             COALESCE(SUM(ps.games_played),0)::int as "totalPlayed",
-            COALESCE(SUM(ps.games_won),0)::int as "totalWon"
+            COALESCE(SUM(ps.games_won),0)::int as "totalWon",
+            (SELECT COUNT(*) FROM user_stickers us WHERE us.user_id=u.id)::int as "albumCount"
      FROM users u
      LEFT JOIN player_stats ps ON ps.user_id = u.id
      ${where}
@@ -556,6 +586,95 @@ async function unbanUser(id) {
   const r = await pool.query(
     `UPDATE users SET banned_until=NULL, ban_reason=NULL WHERE id=$1 RETURNING ${USER_COLUMNS}`,
     [id]
+  );
+  return r.rows[0] || null;
+}
+
+/* ---- Puntos y álbum de estampas ---- */
+// Suma (o resta, con amount negativo — lo usa el admin para descontar por
+// una sanción) puntos y deja registro en el ledger. No valida fondos: eso
+// es responsabilidad de spendPoints, que sí necesita ser atómico.
+async function awardPoints(userId, amount, reason) {
+  if (!pool || !userId || !amount) return null;
+  const r = await pool.query(
+    `UPDATE users SET points = points + $1 WHERE id=$2 RETURNING points`,
+    [amount, userId]
+  );
+  if (!r.rows[0]) return null;
+  await pool.query(
+    `INSERT INTO point_transactions (user_id,amount,reason) VALUES ($1,$2,$3)`,
+    [userId, amount, reason]
+  );
+  return r.rows[0].points;
+}
+// Gasto atómico (abrir un sobre): la condición points>=$1 en el WHERE evita
+// el saldo negativo sin necesitar una transacción/lock aparte — si no
+// alcanza, rowCount es 0 y devolvemos null (el caller responde "fondos
+// insuficientes" sin haber tocado nada).
+async function spendPoints(userId, amount, reason) {
+  if (!pool || !userId || !amount) return null;
+  const r = await pool.query(
+    `UPDATE users SET points = points - $1 WHERE id=$2 AND points >= $1 RETURNING points`,
+    [amount, userId]
+  );
+  if (!r.rows[0]) return null;
+  await pool.query(
+    `INSERT INTO point_transactions (user_id,amount,reason) VALUES ($1,$2,$3)`,
+    [userId, -amount, reason]
+  );
+  return r.rows[0].points;
+}
+// Fija el saldo a un valor exacto (uso admin: "reiniciar a 0" o corregir un
+// bug puntual) — a diferencia de awardPoints, no suma, reemplaza.
+async function setPoints(userId, amount, reason) {
+  if (!pool || !userId) return null;
+  const before = await pool.query(`SELECT points FROM users WHERE id=$1`, [userId]);
+  if (!before.rows[0]) return null;
+  const diff = amount - before.rows[0].points;
+  const r = await pool.query(`UPDATE users SET points=$1 WHERE id=$2 RETURNING points`, [amount, userId]);
+  if (diff !== 0) {
+    await pool.query(
+      `INSERT INTO point_transactions (user_id,amount,reason) VALUES ($1,$2,$3)`,
+      [userId, diff, reason || 'admin_reset']
+    );
+  }
+  return r.rows[0].points;
+}
+// Cuánto ganó (solo lo positivo, no lo gastado) desde la medianoche UTC —
+// lo usa el tope diario para saber cuánto le queda a tasa completa.
+async function getPointsEarnedToday(userId) {
+  if (!pool || !userId) return 0;
+  const r = await pool.query(
+    `SELECT COALESCE(SUM(amount),0)::int as total FROM point_transactions
+     WHERE user_id=$1 AND amount>0 AND created_at >= date_trunc('day', now())`,
+    [userId]
+  );
+  return r.rows[0].total;
+}
+async function getOwnedStickers(userId) {
+  if (!pool || !userId) return [];
+  const r = await pool.query(`SELECT card_id as "cardId" FROM user_stickers WHERE user_id=$1`, [userId]);
+  return r.rows.map(x => x.cardId);
+}
+// Devuelve true si la estampa era nueva (se agregó), false si ya la tenía
+// (el caller debe convertirla en puntos de sobre en ese caso).
+async function addSticker(userId, cardId) {
+  if (!pool || !userId) return false;
+  const r = await pool.query(
+    `INSERT INTO user_stickers (user_id,card_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+    [userId, cardId]
+  );
+  return r.rowCount > 0;
+}
+async function resetAlbum(userId) {
+  if (!pool || !userId) return;
+  await pool.query(`DELETE FROM user_stickers WHERE user_id=$1`, [userId]);
+}
+async function setAlbumBeta(userId, isBeta) {
+  if (!pool || !userId) return null;
+  const r = await pool.query(
+    `UPDATE users SET album_beta=$1 WHERE id=$2 RETURNING ${USER_COLUMNS}`,
+    [!!isBeta, userId]
   );
   return r.rows[0] || null;
 }
@@ -644,6 +763,7 @@ module.exports = {
   upsertUser, getUserById, updateUserProfile, recordGameResult, getUserStats, getLeaderboard,
   addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
   banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
+  awardPoints, spendPoints, setPoints, getPointsEarnedToday, getOwnedStickers, addSticker, resetAlbum, setAlbumBeta,
   getOrCreateFriendCode, sendFriendRequest, respondFriendRequest, removeFriend, getFriendsData, getFriendIds, areFriends,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },

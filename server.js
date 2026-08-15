@@ -35,6 +35,10 @@ const CONCEPTS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'concep
 const ALL_CATEGORIES = [...new Set(CONCEPTS.map(c => c.category))];
 const LIE_CATEGORIES = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'mentiroso-categories.json'), 'utf-8'));
 const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subasta-cards.json'), 'utf-8'));
+// Álbum de estampas: todas las cartas de Subasta salvo Troll (no se
+// consideran coleccionables — ver notas de diseño del sistema de puntos).
+const ALBUM_CARDS = SUBASTA_CARDS.filter(c => c.rareza !== 'troll');
+const ALBUM_CARDS_BY_RAREZA = ALBUM_CARDS.reduce((acc,c)=>{ (acc[c.rareza] ||= []).push(c); return acc; }, {});
 const WAVE_PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wavelength-pairs.json'), 'utf-8'));
 
 const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
@@ -45,11 +49,31 @@ const DEFAULT_SETTINGS = {
   quienSoy:   { roundCount: 1 },
   subasta:    { rarezaPesos: { mediano: 12, top: 6, leyenda: 2, troll: 1.5, moments: 1.5 }, defaultBudget: 1000, defaultSkipLimit: 5, minPrice: 10, maxPrice: 150 },
   opciones:  { impMangaOptions:[1,3,5,7,10], lieRoundOptions:[3,5,8,10], waveRoundOptions:[3,5,8,10], whoRoundOptions:[1,2,3,5], subBudgetOptions:[500,750,1000,1500,2000,3000,5000], subSkipOptions:[0,2,3,5,8,10] },
+  // Sistema de puntos/álbum de estampas. enabled=false hasta el lanzamiento
+  // real — mientras tanto solo los usuarios con album_beta=true en la base
+  // pueden probarlo (ver albumActiveFor en server.js).
+  album: {
+    enabled: false,
+    pubRate: 6, privRate: 3.2, winBonusPct: 0.6, ceilingMult: 1.5,
+    dailyCapFull: 400, dailyCapReducedPct: 0.15,
+    avgMinPerRound: { impostor: 2.5, mentiroso: 3, wavelength: 1.5, who: 2.5 },
+    subastaFlatMin: 20,
+    packs: {
+      bronce: { cost: 50,  stickers: 3, odds: { mediano:.70, top:.22, leyenda:.05 } },
+      plata:  { cost: 125, stickers: 3, odds: { mediano:.50, top:.32, leyenda:.12 } },
+      oro:    { cost: 350, stickers: 4, odds: { mediano:.25, top:.35, leyenda:.25 } },
+    },
+    scrapValue: { mediano: 5, top: 15, leyenda: 40 },
+  },
 };
 let SETTINGS = (() => {
   try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8')); }
   catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
 })();
+// settings.json en disco puede venir de antes de que existiera la sección
+// "album" (o de antes de que se agregara alguna rareza nueva) — sin este
+// merge quedaría undefined hasta el próximo guardado manual desde el admin.
+if (!SETTINGS.album) SETTINGS.album = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.album));
 
 /* ===================== FEEDBACK + ANALYTICS ===================== */
 // La persistencia real vive en store.js (Postgres si hay DATABASE_URL,
@@ -103,6 +127,7 @@ const SMOKE_TEST_TOKEN = process.env.SMOKE_TEST_TOKEN || 'local-smoke-test-412';
 function startCurrentGame(r){
   if(!r.gameType) return false;
   if(r.players.size<MIN_PLAYERS[r.gameType]) return false;
+  r.gameStartedAt = Date.now();
   if(r.gameType==='impostor'){r.mangaNumber=1;startManga(r);}
   else if(r.gameType==='mentiroso'){startLieSession(r);}
   else if(r.gameType==='subasta'){startFormationVote(r);}
@@ -143,6 +168,61 @@ async function notifyGameResultAndAchievements(socketId, userId, gameType, won, 
   }catch(e){ console.error('[achievements] error notificando logros:', e.message); }
 }
 
+/* ===================== PUNTOS / ÁLBUM DE ESTAMPAS ===================== */
+// Mientras SETTINGS.album.enabled esté en false, el sistema solo funciona
+// para cuentas marcadas album_beta=true (panel admin) — así se puede probar
+// con algunos amigos antes de activarlo para todos. Sin DB (store.usingDb
+// false) simplemente no hay a quién marcar como beta, así que queda apagado.
+async function albumActiveFor(userId){
+  if(SETTINGS.album?.enabled) return true;
+  if(!userId || !store.usingDb) return false;
+  try{ const u = await store.getUserById(userId); return !!u?.albumBeta; }
+  catch(e){ return false; }
+}
+// Reparte `amount` entre el cupo diario a tasa completa (SETTINGS.album.dailyCapFull)
+// y el resto a tasa reducida (dailyCapReducedPct), para que una maratón de
+// varias horas no rinda más que jugar a un ritmo normal varios días.
+async function grantPointsWithDailyCap(userId, amount, reason){
+  const cfg = SETTINGS.album || DEFAULT_SETTINGS.album;
+  const earnedToday = await store.getPointsEarnedToday(userId);
+  const remainingFull = Math.max(0, cfg.dailyCapFull - earnedToday);
+  const fullPortion = Math.min(amount, remainingFull);
+  const reducedPortion = amount - fullPortion;
+  const adjusted = fullPortion + Math.round(reducedPortion * cfg.dailyCapReducedPct);
+  if(adjusted<=0) return null;
+  const newBalance = await store.awardPoints(userId, adjusted, reason);
+  return { adjusted, newBalance };
+}
+// Puntos por partida completada de verdad, según el tiempo REAL que duró
+// (con techo, nunca piso — ver notas de diseño). Se llama junto a
+// recordGameStats en los 6 puntos de finalización real de cada minijuego,
+// nunca en un corte anticipado (host:force_end) ni en una interrupción.
+async function awardGamePoints(r, gameType, winnerIds){
+  const cfg = SETTINGS.album || DEFAULT_SETTINGS.album;
+  const winSet = new Set(winnerIds||[]);
+  const rounds = ({
+    impostor: r.impostorConfig?.mangaCount,
+    mentiroso: r.mentirosoConfig?.roundCount,
+    wavelength: r.waveConfig?.roundCount,
+    who: r.whoConfig?.roundCount,
+  })[gameType] || 1;
+  const expectedMin = gameType==='subasta' ? cfg.subastaFlatMin : rounds * (cfg.avgMinPerRound[gameType]||2.5);
+  const realMin = r.gameStartedAt ? (Date.now()-r.gameStartedAt)/60000 : expectedMin;
+  const creditedMin = Math.min(realMin, expectedMin * cfg.ceilingMult);
+  const rate = r.isPublic ? cfg.pubRate : cfg.privRate;
+  const participation = Math.round(creditedMin * rate);
+  for(const p of r.players.values()){
+    if(!p.userId || !p.connected) continue; // se fue a mitad de partida: no cobra
+    try{
+      if(!(await albumActiveFor(p.userId))) continue; // sistema apagado / no es beta: no acumula todavía
+      const amount = participation + (winSet.has(p.id) ? Math.round(participation*cfg.winBonusPct) : 0);
+      if(amount<=0) continue;
+      const granted = await grantPointsWithDailyCap(p.userId, amount, 'game_'+gameType);
+      if(granted) io.to(p.id).emit('player:points_earned', { amount:granted.adjusted, newBalance:granted.newBalance });
+    }catch(e){ console.error('[album] error otorgando puntos:', e.message); }
+  }
+}
+
 function genCode() {
   let c;
   do { c = ''; for (let i=0;i<4;i++) c += ROOM_CODE_CHARS[Math.floor(Math.random()*ROOM_CODE_CHARS.length)]; }
@@ -161,6 +241,7 @@ function newRoom(code, hostId) {
     status: 'lobby',
     isTest: false,                // true en salas creadas por scripts/smoke-test.js: no suman a Analytics
     isPublic: false,               // true = aparece en "Unirse a sala pública"; el modo queda fijo desde la creación
+    gameStartedAt: null,           // Date.now() al arrancar la partida real (startCurrentGame) — usado para calcular los puntos según duración real
     chat: [],                      // últimos mensajes del chat en vivo (se manda como historial al entrar/reconectar)
     chatEnabled: true,             // en salas privadas el anfitrión lo puede apagar (ej. si están en una llamada); en públicas queda siempre prendido
     impostorConfig: { impostorCount: SETTINGS.impostor?.impostorCount??1, mangaCount: SETTINGS.impostor?.mangaCount??3, categories: ALL_CATEGORIES.slice() },
@@ -440,7 +521,7 @@ function endManga(r,result,voters){
   else if (result==='impostors_win'){ for(const id of r.impostorIds){const p=r.players.get(id); if(p?.alive)p.score+=3;} }
   const isLast=r.mangaNumber>=r.impostorConfig.mangaCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ if(!r.isTest) trackEvent('game_completed','impostor'); recordGameStats(r,'impostor',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','impostor'); const winnerIds=scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id); recordGameStats(r,'impostor',winnerIds); awardGamePoints(r,'impostor',winnerIds); }
   io.to(r.code).emit('imp:manga_over',{ result, concept:r.concept, impostorNames:names, mangaNumber:r.mangaNumber, mangaCount:r.impostorConfig.mangaCount, isLastManga:isLast, scores });
 }
 
@@ -501,7 +582,7 @@ function resolveLie(r,success,reason){
   r.status='lie_round_over';
   const isLast=r.lie.roundNumber>=r.mentirosoConfig.roundCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ if(!r.isTest) trackEvent('game_completed','mentiroso'); recordGameStats(r,'mentiroso',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','mentiroso'); const winnerIds=scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id); recordGameStats(r,'mentiroso',winnerIds); awardGamePoints(r,'mentiroso',winnerIds); }
   io.to(r.code).emit('lie:resolved',{ success, reason:reason||(success?'completed':'rejected'), accusedName:accused?.name||'?', accuserName:accuser?.name||'?', category:r.lie.category, target:ch.target, count:ch.count, namedSoFar:ch.namedSoFar, mode:r.mentirosoConfig.mode, roundNumber:r.lie.roundNumber, roundCount:r.mentirosoConfig.roundCount, isLastRound:isLast, scores });
 }
 
@@ -791,7 +872,7 @@ function finishSubastaOVR(r){
   scores.sort((a,b)=>b.points-a.points||b.ovr-a.ovr);
   scores.forEach((sc,i)=>{ const p=r.players.get(sc.id); if(p)p.score+=Math.max(0,scores.length-i); });
   if(!r.isTest) trackEvent('game_completed','subasta');
-  recordGameStats(r,'subasta',scores.filter(s=>s.points===scores[0]?.points).map(s=>s.id));
+  { const winnerIds=scores.filter(s=>s.points===scores[0]?.points).map(s=>s.id); recordGameStats(r,'subasta',winnerIds); awardGamePoints(r,'subasta',winnerIds); }
   io.to(r.code).emit('sub:game_over',{mode:'ovr',scores,matchups,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 
@@ -916,7 +997,7 @@ function finishTournament(r,championId){
   order.forEach((id,i)=>{ const p=r.players.get(id); if(p)p.score+=Math.max(0,order.length-i); });
   const scores=order.map(id=>{ const t=s.teams.get(id); return {id,name:t.name,ovr:t.ovr,cards:t.cards}; });
   if(!r.isTest) trackEvent('game_completed','subasta');
-  recordGameStats(r,'subasta',[championId]);
+  recordGameStats(r,'subasta',[championId]); awardGamePoints(r,'subasta',[championId]);
   io.to(r.code).emit('sub:game_over',{mode:'votacion',championName:champion.name,scores,formation:s.formation,formationSlots:FORMATIONS_DATA[s.formation]||[]});
 }
 function startFormationVote(r){
@@ -1033,7 +1114,7 @@ function resolveWaveRound(r){
   r.status='wave_reveal';
   const isLast = r.wave.roundNumber>=r.waveConfig.roundCount;
   const scores=publicPlayers(r).sort((a,b)=>b.score-a.score);
-  if(isLast){ if(!r.isTest) trackEvent('game_completed','wavelength'); recordGameStats(r,'wavelength',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id)); }
+  if(isLast){ if(!r.isTest) trackEvent('game_completed','wavelength'); const winnerIds=scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id); recordGameStats(r,'wavelength',winnerIds); awardGamePoints(r,'wavelength',winnerIds); }
   io.to(r.code).emit('wave:reveal', {
     target:r.wave.target, left:r.wave.pair.left, right:r.wave.pair.right,
     psychicId:r.wave.psychicId, psychicName:psy?psy.name:'?', psychicScore,
@@ -1122,7 +1203,7 @@ function finishWho(r){
   if(isLast){
     r.status='who_over';
     if(!r.isTest) trackEvent('game_completed','who');
-    recordGameStats(r,'who',scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id));
+    { const winnerIds=scores.filter(s=>s.score===scores[0]?.score).map(s=>s.id); recordGameStats(r,'who',winnerIds); awardGamePoints(r,'who',winnerIds); }
     io.to(r.code).emit('who:game_over',{ scores, assigns });
   } else {
     r.status='who_round_over';
@@ -1741,7 +1822,7 @@ io.on('connection', socket => {
   function resetRoomToLobby(r, code){
     clearLieTimer(r); clearSubTimer(r); clearHostTimer(code);
     if(r.subasta.nextCardTimer){ clearTimeout(r.subasta.nextCardTimer); r.subasta.nextCardTimer=null; }
-    r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0;
+    r.status='lobby'; r.gameType=null; r.concept=null; r.impostorIds=new Set(); r.usedClues=[]; r.roundNumber=0; r.mangaNumber=0; r.gameStartedAt=null;
     r.lie={roundNumber:0,turnStartIndex:0,category:null,turnOrder:[],currentTurnIndex:0,currentClaim:0,lastClaimerId:null,challenge:null};
     r.subasta={phase:'config',formation:null,formationVotes:new Map(),deck:[],currentCardIndex:-1,currentCard:null,auctionPhase:null,secondsLeft:0,totalEligible:0,bids:new Map(),highestBid:null,playerState:new Map(),resolvedCards:[],rps:null,rpsTimer:null,teams:null,bracket:null,nextCardTimer:null};
     r.wave={roundNumber:0,order:[],orderIndex:0,psychicId:null,pair:null,target:null,usedPairIndexes:new Set(),guesses:new Map(),secondsLeft:0,deadlineAt:null};
@@ -1943,6 +2024,58 @@ app.delete('/friends/:friendId', async (req,res)=>{
   }catch(e){ res.status(500).json({error:e.message}); }
 });
 
+/* ===== Álbum de estampas y sobres (ver awardGamePoints/albumActiveFor) ===== */
+function pickWeightedRareza(odds){
+  const total = Object.values(odds).reduce((a,b)=>a+b, 0);
+  let r = Math.random()*total;
+  for(const k in odds){ r -= odds[k]; if(r<=0) return k; }
+  return 'mediano';
+}
+// El cliente lo consulta tras iniciar sesión para saber si mostrar (o
+// esconder por completo) el chip de puntos/álbum/sobres.
+app.get('/album/status', async (req,res)=>{
+  const uid = bearerUserId(req);
+  res.json({ ok:true, active: uid ? await albumActiveFor(uid) : false });
+});
+app.get('/album', async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'El álbum necesita la base de datos conectada (DATABASE_URL).'});
+  if(!(await albumActiveFor(uid))) return res.status(403).json({error:'El álbum todavía no está disponible.'});
+  try{
+    const [user, owned] = await Promise.all([store.getUserById(uid), store.getOwnedStickers(uid)]);
+    res.json({ ok:true, points:user?.points||0, catalog:ALBUM_CARDS, owned, total:ALBUM_CARDS.length, packs:SETTINGS.album.packs });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+app.post('/packs/open', express.json({limit:'1kb'}), async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los sobres necesitan la base de datos conectada (DATABASE_URL).'});
+  if(!(await albumActiveFor(uid))) return res.status(403).json({error:'El álbum todavía no está disponible.'});
+  const packType = String(req.body?.packType||'');
+  const pack = SETTINGS.album?.packs?.[packType];
+  if(!pack) return res.status(400).json({error:'Tipo de sobre inválido.'});
+  try{
+    const newBalance = await store.spendPoints(uid, pack.cost, 'pack_'+packType);
+    if(newBalance===null) return res.status(400).json({error:'Puntos insuficientes.'});
+    const results = [];
+    for(let i=0;i<pack.stickers;i++){
+      const rareza = pickWeightedRareza(pack.odds);
+      const cardsInRareza = ALBUM_CARDS_BY_RAREZA[rareza] || ALBUM_CARDS;
+      const card = cardsInRareza[Math.floor(Math.random()*cardsInRareza.length)];
+      const isNew = await store.addSticker(uid, card.id);
+      let scrapAwarded = 0;
+      if(!isNew){
+        scrapAwarded = SETTINGS.album.scrapValue[rareza]||0;
+        if(scrapAwarded>0) await store.awardPoints(uid, scrapAwarded, 'scrap_dup');
+      }
+      results.push({ cardId:card.id, name:card.name, rareza, isNew, scrapAwarded });
+    }
+    const user = await store.getUserById(uid);
+    res.json({ ok:true, results, newBalance: user?.points ?? newBalance });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+
 // Buzón de contacto: cualquier jugador puede mandar un bug/sugerencia. Sin
 // autenticación (es público), pero con límite de tamaño y rate-limit por IP.
 app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
@@ -2140,6 +2273,40 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
     }catch(e){ res.status(500).json({error:e.message}); }
   });
 
+  // Puntos/álbum: ajustar/reiniciar el saldo de un usuario (compensar un bug,
+  // descontar tras una sanción) y dar/quitar acceso beta antes del lanzamiento.
+  app.post('/admin/users/:id/points-adjust', adminAuth, express.json({limit:'1kb'}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    const amount = parseInt(req.body?.amount);
+    if(!Number.isInteger(amount) || amount===0) return res.status(400).json({error:'Indica una cantidad de puntos distinta de cero.'});
+    try{
+      const points = await store.awardPoints(Number(req.params.id), amount, 'admin_adjust');
+      if(points===null) return res.status(404).json({error:'not found'});
+      res.json({ok:true, points});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/users/:id/points-reset', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const points = await store.setPoints(Number(req.params.id), 0, 'admin_reset');
+      if(points===null) return res.status(404).json({error:'not found'});
+      res.json({ok:true, points});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/users/:id/album-reset', adminAuth, async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{ await store.resetAlbum(Number(req.params.id)); res.json({ok:true}); }
+    catch(e){ res.status(500).json({error:e.message}); }
+  });
+  app.post('/admin/users/:id/album-beta', adminAuth, express.json({limit:'1kb'}), async (req,res)=>{
+    if(!store.usingDb) return res.status(503).json({error:'Las cuentas necesitan la base de datos conectada (DATABASE_URL).'});
+    try{
+      const updated = await store.setAlbumBeta(Number(req.params.id), !!req.body?.enabled);
+      if(!updated) return res.status(404).json({error:'not found'});
+      res.json({ok:true, user:updated});
+    }catch(e){ res.status(500).json({error:e.message}); }
+  });
+
   // Reportes de mensajes de chat (salas públicas). "ban" resuelve el
   // reporte Y aplica el veto en un solo paso; "dismiss" lo descarta sin
   // tocar la cuenta reportada.
@@ -2191,6 +2358,13 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
       const v = Array.isArray(arr) ? arr.map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<=20) : def;
       return v.length ? [...new Set(v)].sort((a,b)=>a-b) : def;
     };
+    // Probabilidades de rareza dentro de un sobre: números positivos, sin
+    // exigir que sumen 1 acá — quien las usa (openPack) siempre normaliza.
+    const cleanOdds = (o, def) => {
+      const out = {};
+      for(const k of ['mediano','top','leyenda']) out[k] = Math.max(0.01, parseFloat(o?.[k])||def[k]);
+      return out;
+    };
     return {
       impostor: {
         impostorCount: Math.min(5, Math.max(1, parseInt(s.impostor?.impostorCount)||1)),
@@ -2223,6 +2397,44 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
         whoRoundOptions:  toOpts(s.opciones?.whoRoundOptions,  [1,2,3,5]),
         subBudgetOptions: toBudgetOpts(s.opciones?.subBudgetOptions, [500,750,1000,1500,2000,3000,5000]),
         subSkipOptions:   toSkipOpts(s.opciones?.subSkipOptions,   [0,2,3,5,8,10]),
+      },
+      album: {
+        enabled: !!s.album?.enabled,
+        pubRate:  Math.max(0.1, parseFloat(s.album?.pubRate)||6),
+        privRate: Math.max(0.1, parseFloat(s.album?.privRate)||3.2),
+        winBonusPct:  Math.max(0, parseFloat(s.album?.winBonusPct)||0.6),
+        ceilingMult:  Math.max(1, parseFloat(s.album?.ceilingMult)||1.5),
+        dailyCapFull: Math.max(0, parseInt(s.album?.dailyCapFull)||400),
+        dailyCapReducedPct: Math.min(1, Math.max(0, parseFloat(s.album?.dailyCapReducedPct)||0.15)),
+        avgMinPerRound: {
+          impostor:   Math.max(0.1, parseFloat(s.album?.avgMinPerRound?.impostor)||2.5),
+          mentiroso:  Math.max(0.1, parseFloat(s.album?.avgMinPerRound?.mentiroso)||3),
+          wavelength: Math.max(0.1, parseFloat(s.album?.avgMinPerRound?.wavelength)||1.5),
+          who:        Math.max(0.1, parseFloat(s.album?.avgMinPerRound?.who)||2.5),
+        },
+        subastaFlatMin: Math.max(0.1, parseFloat(s.album?.subastaFlatMin)||20),
+        packs: {
+          bronce: {
+            cost:     Math.max(1, parseInt(s.album?.packs?.bronce?.cost)||50),
+            stickers: Math.min(20, Math.max(1, parseInt(s.album?.packs?.bronce?.stickers)||3)),
+            odds: cleanOdds(s.album?.packs?.bronce?.odds, {mediano:.70, top:.22, leyenda:.05}),
+          },
+          plata: {
+            cost:     Math.max(1, parseInt(s.album?.packs?.plata?.cost)||125),
+            stickers: Math.min(20, Math.max(1, parseInt(s.album?.packs?.plata?.stickers)||3)),
+            odds: cleanOdds(s.album?.packs?.plata?.odds, {mediano:.50, top:.32, leyenda:.12}),
+          },
+          oro: {
+            cost:     Math.max(1, parseInt(s.album?.packs?.oro?.cost)||350),
+            stickers: Math.min(20, Math.max(1, parseInt(s.album?.packs?.oro?.stickers)||4)),
+            odds: cleanOdds(s.album?.packs?.oro?.odds, {mediano:.25, top:.35, leyenda:.25}),
+          },
+        },
+        scrapValue: {
+          mediano: Math.max(0, parseInt(s.album?.scrapValue?.mediano)||5),
+          top:     Math.max(0, parseInt(s.album?.scrapValue?.top)||15),
+          leyenda: Math.max(0, parseInt(s.album?.scrapValue?.leyenda)||40),
+        },
       },
     };
   }

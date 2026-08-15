@@ -229,6 +229,38 @@
   </div>
 </div>
 
+<!-- Modal: álbum de estampas -->
+<div id="album-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="albumTitle">📕 Álbum de estampas</h2>
+      <button class="rules-close" id="btn-album-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body">
+      <div class="album-summary">
+        <span id="album-progress-text">0/0</span>
+        <span id="album-points-text">🪙 0</span>
+        <button class="chip-btn" id="btn-open-packs" data-i18n="albumOpenPacksBtn">🎁 Abrir sobres</button>
+      </div>
+      <div class="album-grid" id="album-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: sobres (comprar y abrir) -->
+<div id="packs-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
+  <div class="rules-box">
+    <div class="rules-box-head">
+      <h2 class="rules-box-title" data-i18n="packsTitle">🎁 Sobres</h2>
+      <button class="rules-close" id="btn-packs-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
+    </div>
+    <div class="rules-body">
+      <div id="packs-list" class="packs-list"></div>
+      <div id="pack-reveal" class="pack-reveal hidden"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Banner: invitación de amigo recibida (aparece encima de cualquier pantalla) -->
 <div id="room-invite-banner" class="hidden">
   <div class="room-invite-icon">📨</div>
@@ -285,6 +317,7 @@
         </button>
         <div class="chip-btn-row">
           <button class="chip-btn" id="btn-friends" style="position:relative;"><span data-i18n="friendsBtn">👥 Amigos</span><span id="friends-unread-badge" class="chat-badge hidden" style="position:absolute;top:-6px;right:-6px;">0</span></button>
+          <button class="chip-btn hidden" id="btn-album"><span data-i18n="albumBtn">📕 Álbum</span> <span id="album-points-badge" style="background:var(--neon);color:#0a1400;border-radius:999px;padding:1px 8px;font-size:0.72rem;font-weight:800;margin-left:4px;">0</span></button>
           <button class="chip-btn" id="btn-my-stats" data-i18n="myStats">Mis estadísticas</button>
           <button class="chip-btn chip-danger" id="btn-auth-logout" data-i18n="logout">Cerrar sesión</button>
         </div>

@@ -434,6 +434,15 @@
     <div class="cfg-row"><label>Precio máximo de cartas</label><input type="number" id="cfg-sub-price-max" min="1" max="99999" step="1" value="150"></div>
   </div>
 
+  <div class="cfg-section">
+    <h3 class="cfg-title">📕 Álbum de estampas</h3>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:14px">Mientras esté apagado, solo los usuarios marcados como "beta" (pestaña Usuarios) ganan puntos y pueden abrir sobres — el resto no ve nada del sistema. Antes de prenderlo para todos, conviene reiniciar los puntos/álbum de los beta testers para que todos arranquen parejos.</p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;">
+      <input type="checkbox" id="cfg-album-enabled" style="width:18px;height:18px;">
+      Álbum de estampas activo para todos los jugadores
+    </label>
+  </div>
+
   <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
     <button class="btn btn-ghost" id="btn-save-settings">Guardar local</button>
     <button class="btn btn-primary" id="btn-publish-settings">Guardar y publicar en GitHub ↑</button>
@@ -1318,6 +1327,8 @@ function populateConfig(s){
   document.getElementById('cfg-sub-skip-opts').value   = (opts.subSkipOptions || [0,2,3,5,8,10]).join(',');
   document.getElementById('cfg-sub-price-min').value   = s.subasta?.minPrice ?? 10;
   document.getElementById('cfg-sub-price-max').value   = s.subasta?.maxPrice ?? 150;
+  // Álbum de estampas
+  document.getElementById('cfg-album-enabled').checked = !!s.album?.enabled;
 }
 
 function parseOpts(str){ return str.split(',').map(v=>parseFloat(v.trim())).filter(v=>!isNaN(v)&&v>0); }
@@ -1353,13 +1364,22 @@ function buildSettingsPayload(){
       subBudgetOptions: parseOpts(document.getElementById('cfg-sub-budget-opts').value),
       subSkipOptions:   parseNonNegOpts(document.getElementById('cfg-sub-skip-opts').value),
     },
+    // Solo "enabled" tiene UI por ahora — el resto de la economía (tasas,
+    // sobres, topes) se preserva tal como se cargó para no resetearla a los
+    // valores por defecto cada vez que se guarda algo desde esta pantalla.
+    album: {
+      ..._lastLoadedSettings?.album,
+      enabled: document.getElementById('cfg-album-enabled').checked,
+    },
   };
 }
 
+let _lastLoadedSettings = null;
 async function loadConfig(){
   try{
     const r = await fetch('/admin/data/settings', {headers:_authHeaders()});
     const s = await r.json();
+    _lastLoadedSettings = s;
     populateConfig(s);
   }catch(e){ console.warn('config load error',e); }
 }
@@ -2267,8 +2287,8 @@ function renderUsers(){
       <div class="cfg-section" style="display:flex;align-items:center;gap:14px;">
         ${avatarHtml}
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:700">${esc(u.displayName||u.name)} ${u.displayName?`<span style="color:var(--soft);font-weight:400;font-size:12px">(${esc(u.name)})</span>`:''}</div>
-          <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas${bannedLabel}</div>
+          <div style="font-weight:700">${esc(u.displayName||u.name)} ${u.displayName?`<span style="color:var(--soft);font-weight:400;font-size:12px">(${esc(u.name)})</span>`:''} ${u.albumBeta?'<span style="color:#a78bfa;font-weight:700;font-size:11px">· 🧪 BETA álbum</span>':''}</div>
+          <div style="color:var(--soft);font-size:12px;margin-top:2px">${esc(u.provider)} · desde ${joined} · ${u.totalPlayed} jugadas / ${u.totalWon} ganadas · 🪙 ${u.points||0} pts · 📕 ${u.albumCount||0} estampas${bannedLabel}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
           <button class="btn-export" data-reset-name="${u.id}" title="Reemplaza el nombre por uno genérico (UserNNNN)">🔤 Nombre</button>
@@ -2276,6 +2296,10 @@ function renderUsers(){
           ${isBanned
             ? `<button class="btn-export" data-unban="${u.id}" style="color:#8f8" title="Quita el veto de salas públicas">✅ Quitar veto</button>`
             : `<button class="btn-export" data-ban="${u.id}" style="color:var(--gold,#e9b949)" title="Veta la cuenta de las salas públicas">🚫 Vetar</button>`}
+          <button class="btn-export" data-points-adjust="${u.id}" title="Suma o resta puntos (compensación, corrección, sanción)">🪙 Ajustar puntos</button>
+          <button class="btn-export" data-points-reset="${u.id}" title="Reinicia el saldo de puntos a 0">🔄 Reiniciar puntos</button>
+          <button class="btn-export" data-album-reset="${u.id}" title="Vacía las estampas del álbum de este usuario">📕 Reiniciar álbum</button>
+          <button class="btn-export" data-album-beta="${u.id}" data-beta-on="${u.albumBeta?'0':'1'}" style="color:${u.albumBeta?'#a78bfa':''}" title="Acceso anticipado al álbum antes del lanzamiento general">🧪 ${u.albumBeta?'Quitar beta':'Dar beta'}</button>
           <button class="btn-export" data-del-user="${u.id}" style="color:var(--red);">🗑 Borrar</button>
         </div>
       </div>`;
@@ -2327,6 +2351,64 @@ document.getElementById('list-users').addEventListener('click', async e=>{
     const u = _usersItems.find(x=>x.id===id);
     await unbanUserPrompt(id, u?.displayName||u?.name);
     loadUsers();
+    return;
+  }
+  const pointsAdjustBtn = e.target.closest('[data-points-adjust]');
+  const pointsResetBtn = e.target.closest('[data-points-reset]');
+  const albumResetBtn = e.target.closest('[data-album-reset]');
+  const albumBetaBtn = e.target.closest('[data-album-beta]');
+  if(pointsAdjustBtn){
+    const id = Number(pointsAdjustBtn.dataset.pointsAdjust);
+    const u = _usersItems.find(x=>x.id===id);
+    const input = prompt(`¿Cuántos puntos ajustar para "${u?.displayName||u?.name}"?\nPositivo para otorgar, negativo para quitar (ej: -200).`, '');
+    if(input === null) return;
+    const amount = parseInt(input.trim());
+    if(!Number.isInteger(amount) || amount===0){ toast('Cantidad inválida','err'); return; }
+    try{
+      const r = await fetch(`/admin/users/${id}/points-adjust`, {method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({amount})});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast(`✓ Saldo ahora: ${data.points} pts`,'ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(pointsResetBtn){
+    const id = Number(pointsResetBtn.dataset.pointsReset);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Reiniciar el saldo de puntos de "${u?.displayName||u?.name}" a 0?`)) return;
+    try{
+      const r = await fetch(`/admin/users/${id}/points-reset`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Puntos reiniciados','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(albumResetBtn){
+    const id = Number(albumResetBtn.dataset.albumReset);
+    const u = _usersItems.find(x=>x.id===id);
+    if(!confirm(`¿Vaciar el álbum de estampas de "${u?.displayName||u?.name}"? No se puede deshacer.`)) return;
+    try{
+      const r = await fetch(`/admin/users/${id}/album-reset`, {method:'POST', headers:_authHeaders()});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast('✓ Álbum reiniciado','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
+    return;
+  }
+  if(albumBetaBtn){
+    const id = Number(albumBetaBtn.dataset.albumBeta);
+    const enabled = albumBetaBtn.dataset.betaOn === '1';
+    try{
+      const r = await fetch(`/admin/users/${id}/album-beta`, {method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({enabled})});
+      const data = await r.json();
+      if(!r.ok || !data.ok) throw new Error(data.error||'error');
+      toast(enabled ? '✓ Acceso beta al álbum activado' : '✓ Acceso beta al álbum quitado','ok');
+      loadUsers();
+    }catch(e){ toast('Error: '+e.message,'err'); }
     return;
   }
   if(delBtn){

@@ -73,6 +73,10 @@ const sfx = (() => {
     inviteSent()     { b(700,0.06,0.16,'sine'); b(950,0.09,0.18,'sine',0.06); },
     // Invitación recibida — timbre de 3 notas, más llamativo
     inviteReceived() { b(659,0.09,0.22,'sine'); b(784,0.09,0.24,'sine',0.09); b(988,0.22,0.28,'sine',0.18); },
+    // Abrir un sobre — sweep ascendente rápido, como un "rasgado"
+    packOpen()    { b(300,0.05,0.18,'sawtooth'); b(500,0.05,0.18,'sawtooth',0.04); b(750,0.08,0.2,'sawtooth',0.08); },
+    // Estampa nueva dentro del sobre — brillo ascendente
+    newSticker()  { b(880,0.08,0.22,'sine'); b(1175,0.14,0.26,'sine',0.08); },
   };
 })();
 
@@ -148,6 +152,7 @@ socket.on('connect', () => {
   connBanner.classList.add('hidden');
   registerPresence();
   loadFriends(); // precarga la lista para que "Invitar amigos" no arranque vacío
+  loadAlbumStatus();
   // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
   if (roomCode && myStoredId) {
     socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId }, (res) => {
@@ -494,7 +499,7 @@ function renderAuthUI(){
   const tok = getAuthToken();
   if(tok){
     const payload = decodeJwtPayload(tok);
-    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; registerPresence(); loadFriends(); }
+    if(payload && payload.exp*1000>Date.now()){ authUser={id:payload.uid,name:payload.name,avatar:payload.avatar,provider:payload.provider}; registerPresence(); loadFriends(); loadAlbumStatus(); }
     else setAuthToken(null);
   }
   try{
@@ -526,6 +531,7 @@ $('btn-login-google').addEventListener('click', ()=>{ location.href='/auth/googl
 $('btn-login-discord').addEventListener('click', ()=>{ location.href='/auth/discord/start'; });
 $('btn-auth-logout').addEventListener('click', ()=>{
   setAuthToken(null); authUser=null; renderAuthUI();
+  _albumActive = false; $('btn-album').classList.add('hidden');
   // Fuerza una desconexión/reconexión del socket para que el servidor deje
   // de contarnos como "en línea" con la identidad vieja (solo pasa desde la
   // pantalla principal, donde este botón vive — no hay sala activa que perder).
@@ -923,6 +929,106 @@ socket.on('friend:presence', ({userId,online})=>{
 });
 socket.on('friend:list_changed', ()=>{ if(authUser) loadFriends(); });
 document.addEventListener('langchange', ()=>{ if(!$('friends-overlay').classList.contains('hidden')) renderFriends(); });
+
+/* ===== Álbum de estampas y sobres ===== */
+let _albumActive = false;
+let _albumData = { points:0, catalog:[], owned:[], total:0, packs:{} };
+async function loadAlbumStatus(){
+  const tok = getAuthToken();
+  if(!tok){ _albumActive=false; $('btn-album').classList.add('hidden'); return; }
+  try{
+    const res = await fetch('/album/status', { headers:{ Authorization:'Bearer '+tok } });
+    const json = await res.json();
+    _albumActive = !!(json && json.active);
+    $('btn-album').classList.toggle('hidden', !_albumActive);
+    if(_albumActive) loadAlbum();
+  }catch(e){ _albumActive=false; $('btn-album').classList.add('hidden'); }
+}
+async function loadAlbum(){
+  const tok = getAuthToken();
+  if(!tok || !_albumActive) return;
+  try{
+    const res = await fetch('/album', { headers:{ Authorization:'Bearer '+tok } });
+    const json = await res.json();
+    if(!json.ok) return;
+    _albumData = json;
+    $('album-points-badge').textContent = json.points;
+    renderAlbumSummary();
+  }catch(e){}
+}
+function stickerImg(cardId, owned){
+  return `/images/${owned?'reales':'siluetas'}/${encodeURIComponent(cardId.toLowerCase())}.png`;
+}
+function renderAlbumSummary(){
+  const ownedSet = new Set(_albumData.owned);
+  $('album-progress-text').textContent = `${ownedSet.size}/${_albumData.total}`;
+  $('album-points-text').textContent = '🪙 '+_albumData.points;
+  $('album-grid').innerHTML = _albumData.catalog.map(c=>{
+    const owned = ownedSet.has(c.id);
+    return `<div class="album-sticker${owned?'':' locked'}">
+      <img src="${esc(stickerImg(c.id, owned))}" alt="" loading="lazy"/>
+      <div class="as-name">${owned ? esc(c.name) : '?'}</div>
+    </div>`;
+  }).join('');
+}
+function openAlbumOverlay(){
+  if(!_albumActive) return;
+  $('album-overlay').classList.remove('hidden');
+  loadAlbum();
+}
+$('btn-album').addEventListener('click', openAlbumOverlay);
+$('btn-album-close').addEventListener('click', ()=>$('album-overlay').classList.add('hidden'));
+$('album-overlay').addEventListener('click', e=>{ if(e.target===$('album-overlay'))$('album-overlay').classList.add('hidden'); });
+$('btn-open-packs').addEventListener('click', ()=>{
+  $('album-overlay').classList.add('hidden');
+  renderPacksList();
+  $('pack-reveal').classList.add('hidden'); $('pack-reveal').innerHTML='';
+  $('packs-overlay').classList.remove('hidden');
+});
+$('btn-packs-close').addEventListener('click', ()=>$('packs-overlay').classList.add('hidden'));
+$('packs-overlay').addEventListener('click', e=>{ if(e.target===$('packs-overlay'))$('packs-overlay').classList.add('hidden'); });
+const PACK_LABELS = { bronce:{icon:'🥉',name:'Bronce'}, plata:{icon:'🥈',name:'Plata'}, oro:{icon:'🥇',name:'Oro'} };
+function renderPacksList(){
+  const packs = _albumData.packs || {};
+  $('packs-list').innerHTML = Object.keys(packs).map(key=>{
+    const p = packs[key]; const meta = PACK_LABELS[key] || {icon:'🎁',name:key};
+    return `<div class="pack-card">
+      <div class="pc-info">
+        <div class="pc-name">${meta.icon} ${esc(meta.name)}</div>
+        <div class="pc-desc">${t('packStickersDesc',{n:p.stickers})}</div>
+      </div>
+      <button class="chip-btn" data-open-pack="${esc(key)}">🪙 ${p.cost}</button>
+    </div>`;
+  }).join('');
+}
+$('packs-list').addEventListener('click', async e=>{
+  const btn = e.target.closest('[data-open-pack]'); if(!btn || btn.disabled) return;
+  const packType = btn.dataset.openPack;
+  btn.disabled = true;
+  try{
+    const res = await fetch('/packs/open', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body:JSON.stringify({packType}) });
+    const json = await res.json();
+    if(!res.ok || !json.ok){ showToast(json.error||t('friendsError'), true); btn.disabled=false; return; }
+    _albumData.points = json.newBalance;
+    $('album-points-badge').textContent = json.newBalance;
+    sfx.packOpen();
+    const revealEl = $('pack-reveal');
+    revealEl.classList.remove('hidden');
+    revealEl.innerHTML = json.results.map(r=>`
+      <div class="pack-reveal-card${r.isNew?' is-new':''}">
+        <img src="${esc(stickerImg(r.cardId, true))}" alt=""/>
+        <div class="prc-name">${esc(r.name)}</div>
+        <div class="prc-tag">${r.isNew ? t('packNewSticker') : '+'+r.scrapAwarded+' pts'}</div>
+      </div>`).join('');
+    if(json.results.some(r=>r.isNew)) sfx.newSticker();
+  }catch(e){ showToast(t('friendsError'), true); }
+  finally{ btn.disabled = false; }
+});
+socket.on('player:points_earned', ({amount, newBalance})=>{
+  _albumData.points = newBalance;
+  $('album-points-badge').textContent = newBalance;
+  showToast(t('pointsEarnedToast',{amount}), false);
+});
 
 /* ===== Invitar amigos en línea directo a la sala (sin código) ===== */
 function renderInviteFriends(){
