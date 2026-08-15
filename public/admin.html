@@ -1238,8 +1238,9 @@ function openCardModal(idx){
   document.getElementById('cm-rar').value    = c.rareza||'mediano';
   document.getElementById('cm-media').value  = c.media||80;
   document.getElementById('cm-troll').checked= !!c.troll;
-  document.getElementById('cm-img-pos-y').value = c.imgPosY ?? 20;
-  document.getElementById('cm-img-fit').value = c.imgFit || 'contain';
+  const cmFit = c.imgFit || 'contain';
+  document.getElementById('cm-img-fit').value = cmFit;
+  document.getElementById('cm-img-pos-y').value = c.imgPosY ?? (cmFit==='cover' ? 20 : 50);
   applyAlbumPreviewStyle();
   document.getElementById('cm-delete').style.display = isNew ? 'none' : '';
 
@@ -1299,7 +1300,13 @@ function applyAlbumPreviewStyle(){
   document.getElementById('cm-img-pos-label').textContent = fit==='cover' ? 'Posición vertical (evita cortar la cabeza)' : 'Posición vertical dentro del marco';
 }
 document.getElementById('cm-img-pos-y').addEventListener('input', applyAlbumPreviewStyle);
-document.getElementById('cm-img-fit').addEventListener('change', applyAlbumPreviewStyle);
+document.getElementById('cm-img-fit').addEventListener('change', function(){
+  // Al cambiar el modo, saltar a la posición típica de ese modo — "completa"
+  // se ve mejor centrada, "recortada" sesgada hacia arriba para no cortar
+  // la cabeza. El admin puede seguir ajustando el deslizador después.
+  document.getElementById('cm-img-pos-y').value = this.value==='cover' ? 20 : 50;
+  applyAlbumPreviewStyle();
+});
 
 function saveCardModal(){
   const isNew = _cmIdx === -1;

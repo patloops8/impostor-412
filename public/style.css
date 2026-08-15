@@ -296,7 +296,7 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .album-sticker:not(.locked):hover{transform:translateY(-3px) scale(1.035);box-shadow:0 0 18px var(--rareza-glow,transparent),0 8px 18px rgba(0,0,0,0.4);}
 .album-sticker:not(.locked):hover::before{transform:translateX(130%);}
 .album-sticker.locked{opacity:0.4;filter:grayscale(0.9) brightness(0.7);border-style:dashed;box-shadow:none;}
-.album-sticker img{width:100%;aspect-ratio:3/4;object-fit:contain;object-position:50% 20%;border-radius:7px;background:var(--bg3,#1a1e22);}
+.album-sticker img{width:100%;aspect-ratio:3/4;object-fit:contain;object-position:50% 50%;border-radius:7px;background:var(--bg3,#1a1e22);}
 .album-sticker .as-name{font-size:0.66rem;font-weight:700;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .album-sticker.exclusive{border-color:var(--purple);box-shadow:0 0 14px rgba(139,84,224,0.45),0 0 8px rgba(233,185,73,0.3);background:linear-gradient(160deg,var(--card),#241a33);}
 
@@ -326,7 +326,7 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .pack-reveal-card{width:104px;background:linear-gradient(160deg,var(--card),var(--bg2));border:1.5px solid var(--line2);border-radius:12px;padding:10px;text-align:center;animation:cardFlipIn .5s cubic-bezier(.2,.8,.3,1.1) both;}
 .pack-reveal-card.is-new{border-color:var(--rareza-color,var(--neon));box-shadow:0 0 16px var(--rareza-glow,rgba(182,255,46,0.3));}
 .pack-reveal-card.rareza-leyenda.is-new{animation:cardFlipIn .5s cubic-bezier(.2,.8,.3,1.1) both,rarityPulse 1.4s ease-in-out .5s 2;}
-.pack-reveal-card img{width:100%;aspect-ratio:3/4;object-fit:contain;object-position:50% 20%;border-radius:7px;background:var(--bg3,#1a1e22);}
+.pack-reveal-card img{width:100%;aspect-ratio:3/4;object-fit:contain;object-position:50% 50%;border-radius:7px;background:var(--bg3,#1a1e22);}
 .pack-reveal-card .prc-name{font-size:0.68rem;font-weight:700;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pack-reveal-card .prc-tag{font-size:0.64rem;font-weight:800;margin-top:3px;}
 .pack-reveal-card.is-new .prc-tag{color:var(--rareza-color,var(--neon));}

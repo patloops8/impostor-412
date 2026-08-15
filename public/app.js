@@ -977,8 +977,11 @@ function renderAlbumSummary(){
   $('album-points-text').textContent = '🪙 '+_albumData.points;
   $('album-grid').innerHTML = _albumData.catalog.map(c=>{
     const owned = ownedSet.has(c.id);
-    const posY = Number.isFinite(c.imgPosY) ? Math.min(100,Math.max(0,c.imgPosY)) : 20;
     const fit = c.imgFit==='cover' ? 'cover' : 'contain';
+    // Sin valor guardado: "recortada" sesga hacia arriba para no cortar la
+    // cabeza; "completa" no recorta nada, así que centrarla evita el hueco
+    // vacío que deja un sesgo hacia arriba en fotos con mucho margen.
+    const posY = Number.isFinite(c.imgPosY) ? Math.min(100,Math.max(0,c.imgPosY)) : (fit==='cover' ? 20 : 50);
     return `<div class="album-sticker rareza-${esc(c.rareza)}${owned?'':' locked'}">
       <img src="${esc(stickerImg(c.id, owned))}" alt="" loading="lazy" style="object-fit:${fit};object-position:50% ${posY}%"/>
       <div class="as-name">${owned ? esc(c.name) : '?'}</div>
@@ -1076,8 +1079,8 @@ async function revealPackResults(results){
     if(i>0) await sleep(260);
     const card = document.createElement('div');
     card.className = `pack-reveal-card rareza-${esc(r.rareza)}${r.isNew?' is-new':''}`;
-    const posY = Number.isFinite(r.imgPosY) ? Math.min(100,Math.max(0,r.imgPosY)) : 20;
     const fit = r.imgFit==='cover' ? 'cover' : 'contain';
+    const posY = Number.isFinite(r.imgPosY) ? Math.min(100,Math.max(0,r.imgPosY)) : (fit==='cover' ? 20 : 50);
     card.innerHTML = `
       <img src="${esc(stickerImg(r.cardId, true))}" alt="" style="object-fit:${fit};object-position:50% ${posY}%"/>
       <div class="prc-name">${esc(r.name)}</div>
