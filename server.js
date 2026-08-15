@@ -108,6 +108,14 @@ const POSITION_LABELS = {
   MCD:'Mediocentro Defensivo', MC:'Mediocentro', MCO:'Mediocentro Ofensivo',
   ED:'Extremo Derecho', EI:'Extremo Izquierdo', DC:'Delantero Centro',
 };
+// Posiciones donde una carta puede jugar: la principal + las secundarias
+// opcionales (data/subasta-cards.json, campo secondaryPositions). Filtra
+// códigos inválidos y quita duplicados — usado en todo lo que antes miraba
+// solo card.position a secas (armado de mazo, elegibilidad, asignación).
+function cardEligiblePositions(card){
+  const list = [card.position, ...(card.secondaryPositions||[])];
+  return list.filter((p,i)=>POSITION_ORDER.includes(p) && list.indexOf(p)===i);
+}
 const FORMATIONS_PATH = path.join(__dirname, 'data', 'formations.json');
 function loadFormationsData(){
   try { return JSON.parse(fs.readFileSync(FORMATIONS_PATH,'utf-8')); }
@@ -667,16 +675,24 @@ function weightedSample(pool, cuantas){
 function buildDeck(r){
   const slots=slotCounts(r.subasta.formation), pc=r.players.size, pool={};
   for(const p of POSITION_ORDER)pool[p]=[];
-  for(const c of SUBASTA_CARDS) if(pool[c.position])pool[c.position].push(c);
+  // Una carta multiposición entra al pool de CADA posición donde puede jugar.
+  for(const c of SUBASTA_CARDS) for(const p of cardEligiblePositions(c)) if(pool[p]) pool[p].push(c);
   const deck=[];
+  // Evita que la misma carta salga sorteada dos veces en el mismo mazo (una
+  // vez por cada posición donde es elegible) — se descarta del resto de los
+  // pools apenas sale sorteada en el primero.
+  const usedIds = new Set();
   for(const pos of POSITION_ORDER){
     const needPerPlayer=slots[pos]||0;
     if(!needPerPlayer)continue;
     const minimo = needPerPlayer * pc;
     const conColchon = minimo + Math.ceil(minimo*0.5) + 2;
-    const cuantas = Math.min(conColchon, pool[pos].length);
+    const available = pool[pos].filter(c=>!usedIds.has(c.id));
+    const cuantas = Math.min(conColchon, available.length);
     // Selección ponderada por rareza (medianos más probables, leyendas/trolls menos)
-    deck.push(...weightedSample(pool[pos], cuantas));
+    const picked = weightedSample(available, cuantas);
+    for(const c of picked) usedIds.add(c.id);
+    deck.push(...picked);
   }
   const minP = SETTINGS.subasta?.minPrice ?? 10;
   const maxP = Math.max(minP, SETTINGS.subasta?.maxPrice ?? 150);
@@ -684,22 +700,25 @@ function buildDeck(r){
   return deck.map(c=>({ ...c, startingPrice: Math.round(minP + ((Math.random()+Math.random())/2)*(maxP-minP)) }));
 }
 // ¿Algún jugador todavía necesita (y podría llegar a llenar) esta posición?
-function someoneNeedsPosition(r, pos){
+// ¿Le sirve esta carta a alguien todavía? OR entre todas sus posiciones
+// elegibles — si tiene secundarias, basta con que UNA le falte a alguien.
+function someoneNeedsCard(r, card){
   const slots=slotCounts(r.subasta.formation);
+  const positions = cardEligiblePositions(card);
   for(const [pid] of r.players.entries()){
     const ps=r.subasta.playerState.get(pid);
-    if(ps && ps.team[pos].length < slots[pos]) return true;
+    if(ps && positions.some(p=>ps.team[p].length < (slots[p]||0))) return true;
   }
   return false;
 }
-// Avanza a la siguiente carta ÚTIL: salta las de posiciones que TODOS ya completaron.
+// Avanza a la siguiente carta ÚTIL: salta las que ya nadie necesita en
+// ninguna de sus posiciones elegibles.
 function advanceToNextUsefulCard(r){
   const s=r.subasta;
   let idx=s.currentCardIndex+1;
   while(idx < s.deck.length){
-    const pos=s.deck[idx].position;
-    if(someoneNeedsPosition(r,pos)){ s.currentCardIndex=idx; showCard(r); return; }
-    idx++; // nadie necesita esta posición: saltarla
+    if(someoneNeedsCard(r, s.deck[idx])){ s.currentCardIndex=idx; showCard(r); return; }
+    idx++; // nadie necesita esta carta en ninguna de sus posiciones: saltarla
   }
   // No quedan cartas útiles: termina la subasta
   endSubasta(r);
@@ -710,10 +729,11 @@ function showCard(r){
   clearSubTimer(r);
   s.currentCard=card; s.bids=new Map(); s.highestBid=null; s.auctionPhase='analysis'; s.secondsLeft=ANALYSIS_S;
   const slots=slotCounts(s.formation); let elig=0;
+  const eligiblePositions = cardEligiblePositions(card);
   for(const [pid] of r.players.entries()){
     const ps=s.playerState.get(pid);
     if(!ps){s.bids.set(pid,{amount:null,skip:false,eligible:false,responded:true});continue;}
-    const need=ps.team[card.position].length<slots[card.position];
+    const need=eligiblePositions.some(p=>ps.team[p].length < (slots[p]||0));
     const afford=ps.budget>=card.startingPrice;
     const e=need&&afford;
     s.bids.set(pid,{amount:null,skip:false,eligible:e,responded:!e});
@@ -774,7 +794,7 @@ function resolveCard(r){
     const mx=Math.max(...valid.map(b=>b.amount));
     const tied=valid.filter(b=>b.amount===mx);
     const w=tied[Math.floor(Math.random()*tied.length)];
-    assignCard(r,w.playerId,w.amount); result={type:'bid',winnerId:w.playerId,amount:w.amount};
+    const filledPosition=assignCard(r,w.playerId,w.amount); result={type:'bid',winnerId:w.playerId,amount:w.amount,filledPosition};
     finishResolveCard(r,card,result);
   } else if(noResp.length>=2){
     // Nadie pujó, pero 2+ elegibles NO skipearon: piedra-papel-tijera entre ellos.
@@ -782,7 +802,7 @@ function resolveCard(r){
     return; // se resuelve async tras el PPT
   } else if(noResp.length===1){
     // Solo un elegible no skipeó ni pujó: se la lleva forzado al precio inicial.
-    assignCard(r,noResp[0],card.startingPrice); result={type:'forced',winnerId:noResp[0],amount:card.startingPrice};
+    const filledPosition=assignCard(r,noResp[0],card.startingPrice); result={type:'forced',winnerId:noResp[0],amount:card.startingPrice,filledPosition};
     finishResolveCard(r,card,result);
   } else {
     // Todos los elegibles skipearon (o no había elegibles): la carta se DESCARTA.
@@ -832,8 +852,8 @@ function resolveRPS(r){
 
   if(losers.length===1){
     // Hay un perdedor claro: se queda con la carta al precio inicial
-    assignCard(r,losers[0],card.startingPrice);
-    const result={type:'rps',winnerId:losers[0],amount:card.startingPrice,choices:choiceMap};
+    const filledPosition=assignCard(r,losers[0],card.startingPrice);
+    const result={type:'rps',winnerId:losers[0],amount:card.startingPrice,choices:choiceMap,filledPosition};
     io.to(r.code).emit('sub:rps_result',{ choices:choiceMap, loserName:r.players.get(losers[0])?.name, decided:true });
     r.status='subasta_play'; // restaurar para finishResolveCard
     setTimeout(()=>finishResolveCard(r,card,result),2500);
@@ -859,17 +879,33 @@ function finishResolveCard(r,card,result){
   if(s.nextCardTimer) clearTimeout(s.nextCardTimer);
   s.nextCardTimer = setTimeout(()=>{ if(rooms.get(r.code)) advanceToNextUsefulCard(r); }, 5000);
 }
+// Devuelve la posición donde quedó cargada la carta (la principal si sigue
+// abierta, si no la primera secundaria que todavía le haga falta al
+// jugador) — la llama cada call-site para guardarla en result.filledPosition,
+// porque buildTeams necesita saber cuál fue el casillero real usado.
 function assignCard(r,pid,amount){
-  const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return;
-  ps.budget-=amount; ps.team[card.position].push({cardId:card.id,amountPaid:amount}); ps.mediaSum+=card.media;
+  const s=r.subasta, card=s.currentCard, ps=s.playerState.get(pid); if(!ps)return null;
+  ps.budget-=amount;
+  const slots=slotCounts(s.formation);
+  const eligiblePositions = cardEligiblePositions(card);
+  const targetPos = eligiblePositions.find(p=>ps.team[p].length < (slots[p]||0)) || card.position;
+  ps.team[targetPos].push({cardId:card.id,amountPaid:amount});
+  ps.mediaSum+=card.media;
+  return targetPos;
 }
 function buildTeams(r){
   // Devuelve un Map pid -> { name, cards:[{name,position,positionLabel,media,...}], ovr }
   const s=r.subasta;
   const teamCards=new Map(); for(const [pid] of r.players.entries())teamCards.set(pid,[]);
   for(const {card,result} of s.resolvedCards){
-    if(result.winnerId&&teamCards.has(result.winnerId))
-      teamCards.get(result.winnerId).push({cardId:card.id,name:card.name,label:card.label,position:card.position,positionLabel:POSITION_LABELS[card.position],media:card.media,amountPaid:result.amount,troll:card.troll});
+    if(result.winnerId&&teamCards.has(result.winnerId)){
+      // Si la carta es multiposición y se usó para tapar una secundaria, acá
+      // hay que quedarse con esa posición real (filledPosition), no con la
+      // principal de la carta — si no, finishSubastaOVR/cardAtPosition
+      // nunca la van a encontrar en el casillero donde en verdad quedó.
+      const pos = result.filledPosition || card.position;
+      teamCards.get(result.winnerId).push({cardId:card.id,name:card.name,label:card.label,position:pos,positionLabel:POSITION_LABELS[pos],media:card.media,amountPaid:result.amount,troll:card.troll});
+    }
   }
   const teams=new Map();
   for(const [pid,ps] of s.playerState.entries()){

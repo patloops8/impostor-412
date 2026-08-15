@@ -192,6 +192,11 @@
   .cm-troll-group{flex-direction:row !important;align-items:center;gap:8px;padding-bottom:7px;flex:0 0 auto}
   .cm-troll-group input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--red)}
   .cm-troll-group label{font-size:13px;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;margin:0}
+  .cm-secpos-grid{display:flex;flex-wrap:wrap;gap:6px 14px}
+  .cm-secpos-item{display:flex;align-items:center;gap:5px}
+  .cm-secpos-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent,#4fc3f7)}
+  .cm-secpos-item label{font-size:12px;color:var(--text);text-transform:none;letter-spacing:0;cursor:pointer;margin:0}
+  .cm-secpos-item.is-primary{opacity:0.35}
   .cm-id-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);margin-top:4px}
   .cm-id-label{font-size:11px;color:var(--soft);white-space:nowrap}
   .cm-id-val{font-size:11px;color:var(--soft);font-family:monospace;flex:1}
@@ -806,6 +811,10 @@
           <input type="checkbox" id="cm-troll">
         </div>
       </div>
+      <div class="cm-field-row">
+        <label>Posiciones secundarias</label>
+        <div class="cm-secpos-grid" id="cm-secpos-grid"></div>
+      </div>
       <div class="cm-id-row">
         <span class="cm-id-label">ID:</span>
         <span class="cm-id-val" id="cm-id-display"></span>
@@ -1206,7 +1215,7 @@ function renderSubasta(){
   const q = subastaSearch.toLowerCase();
   const list = DATA.subasta.map((c,i)=>({c,i})).filter(({c})=>
     (!q || c.name.toLowerCase().includes(q) || (c.label||'').toLowerCase().includes(q)) &&
-    (!subastaPos || c.position === subastaPos) &&
+    (!subastaPos || c.position === subastaPos || (c.secondaryPositions||[]).includes(subastaPos)) &&
     (!subastaRar || c.rareza === subastaRar)
   );
   _filteredIdxs = list.map(({i})=>i);
@@ -1226,7 +1235,7 @@ function renderSubasta(){
       <div class="sc-name">${esc(c.label||c.name)}</div>
       <div class="sc-id">${esc(c.id)}</div>
       <div class="sc-meta">
-        <span>${esc(c.position||'')}</span>
+        <span>${esc(c.position||'')}${(c.secondaryPositions||[]).length?' +'+esc(c.secondaryPositions.join('/')):''}</span>
         <span class="sc-media">${c.media}</span>
         <span class="rareza-${esc(c.rareza||'normal')}">${esc(c.rareza||'normal')}</span>
         ${c.troll?'<span style="color:var(--red)">🃏</span>':''}
@@ -1237,6 +1246,40 @@ function renderSubasta(){
 }
 
 let _cmIdx = -1; // -1 = nueva carta
+
+const POSITION_LIST = [
+  {code:'POR', label:'POR — Portero'},
+  {code:'LD',  label:'LD — Lateral D'},
+  {code:'DFC', label:'DFC — Central'},
+  {code:'LI',  label:'LI — Lateral I'},
+  {code:'MCD', label:'MCD — Mediocentro D'},
+  {code:'MC',  label:'MC — Mediocentro'},
+  {code:'MCO', label:'MCO — Mediocentro O'},
+  {code:'ED',  label:'ED — Extremo D'},
+  {code:'EI',  label:'EI — Extremo I'},
+  {code:'DC',  label:'DC — Delantero'},
+];
+
+function renderSecPosCheckboxes(primaryPos, selected){
+  const grid = document.getElementById('cm-secpos-grid');
+  const sel = new Set(selected||[]);
+  grid.innerHTML = POSITION_LIST.map(({code,label})=>{
+    const isPrimary = code === primaryPos;
+    const checked = !isPrimary && sel.has(code);
+    return `<div class="cm-secpos-item${isPrimary?' is-primary':''}">
+      <input type="checkbox" id="cm-secpos-${code}" value="${code}" ${checked?'checked':''} ${isPrimary?'disabled':''}>
+      <label for="cm-secpos-${code}">${esc(code)}</label>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('cm-pos').addEventListener('change', function(){
+  const checked = POSITION_LIST.map(p=>p.code).filter(code=>{
+    const el = document.getElementById('cm-secpos-'+code);
+    return el && !el.disabled && el.checked;
+  });
+  renderSecPosCheckboxes(this.value, checked);
+});
 
 function openCardModal(idx){
   _cmIdx = idx;
@@ -1252,6 +1295,7 @@ function openCardModal(idx){
   document.getElementById('cm-rar').value    = c.rareza||'mediano';
   document.getElementById('cm-media').value  = c.media||80;
   document.getElementById('cm-troll').checked= !!c.troll;
+  renderSecPosCheckboxes(c.position||'DC', c.secondaryPositions||[]);
   const cmFit = c.imgFit || 'contain';
   document.getElementById('cm-img-fit').value = cmFit;
   document.getElementById('cm-img-pos-y').value = c.imgPosY ?? (cmFit==='cover' ? 20 : 50);
@@ -1341,7 +1385,14 @@ function saveCardModal(){
   if(!id)    { toast('No se pudo generar un ID — escribe el nombre primero','err'); return; }
   if(media<1){ toast('Media inválida','err'); return; }
 
+  const secondaryPositions = POSITION_LIST.map(p=>p.code).filter(code=>{
+    if(code === pos) return false;
+    const el = document.getElementById('cm-secpos-'+code);
+    return el && el.checked;
+  });
+
   const card = {id, name, label, position:pos, rareza:rar, media, troll, imgPosY, imgFit};
+  if(secondaryPositions.length) card.secondaryPositions = secondaryPositions;
 
   if(isNew){
     DATA.subasta.push(card);

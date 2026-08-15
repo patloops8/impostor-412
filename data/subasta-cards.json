@@ -429,7 +429,10 @@
     "position": "LI",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "secondaryPositions": [
+      "DFC"
+    ]
   },
   {
     "id": "ferland_mendy",
@@ -648,15 +651,6 @@
     "troll": false
   },
   {
-    "id": "frenkie_de_jong",
-    "name": "Frenkie de Jong",
-    "label": "Frenkie de Jong (FC Barcelona)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false
-  },
-  {
     "id": "gavi",
     "name": "Gavi",
     "label": "Gavi (FC Barcelona)",
@@ -756,15 +750,6 @@
     "troll": false
   },
   {
-    "id": "youri_tielemans",
-    "name": "Youri Tielemans",
-    "label": "Youri Tielemans (Aston Villa)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false
-  },
-  {
     "id": "antoine_griezmann_clausula",
     "name": "Antoine Griezmann",
     "label": "Antoine Griezmann (Fracaso Barcelona)",
@@ -783,24 +768,6 @@
     "troll": false
   },
   {
-    "id": "cole_palmer",
-    "name": "Cole Palmer",
-    "label": "Cole Palmer (Chelsea)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 84,
-    "troll": false
-  },
-  {
-    "id": "dani_olmo",
-    "name": "Dani Olmo",
-    "label": "Dani Olmo (FC Barcelona)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false
-  },
-  {
     "id": "diego_maradona_dt",
     "name": "Diego Maradona",
     "label": "Diego Maradona (DT Dorados)",
@@ -808,15 +775,6 @@
     "rareza": "troll",
     "media": 45,
     "troll": true
-  },
-  {
-    "id": "florian_wirtz",
-    "name": "Florian Wirtz",
-    "label": "Florian Wirtz (Liverpool)",
-    "position": "MCO",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false
   },
   {
     "id": "francesco_totti",
@@ -870,15 +828,6 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
-  },
-  {
-    "id": "martin_degaard",
-    "name": "Martin Ødegaard",
-    "label": "Martin Ødegaard (Arsenal)",
-    "position": "MCO",
-    "rareza": "top",
-    "media": 87,
     "troll": false
   },
   {
@@ -2052,15 +2001,6 @@
     "troll": false
   },
   {
-    "id": "granit_xhaka",
-    "name": "Granit Xhaka",
-    "label": "Granit Xhaka (Sunderland)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 81,
-    "troll": false
-  },
-  {
     "id": "henrik_larsson",
     "name": "Henrik Larsson",
     "label": "Henrik Larsson (Barcelona)",
@@ -2457,15 +2397,6 @@
     "troll": false
   },
   {
-    "id": "kobbie_mainoo",
-    "name": "Kobbie Mainoo",
-    "label": "Kobbie Mainoo (Manchester United)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 80,
-    "troll": false
-  },
-  {
     "id": "koke",
     "name": "Koke",
     "label": "Koke (Atletico de Madrid)",
@@ -2544,7 +2475,10 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 81,
-    "troll": false
+    "troll": false,
+    "secondaryPositions": [
+      "LI"
+    ]
   },
   {
     "id": "lucas_paqueta",
@@ -4752,15 +4686,6 @@
     "troll": false
   },
   {
-    "id": "david_alaba",
-    "name": "David Alaba",
-    "label": "David Alaba (Agente Libre)",
-    "position": "DFC",
-    "rareza": "mediano",
-    "media": 77,
-    "troll": false
-  },
-  {
     "id": "clement_lenglet",
     "name": "Clément Lenglet",
     "label": "Clément Lenglet (Benfica)",
@@ -5184,30 +5109,12 @@
     "troll": false
   },
   {
-    "id": "lucas_hernandez",
-    "name": "Lucas Hernández",
-    "label": "Lucas Hernández (Paris Saint Germain)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 79,
-    "troll": false
-  },
-  {
     "id": "facundo_medina",
     "name": "Facundo Medina",
     "label": "Facundo Medina (Olympique de Marsella)",
     "position": "LI",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
-  },
-  {
-    "id": "theo_hernandez",
-    "name": "Theo Hernandez",
-    "label": "Theo Hernandez (Al Hilal)",
-    "position": "LI",
-    "rareza": "mediano",
-    "media": 82,
     "troll": false
   },
   {
@@ -5262,7 +5169,10 @@
     "position": "MCD",
     "rareza": "top",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "gravenberch_",
@@ -5325,7 +5235,10 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 83,
-    "troll": false
+    "troll": false,
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "dounglas_luis",
@@ -5370,7 +5283,10 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "manuel_ugarte",
@@ -5379,15 +5295,6 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
-  },
-  {
-    "id": "casemiro",
-    "name": "Casemiro",
-    "label": "Casemiro (Inter de Miami)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 81,
     "troll": false
   },
   {
@@ -5541,15 +5448,6 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
-  },
-  {
-    "id": "adrien_rabiot",
-    "name": "Adrien Rabiot",
-    "label": "Adrien Rabiot (Milan)",
-    "position": "MC",
-    "rareza": "mediano",
-    "media": 82,
     "troll": false
   },
   {
