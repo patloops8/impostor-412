@@ -144,6 +144,35 @@ async function initStore() {
       obtained_at TIMESTAMPTZ DEFAULT now(),
       PRIMARY KEY (user_id, card_id)
     )`);
+  // Recompensas de ranking semanal/mensual (Fase 2). reward_periods evita
+  // repartir dos veces el mismo período si el proceso se reinicia o estuvo
+  // dormido justo en el corte — es la marca de "ya procesé esta semana/mes".
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reward_periods (
+      period_type TEXT NOT NULL,
+      period_key TEXT NOT NULL,
+      processed_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (period_type, period_key)
+    )`);
+  // Sobres ganados como premio de ranking, pendientes de que el jugador los
+  // abra él mismo (mismo flujo/animación que un sobre comprado, sin gastar
+  // puntos — ver usePackCredit).
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_pack_credits (
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      pack_type TEXT NOT NULL,
+      count INT NOT NULL DEFAULT 0,
+      PRIMARY KEY (user_id, pack_type)
+    )`);
+  // Estampas exclusivas (premio del #1 mensual) — catálogo aparte del de
+  // Subasta, nunca se consiguen en sobres normales.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_exclusive_stickers (
+      user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      sticker_id TEXT NOT NULL,
+      obtained_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, sticker_id)
+    )`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS achievements (
       id SERIAL PRIMARY KEY,
@@ -679,6 +708,83 @@ async function setAlbumBeta(userId, isBeta) {
   return r.rows[0] || null;
 }
 
+/* ---- Recompensas de ranking semanal/mensual (Fase 2) ---- */
+// Calendario de Postgres (meses de distinta duración, años bisiestos) en vez
+// de replicarlo a mano en JS. unit viene siempre de una lista fija interna
+// ('week'|'month'), nunca de input de usuario, así que interpolarlo
+// directamente en el SQL es seguro.
+async function getPreviousPeriodBounds(unit) {
+  if (!pool) return null;
+  if (unit !== 'week' && unit !== 'month') throw new Error('unit inválido');
+  const r = await pool.query(
+    `SELECT date_trunc('${unit}', now() - interval '1 ${unit}') as start,
+            date_trunc('${unit}', now()) as "end"`
+  );
+  return r.rows[0];
+}
+async function getPeriodRanking(startISO, endISO) {
+  if (!pool) return [];
+  const r = await pool.query(
+    `SELECT user_id as "userId", SUM(amount)::int as points
+     FROM point_transactions
+     WHERE amount>0 AND created_at>=$1 AND created_at<$2
+     GROUP BY user_id ORDER BY points DESC`,
+    [startISO, endISO]
+  );
+  return r.rows;
+}
+async function isPeriodProcessed(periodType, periodKey) {
+  if (!pool) return true; // sin DB no hay nada que repartir — tratarlo como "ya hecho"
+  const r = await pool.query(
+    `SELECT 1 FROM reward_periods WHERE period_type=$1 AND period_key=$2`,
+    [periodType, periodKey]
+  );
+  return r.rowCount > 0;
+}
+async function markPeriodProcessed(periodType, periodKey) {
+  if (!pool) return;
+  await pool.query(
+    `INSERT INTO reward_periods (period_type,period_key) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+    [periodType, periodKey]
+  );
+}
+async function grantPackCredit(userId, packType, count) {
+  if (!pool || !userId || !count) return;
+  await pool.query(
+    `INSERT INTO user_pack_credits (user_id,pack_type,count) VALUES ($1,$2,$3)
+     ON CONFLICT (user_id,pack_type) DO UPDATE SET count = user_pack_credits.count + $3`,
+    [userId, packType, count]
+  );
+}
+async function getPackCredits(userId) {
+  if (!pool || !userId) return {};
+  const r = await pool.query(`SELECT pack_type as "packType", count FROM user_pack_credits WHERE user_id=$1`, [userId]);
+  const out = {};
+  for (const row of r.rows) out[row.packType] = row.count;
+  return out;
+}
+async function usePackCredit(userId, packType) {
+  if (!pool || !userId) return null;
+  const r = await pool.query(
+    `UPDATE user_pack_credits SET count=count-1 WHERE user_id=$1 AND pack_type=$2 AND count>=1 RETURNING count`,
+    [userId, packType]
+  );
+  return r.rows[0] ? r.rows[0].count : null;
+}
+async function addExclusiveSticker(userId, stickerId) {
+  if (!pool || !userId) return false;
+  const r = await pool.query(
+    `INSERT INTO user_exclusive_stickers (user_id,sticker_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+    [userId, stickerId]
+  );
+  return r.rowCount > 0;
+}
+async function getOwnedExclusiveStickers(userId) {
+  if (!pool || !userId) return [];
+  const r = await pool.query(`SELECT sticker_id as "stickerId" FROM user_exclusive_stickers WHERE user_id=$1`, [userId]);
+  return r.rows.map(x => x.stickerId);
+}
+
 /* ---- Reportes de chat (salas públicas) ---- */
 async function addReport({ reporterUserId, reportedUserId, roomCode, messageText, reportType, gameType }) {
   if (!pool) return null;
@@ -764,6 +870,8 @@ module.exports = {
   addGameHistory, getGameHistory, getAllUsersAdmin, deleteUser, adminResetUserName, adminClearUserAvatar,
   banUser, unbanUser, addReport, getReports, getReportById, setReportStatus,
   awardPoints, spendPoints, setPoints, getPointsEarnedToday, getOwnedStickers, addSticker, resetAlbum, setAlbumBeta,
+  getPreviousPeriodBounds, getPeriodRanking, isPeriodProcessed, markPeriodProcessed,
+  grantPackCredit, getPackCredits, usePackCredit, addExclusiveSticker, getOwnedExclusiveStickers,
   getOrCreateFriendCode, sendFriendRequest, respondFriendRequest, removeFriend, getFriendsData, getFriendIds, areFriends,
   getAchievements, getAllAchievementsAdmin, createAchievement, updateAchievement, deleteAchievement,
   get usingDb() { return !!pool; },

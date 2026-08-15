@@ -39,6 +39,10 @@ const SUBASTA_CARDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 's
 // consideran coleccionables — ver notas de diseño del sistema de puntos).
 const ALBUM_CARDS = SUBASTA_CARDS.filter(c => c.rareza !== 'troll');
 const ALBUM_CARDS_BY_RAREZA = ALBUM_CARDS.reduce((acc,c)=>{ (acc[c.rareza] ||= []).push(c); return acc; }, {});
+// Estampas exclusivas (premio del #1 del ranking mensual) — catálogo aparte,
+// nunca aparecen en sobres normales. Recargado al reiniciar el servidor,
+// como el resto de los data/*.json (los cambios del admin se guardan a disco).
+const EXCLUSIVE_STICKERS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'exclusive-stickers.json'), 'utf-8'));
 const WAVE_PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'wavelength-pairs.json'), 'utf-8'));
 
 const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
@@ -220,6 +224,54 @@ async function awardGamePoints(r, gameType, winnerIds){
       const granted = await grantPointsWithDailyCap(p.userId, amount, 'game_'+gameType);
       if(granted) io.to(p.id).emit('player:points_earned', { amount:granted.adjusted, newBalance:granted.newBalance });
     }catch(e){ console.error('[album] error otorgando puntos:', e.message); }
+  }
+}
+
+// Sobres de premio por percentil — cada quien recibe solo el mejor escalón
+// que alcanza (no se acumulan). El percentil es sobre el total de gente que
+// ganó algún punto en ese período, no sobre toda la base de usuarios.
+const REWARD_TIERS = {
+  weekly:  { top50:{bronce:2}, top20:{plata:3}, top10:{oro:2}, top5:{oro:4}, first:{oro:8} },
+  monthly: { top50:{plata:5}, top20:{oro:6}, top10:{oro:12}, top5:{oro:20}, first:{oro:30} },
+};
+function tierForRank(rank, total){
+  if(rank===1) return 'first';
+  if(rank<=Math.ceil(total*0.05)) return 'top5';
+  if(rank<=Math.ceil(total*0.10)) return 'top10';
+  if(rank<=Math.ceil(total*0.20)) return 'top20';
+  if(rank<=Math.ceil(total*0.50)) return 'top50';
+  return null;
+}
+// Chequeo "perezoso" de límite de período: no depende de que el setInterval
+// dispare justo en el corte (Render puede tener el proceso dormido en ese
+// momento) — cada vez que corre, mira si el período calendario anterior ya
+// se procesó; si no, reparte y lo marca. Corre en UTC (hora del servidor).
+async function checkAndGrantPeriodRewards(){
+  if(!store.usingDb) return;
+  for(const periodType of ['weekly','monthly']){
+    try{
+      const unit = periodType==='weekly' ? 'week' : 'month';
+      const bounds = await store.getPreviousPeriodBounds(unit);
+      if(!bounds) continue;
+      const periodKey = new Date(bounds.start).toISOString().slice(0,10);
+      if(await store.isPeriodProcessed(periodType, periodKey)) continue;
+      const ranking = await store.getPeriodRanking(new Date(bounds.start).toISOString(), new Date(bounds.end).toISOString());
+      const total = ranking.length;
+      for(let i=0;i<total;i++){
+        const rank = i+1;
+        const tier = tierForRank(rank, total);
+        if(!tier) continue;
+        const reward = REWARD_TIERS[periodType][tier];
+        for(const packType in reward) await store.grantPackCredit(ranking[i].userId, packType, reward[packType]);
+        let exclusiveGranted = null;
+        if(periodType==='monthly' && tier==='first'){
+          const excl = EXCLUSIVE_STICKERS.find(s=>s.monthKey===periodKey.slice(0,7));
+          if(excl){ await store.addExclusiveSticker(ranking[i].userId, excl.id); exclusiveGranted = excl; }
+        }
+        io.to('user:'+ranking[i].userId).emit('rewards:granted', { periodType, tier, reward, exclusiveGranted });
+      }
+      await store.markPeriodProcessed(periodType, periodKey);
+    }catch(e){ console.error('[rewards] error repartiendo período '+periodType+':', e.message); }
   }
 }
 
@@ -1304,6 +1356,10 @@ setInterval(()=>{
   if(sweptPublic) broadcastPublicRooms();
 }, 15*60*1000); // cada 15 minutos
 
+// Recompensas de ranking semanal/mensual — mismo intervalo que el barrido de
+// salas, ver checkAndGrantPeriodRewards para el porqué de este patrón.
+setInterval(checkAndGrantPeriodRewards, 15*60*1000);
+
 /* ===================== SOCKET.IO ===================== */
 // Throttle global: máximo 20 eventos por segundo por socket.
 const RATE_WINDOW=1000, RATE_LIMIT=20;
@@ -2031,6 +2087,25 @@ function pickWeightedRareza(odds){
   for(const k in odds){ r -= odds[k]; if(r<=0) return k; }
   return 'mediano';
 }
+// Tira las estampas de un sobre ya pagado (con puntos o con un crédito
+// ganado por ranking) — compartida entre /packs/open y /packs/open-free
+// para no duplicar la lógica de repetida→scrap.
+async function resolvePackOpen(userId, pack){
+  const results = [];
+  for(let i=0;i<pack.stickers;i++){
+    const rareza = pickWeightedRareza(pack.odds);
+    const cardsInRareza = ALBUM_CARDS_BY_RAREZA[rareza] || ALBUM_CARDS;
+    const card = cardsInRareza[Math.floor(Math.random()*cardsInRareza.length)];
+    const isNew = await store.addSticker(userId, card.id);
+    let scrapAwarded = 0;
+    if(!isNew){
+      scrapAwarded = SETTINGS.album.scrapValue[rareza]||0;
+      if(scrapAwarded>0) await store.awardPoints(userId, scrapAwarded, 'scrap_dup');
+    }
+    results.push({ cardId:card.id, name:card.name, rareza, isNew, scrapAwarded });
+  }
+  return results;
+}
 // El cliente lo consulta tras iniciar sesión para saber si mostrar (o
 // esconder por completo) el chip de puntos/álbum/sobres.
 app.get('/album/status', async (req,res)=>{
@@ -2043,8 +2118,11 @@ app.get('/album', async (req,res)=>{
   if(!store.usingDb) return res.status(503).json({error:'El álbum necesita la base de datos conectada (DATABASE_URL).'});
   if(!(await albumActiveFor(uid))) return res.status(403).json({error:'El álbum todavía no está disponible.'});
   try{
-    const [user, owned] = await Promise.all([store.getUserById(uid), store.getOwnedStickers(uid)]);
-    res.json({ ok:true, points:user?.points||0, catalog:ALBUM_CARDS, owned, total:ALBUM_CARDS.length, packs:SETTINGS.album.packs });
+    const [user, owned, packCredits, ownedExclusiveIds] = await Promise.all([
+      store.getUserById(uid), store.getOwnedStickers(uid), store.getPackCredits(uid), store.getOwnedExclusiveStickers(uid)
+    ]);
+    const exclusives = EXCLUSIVE_STICKERS.filter(s=>ownedExclusiveIds.includes(s.id));
+    res.json({ ok:true, points:user?.points||0, catalog:ALBUM_CARDS, owned, total:ALBUM_CARDS.length, packs:SETTINGS.album.packs, packCredits, exclusives });
   }catch(e){ res.status(500).json({error:e.message}); }
 });
 // Álbum de un amigo, solo lectura (sin saldo de puntos — eso es privado).
@@ -2075,21 +2153,27 @@ app.post('/packs/open', express.json({limit:'1kb'}), async (req,res)=>{
   try{
     const newBalance = await store.spendPoints(uid, pack.cost, 'pack_'+packType);
     if(newBalance===null) return res.status(400).json({error:'Puntos insuficientes.'});
-    const results = [];
-    for(let i=0;i<pack.stickers;i++){
-      const rareza = pickWeightedRareza(pack.odds);
-      const cardsInRareza = ALBUM_CARDS_BY_RAREZA[rareza] || ALBUM_CARDS;
-      const card = cardsInRareza[Math.floor(Math.random()*cardsInRareza.length)];
-      const isNew = await store.addSticker(uid, card.id);
-      let scrapAwarded = 0;
-      if(!isNew){
-        scrapAwarded = SETTINGS.album.scrapValue[rareza]||0;
-        if(scrapAwarded>0) await store.awardPoints(uid, scrapAwarded, 'scrap_dup');
-      }
-      results.push({ cardId:card.id, name:card.name, rareza, isNew, scrapAwarded });
-    }
+    const results = await resolvePackOpen(uid, pack);
     const user = await store.getUserById(uid);
     res.json({ ok:true, results, newBalance: user?.points ?? newBalance });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
+// Igual que /packs/open pero gastando un sobre ganado como premio de
+// ranking (user_pack_credits) en vez de puntos.
+app.post('/packs/open-free', express.json({limit:'1kb'}), async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'Los sobres necesitan la base de datos conectada (DATABASE_URL).'});
+  if(!(await albumActiveFor(uid))) return res.status(403).json({error:'El álbum todavía no está disponible.'});
+  const packType = String(req.body?.packType||'');
+  const pack = SETTINGS.album?.packs?.[packType];
+  if(!pack) return res.status(400).json({error:'Tipo de sobre inválido.'});
+  try{
+    const remaining = await store.usePackCredit(uid, packType);
+    if(remaining===null) return res.status(400).json({error:'No tienes sobres gratis de ese tipo.'});
+    const results = await resolvePackOpen(uid, pack);
+    const user = await store.getUserById(uid);
+    res.json({ ok:true, results, newBalance: user?.points||0, remainingCredits: remaining });
   }catch(e){ res.status(500).json({error:e.message}); }
 });
 
@@ -2124,6 +2208,7 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
     subasta:     path.join(__dirname,'data','subasta-cards.json'),
     settings:    SETTINGS_PATH,
     formations:  FORMATIONS_PATH,
+    exclusiveStickers: path.join(__dirname,'data','exclusive-stickers.json'),
   };
 
   function adminAuth(req,res,next){
@@ -2561,9 +2646,9 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
   app.post('/admin/upload-image', adminAuth, express.json({limit:'12mb'}), (req,res)=>{
     const { type, data } = req.body||{};
     const id = (req.body?.id||'').toLowerCase();
-    if(!id||!data||(type!=='real'&&type!=='silueta')) return res.status(400).json({error:'Faltan campos id/type/data'});
+    if(!id||!data||(type!=='real'&&type!=='silueta'&&type!=='exclusiva')) return res.status(400).json({error:'Faltan campos id/type/data'});
     if(!/^[a-z0-9_]+$/.test(id)) return res.status(400).json({error:'id inválido'});
-    const folder = type==='real' ? 'reales' : 'siluetas';
+    const folder = type==='real' ? 'reales' : type==='silueta' ? 'siluetas' : 'exclusivas';
     const imgPath = path.join(__dirname,'public','images',folder,`${id}.png`);
     const base64 = data.replace(/^data:image\/\w+;base64,/,'');
     fs.writeFileSync(imgPath, Buffer.from(base64,'base64'));
@@ -2619,6 +2704,7 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
         subasta:    'data/subasta-cards.json',
         settings:   'data/settings.json',
         formations: 'data/formations.json',
+        exclusiveStickers: 'data/exclusive-stickers.json',
       };
       const tree = [];
       for(const [key, repoPath] of Object.entries(FILE_REPO_PATHS)){
@@ -2687,4 +2773,5 @@ store.initStore()
   .catch(err => console.error('[store] Error inicializando la base de datos, se sigue con archivos locales:', err.message))
   .finally(() => {
     server.listen(PORT,'0.0.0.0',()=>console.log(`412 corriendo en http://localhost:${PORT}`));
+    checkAndGrantPeriodRewards(); // por si el proceso estuvo dormido justo en el corte de la semana/mes
   });

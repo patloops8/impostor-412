@@ -937,7 +937,7 @@ document.addEventListener('langchange', ()=>{ if(!$('friends-overlay').classList
 
 /* ===== Álbum de estampas y sobres ===== */
 let _albumActive = false;
-let _albumData = { points:0, catalog:[], owned:[], total:0, packs:{} };
+let _albumData = { points:0, catalog:[], owned:[], total:0, packs:{}, packCredits:{}, exclusives:[] };
 let _albumViewingFriendId = null; // null = mi álbum; si no, el id del amigo que estoy viendo (solo lectura)
 async function loadAlbumStatus(){
   const tok = getAuthToken();
@@ -982,6 +982,13 @@ function renderAlbumSummary(){
       <div class="as-name">${owned ? esc(c.name) : '?'}</div>
     </div>`;
   }).join('');
+  const exclusives = viewingFriend ? [] : (_albumData.exclusives||[]);
+  $('album-exclusives-section').classList.toggle('hidden', !exclusives.length);
+  $('album-exclusives-grid').innerHTML = exclusives.map(s=>`
+    <div class="album-sticker exclusive">
+      <img src="${esc(s.imagePath)}" alt="" loading="lazy"/>
+      <div class="as-name">${esc(s.name)}</div>
+    </div>`).join('');
 }
 function openAlbumOverlay(){
   if(!_albumActive) return;
@@ -1038,14 +1045,19 @@ $('btn-pack-odds').addEventListener('click', ()=>{
 });
 function renderPacksList(){
   const packs = _albumData.packs || {};
+  const credits = _albumData.packCredits || {};
   $('packs-list').innerHTML = Object.keys(packs).map(key=>{
     const p = packs[key]; const meta = PACK_LABELS[key] || {icon:'🎁',name:key};
+    const free = credits[key]||0;
     return `<div class="pack-card" data-tier="${esc(key)}">
       <div class="pc-info">
         <div class="pc-name">${meta.icon} ${esc(meta.name)}</div>
         <div class="pc-desc">${t('packStickersDesc',{n:p.stickers})}</div>
       </div>
-      <button class="chip-btn" data-open-pack="${esc(key)}">🪙 ${p.cost}</button>
+      <div class="pc-actions">
+        ${free>0 ? `<button class="chip-btn pc-free-btn" data-open-free="${esc(key)}">${esc(t('packOpenFreeBtn',{n:free}))}</button>` : ''}
+        <button class="chip-btn" data-open-pack="${esc(key)}">🪙 ${p.cost}</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1070,25 +1082,44 @@ async function revealPackResults(results){
     if(r.isNew) sfx.newSticker(); else sfx.tick();
   }
 }
-$('packs-list').addEventListener('click', async e=>{
-  const btn = e.target.closest('[data-open-pack]'); if(!btn || btn.disabled) return;
-  const packType = btn.dataset.openPack;
+async function openPack(url, packType, btn){
   btn.disabled = true;
   try{
-    const res = await fetch('/packs/open', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body:JSON.stringify({packType}) });
+    const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+getAuthToken() }, body:JSON.stringify({packType}) });
     const json = await res.json();
     if(!res.ok || !json.ok){ showToast(json.error||t('friendsError'), true); btn.disabled=false; return; }
     _albumData.points = json.newBalance;
     $('album-points-badge').textContent = json.newBalance;
+    if('remainingCredits' in json){
+      _albumData.packCredits = { ..._albumData.packCredits, [packType]: json.remainingCredits };
+      renderPacksList();
+    }
     sfx.packOpen();
     await revealPackResults(json.results);
   }catch(e){ showToast(t('friendsError'), true); }
   finally{ btn.disabled = false; }
+}
+$('packs-list').addEventListener('click', e=>{
+  const freeBtn = e.target.closest('[data-open-free]');
+  if(freeBtn && !freeBtn.disabled){ openPack('/packs/open-free', freeBtn.dataset.openFree, freeBtn); return; }
+  const btn = e.target.closest('[data-open-pack]');
+  if(btn && !btn.disabled){ openPack('/packs/open', btn.dataset.openPack, btn); }
 });
 socket.on('player:points_earned', ({amount, newBalance})=>{
   _albumData.points = newBalance;
   $('album-points-badge').textContent = newBalance;
   showToast(t('pointsEarnedToast',{amount}), false);
+});
+const TIER_LABELS = { top50:'Top 50%', top20:'Top 20%', top10:'Top 10%', top5:'Top 5%', first:'#1' };
+const PERIOD_LABELS = { weekly:'semanal', monthly:'mensual' };
+socket.on('rewards:granted', ({periodType, tier, reward, exclusiveGranted})=>{
+  const rewardText = Object.entries(reward||{}).map(([k,n])=>`${n} ${(PACK_LABELS[k]||{}).name||k}`).join(', ');
+  // Un solo toast (showToast no encola, un segundo llamado inmediato pisaría
+  // el primero) — si viene la exclusiva, se agrega como segunda línea.
+  let msg = `🏆 ${TIER_LABELS[tier]||tier} ${PERIOD_LABELS[periodType]||periodType} — ${t('rewardsGotToast',{reward:rewardText})}`;
+  if(exclusiveGranted) msg += ' · ⭐ '+t('rewardsExclusiveToast',{name:exclusiveGranted.name});
+  showToast(msg, false);
+  if(_albumActive && !_albumViewingFriendId) loadAlbum(); // refresca sobres/estampas si el álbum está abierto
 });
 
 /* ===== Invitar amigos en línea directo a la sala (sin código) ===== */

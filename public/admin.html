@@ -227,6 +227,7 @@
   <div class="tab" data-tab="achievements">🏆 Logros</div>
   <div class="tab" data-tab="users">👤 Usuarios <span class="badge" id="badge-users">–</span></div>
   <div class="tab" data-tab="reports">🚩 Reportes <span class="badge" id="badge-reports">–</span></div>
+  <div class="tab" data-tab="exclusives">🏆 Exclusivas <span class="badge" id="badge-exclusives">–</span></div>
 </div>
 
 <!-- ===== CONCEPTOS ===== -->
@@ -631,6 +632,26 @@
   <div class="tbl-wrap" style="padding:12px 16px" id="list-reports"></div>
 </div>
 
+<!-- Estampas exclusivas (premio del #1 del ranking mensual) -->
+<div class="panel" id="panel-exclusives">
+  <div class="panel-header">
+    <h2>🏆 Estampas exclusivas</h2>
+    <p>Una por mes, para quien quede #1 del ranking mensual de puntos. No aparecen en sobres ni cuentan para el 100% del álbum normal — son un extra para presumir.</p>
+  </div>
+  <div class="cfg-section" style="max-width:520px">
+    <h3 class="cfg-title">+ Agregar estampa exclusiva</h3>
+    <div class="cfg-row"><label>Mes que premia</label><input type="month" id="excl-month"></div>
+    <div class="cfg-row"><label>Nombre</label><input type="text" id="excl-name" placeholder="ej: Gol de Ferran Torres — Final del Mundial"></div>
+    <div class="cfg-row">
+      <label>Imagen</label>
+      <label class="btn-export" id="lbl-excl-upload" style="cursor:pointer">📤 Subir imagen<input type="file" id="excl-upload" accept="image/*" style="display:none"></label>
+    </div>
+    <img id="excl-preview" src="" alt="" style="max-width:120px;border-radius:8px;margin-top:8px;display:none">
+    <div style="margin-top:14px"><button class="btn btn-primary" id="btn-excl-save">Guardar</button></div>
+  </div>
+  <div class="sub-card-grid" id="list-exclusives" style="padding:12px 16px"></div>
+</div>
+
 <!-- Card edit modal -->
 <div id="card-modal">
   <div class="card-modal-box">
@@ -819,6 +840,7 @@ document.querySelectorAll('.tab').forEach(tab=>{
     else if(currentTab === 'achievements'){ loadAchievements(); }
     else if(currentTab === 'users'){ loadUsers(); }
     else if(currentTab === 'reports'){ loadReports(); }
+    else if(currentTab === 'exclusives'){ loadExclusives(); }
     else if(!DATA[currentTab]) loadTab(currentTab);
     updateSaveBar();
   });
@@ -2536,6 +2558,80 @@ document.getElementById('list-reports').addEventListener('click', async e=>{
       loadReports();
     }catch(e){ toast('Error: '+e.message,'err'); }
   }
+});
+
+// ============================================================
+// ESTAMPAS EXCLUSIVAS (premio del #1 del ranking mensual)
+// ============================================================
+let _exclList = [];
+let _exclPendingId = null, _exclPendingPath = null;
+async function loadExclusives(){
+  _exclList = await fetchData('exclusiveStickers');
+  if(!Array.isArray(_exclList)) _exclList = [];
+  document.getElementById('badge-exclusives').textContent = _exclList.length;
+  renderExclusivesList();
+}
+function renderExclusivesList(){
+  const el = document.getElementById('list-exclusives');
+  if(!_exclList.length){ el.innerHTML = '<div class="empty-state">Todavía no hay ninguna cargada</div>'; return; }
+  el.innerHTML = _exclList.slice().sort((a,b)=>b.monthKey.localeCompare(a.monthKey)).map(s=>`
+    <div class="sub-card">
+      ${s.imagePath ? `<img src="${esc(s.imagePath)}" alt="" style="width:100%;border-radius:6px;margin-bottom:6px;">` : ''}
+      <div class="sc-name">${esc(s.name)}</div>
+      <div class="sc-id">${esc(s.monthKey)} · ${esc(s.id)}</div>
+      <button class="btn-export" data-del-excl="${esc(s.id)}" style="color:var(--red);margin-top:6px;">🗑 Eliminar</button>
+    </div>`).join('');
+}
+document.getElementById('excl-upload').addEventListener('change', function(){
+  const file = this.files[0]; this.value='';
+  if(!file) return;
+  const month = document.getElementById('excl-month').value;
+  const name = document.getElementById('excl-name').value.trim();
+  if(!month || !name){ toast('Completa el mes y el nombre antes de subir la imagen','err'); return; }
+  const id = 'excl_' + month.replace('-','') + '_' + makeId(name);
+  const reader = new FileReader();
+  reader.onload = async e=>{
+    try{
+      const res = await fetch('/admin/upload-image', { method:'POST', headers:_authHeaders({'Content-Type':'application/json'}), body:JSON.stringify({id, type:'exclusiva', data:e.target.result}) });
+      if(res.status===413){ toast('Imagen demasiado grande — reducila antes de subir','err'); return; }
+      const json = await res.json().catch(()=>({ok:false}));
+      if(!json.ok){ toast('Error: '+(json.error||'desconocido'),'err'); return; }
+      _exclPendingId = id; _exclPendingPath = json.path;
+      const prev = document.getElementById('excl-preview');
+      prev.src = json.path; prev.style.display = 'block';
+      toast('✓ Imagen subida','ok');
+    }catch(err){ toast('Error de red','err'); }
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('btn-excl-save').addEventListener('click', async ()=>{
+  const month = document.getElementById('excl-month').value;
+  const name = document.getElementById('excl-name').value.trim();
+  if(!month || !name){ toast('Completa el mes y el nombre','err'); return; }
+  if(!_exclPendingId){ toast('Sube una imagen primero','err'); return; }
+  // Solo una estampa exclusiva por mes: si ya había una cargada para ese
+  // mes, esta la reemplaza.
+  const entry = { id:_exclPendingId, name, monthKey:month, imagePath:_exclPendingPath };
+  const updated = _exclList.filter(s=>s.monthKey!==month).concat([entry]);
+  const res = await saveData('exclusiveStickers', updated);
+  if(!res.ok){ toast('Error al guardar','err'); return; }
+  _exclList = updated;
+  document.getElementById('excl-month').value=''; document.getElementById('excl-name').value='';
+  document.getElementById('excl-preview').style.display='none';
+  _exclPendingId=null; _exclPendingPath=null;
+  toast('✓ Estampa exclusiva guardada','ok');
+  document.getElementById('badge-exclusives').textContent = _exclList.length;
+  renderExclusivesList();
+});
+document.getElementById('list-exclusives').addEventListener('click', async e=>{
+  const btn = e.target.closest('[data-del-excl]'); if(!btn) return;
+  if(!confirm('¿Eliminar esta estampa exclusiva?')) return;
+  const updated = _exclList.filter(s=>s.id!==btn.dataset.delExcl);
+  const res = await saveData('exclusiveStickers', updated);
+  if(!res.ok){ toast('Error al eliminar','err'); return; }
+  _exclList = updated;
+  document.getElementById('badge-exclusives').textContent = _exclList.length;
+  renderExclusivesList();
 });
 
 // ============================================================
