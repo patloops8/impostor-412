@@ -1385,6 +1385,17 @@ function saveCardModal(){
   if(!id)    { toast('No se pudo generar un ID — escribe el nombre primero','err'); return; }
   if(media<1){ toast('Media inválida','err'); return; }
 
+  // El id se genera del nombre (sin el club) — si ya existe otra carta con
+  // el mismo id (mismo jugador agregado de nuevo, o dos jugadores distintos
+  // con nombre idéntico), avisar en vez de guardar un duplicado silencioso.
+  if(isNew){
+    const dup = DATA.subasta.find(c=>c.id===id);
+    if(dup){
+      toast(`Ya existe una carta con este ID: "${dup.label||dup.name}" — cambiá el ID o usá "Posiciones secundarias" en esa carta en vez de crear otra`,'err');
+      return;
+    }
+  }
+
   const secondaryPositions = POSITION_LIST.map(p=>p.code).filter(code=>{
     if(code === pos) return false;
     const el = document.getElementById('cm-secpos-'+code);
