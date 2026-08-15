@@ -5578,5 +5578,27 @@
     "rareza": "top",
     "media": 89,
     "troll": false
+  },
+  {
+    "id": "martin_degaard",
+    "name": "Martin Ødegaard",
+    "label": "Martin Ødegaard (Arsenal)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 87,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "cole_palmer",
+    "name": "Cole Palmer",
+    "label": "Cole Palmer (Chelsea)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 86,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   }
 ]
