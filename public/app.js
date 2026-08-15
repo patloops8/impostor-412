@@ -977,8 +977,9 @@ function renderAlbumSummary(){
   $('album-points-text').textContent = '🪙 '+_albumData.points;
   $('album-grid').innerHTML = _albumData.catalog.map(c=>{
     const owned = ownedSet.has(c.id);
+    const posY = c.imgPosY ?? 20;
     return `<div class="album-sticker rareza-${esc(c.rareza)}${owned?'':' locked'}">
-      <img src="${esc(stickerImg(c.id, owned))}" alt="" loading="lazy"/>
+      <img src="${esc(stickerImg(c.id, owned))}" alt="" loading="lazy" style="object-position:50% ${posY}%"/>
       <div class="as-name">${owned ? esc(c.name) : '?'}</div>
     </div>`;
   }).join('');
@@ -1075,7 +1076,7 @@ async function revealPackResults(results){
     const card = document.createElement('div');
     card.className = `pack-reveal-card rareza-${esc(r.rareza)}${r.isNew?' is-new':''}`;
     card.innerHTML = `
-      <img src="${esc(stickerImg(r.cardId, true))}" alt=""/>
+      <img src="${esc(stickerImg(r.cardId, true))}" alt="" style="object-position:50% ${r.imgPosY ?? 20}%"/>
       <div class="prc-name">${esc(r.name)}</div>
       <div class="prc-tag">${r.isNew ? t('packNewSticker') : '+'+r.scrapAwarded+' pts'}</div>`;
     revealEl.appendChild(card);
