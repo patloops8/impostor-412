@@ -5551,5 +5551,32 @@
     "rareza": "mediano",
     "media": 82,
     "troll": false
+  },
+  {
+    "id": "dani_olmo",
+    "name": "Dani Olmo",
+    "label": "Dani Olmo (F.C. Barcelona)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 86,
+    "troll": false
+  },
+  {
+    "id": "florian_wirtz",
+    "name": "Florian Wirtz",
+    "label": "Florian Wirtz (Liverpool)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 87,
+    "troll": false
+  },
+  {
+    "id": "michael_olise",
+    "name": "Michael Olise",
+    "label": "Michael Olise (Bayern de Munich)",
+    "position": "MCO",
+    "rareza": "top",
+    "media": 89,
+    "troll": false
   }
 ]
