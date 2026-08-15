@@ -274,27 +274,56 @@ button.rps-btn.selected{background:none;border:none;box-shadow:none;color:var(--
 .friend-actions{flex-shrink:0;display:flex;gap:6px;}
 .invite-friend-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
 
-/* ===== Álbum de estampas y sobres ===== */
-.album-summary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;}
+/* ===== Álbum de estampas y sobres =====
+   Cada rareza tiene un color propio (reutiliza los tokens del sitio, los
+   mismos que ya usa el panel admin para Top/Leyenda/Moments) que tiñe el
+   borde/brillo de la estampa — así el color solo, sin leer nada, ya dice
+   qué tan rara es una carta. */
+.rareza-mediano{ --rareza-color:#98a5ad; --rareza-glow:rgba(152,165,173,0.35); }
+.rareza-top{ --rareza-color:var(--cyan); --rareza-glow:rgba(34,211,238,0.4); }
+.rareza-leyenda{ --rareza-color:var(--gold); --rareza-glow:rgba(233,185,73,0.55); }
+.rareza-moments{ --rareza-color:var(--purple); --rareza-glow:rgba(139,84,224,0.5); }
+
+.album-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,var(--bg2),var(--card));border:1px solid var(--line2);border-radius:12px;}
 .album-summary span{font-weight:700;font-size:0.88rem;}
-#album-points-text{color:var(--neon);margin-right:auto;}
-.album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;}
-.album-sticker{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:6px;text-align:center;}
-.album-sticker.locked{opacity:0.35;filter:grayscale(1);}
-.album-sticker img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;background:var(--bg3,#1a1e22);}
-.album-sticker .as-name{font-size:0.66rem;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.packs-list{display:flex;flex-direction:column;gap:10px;}
-.pack-card{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;}
+#album-points-text{color:var(--neon);}
+.album-progress-bar{flex-basis:100%;height:6px;border-radius:999px;background:var(--bg);overflow:hidden;order:5;}
+.album-progress-fill{height:100%;background:linear-gradient(90deg,var(--neon-dim),var(--neon));border-radius:999px;transition:width .4s ease;width:0%;}
+
+.album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;}
+.album-sticker{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--card),var(--bg2));border:1.5px solid var(--rareza-color,var(--line2));border-radius:12px;padding:8px;text-align:center;box-shadow:0 0 10px var(--rareza-glow,transparent),0 4px 10px rgba(0,0,0,0.25);transition:transform .18s ease,box-shadow .18s ease;}
+.album-sticker::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.3) 50%,transparent 60%);transform:translateX(-130%);transition:transform .5s ease;pointer-events:none;}
+.album-sticker:not(.locked):hover{transform:translateY(-3px) scale(1.035);box-shadow:0 0 18px var(--rareza-glow,transparent),0 8px 18px rgba(0,0,0,0.4);}
+.album-sticker:not(.locked):hover::before{transform:translateX(130%);}
+.album-sticker.locked{opacity:0.4;filter:grayscale(0.9) brightness(0.7);border-style:dashed;box-shadow:none;}
+.album-sticker img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;background:var(--bg3,#1a1e22);}
+.album-sticker .as-name{font-size:0.66rem;font-weight:700;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.packs-list{display:flex;flex-direction:column;gap:12px;}
+.pack-card{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:16px;padding:16px 18px;border:1.5px solid var(--line2);background:linear-gradient(135deg,var(--bg2),var(--card));transition:transform .15s ease;}
+.pack-card:hover{transform:translateY(-2px);}
+.pack-card[data-tier="bronce"]{border-color:#a5713f;background:linear-gradient(135deg,#3a2a18,#181210);}
+.pack-card[data-tier="plata"]{border-color:#9aa7b0;background:linear-gradient(135deg,#2b323a,#14181c);}
+.pack-card[data-tier="oro"]{border-color:var(--gold);background:linear-gradient(135deg,#4a3a10,#1c1608);box-shadow:0 0 22px rgba(233,185,73,0.22);}
 .pack-card .pc-info{flex:1;min-width:0;}
-.pack-card .pc-name{font-weight:800;font-size:1rem;}
-.pack-card .pc-desc{font-size:0.76rem;color:var(--text-dim);margin-top:2px;}
-.pack-reveal{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
-.pack-reveal-card{width:96px;background:var(--bg2);border:1.5px solid var(--line2);border-radius:10px;padding:8px;text-align:center;animation:slideUp .3s ease-out;}
-.pack-reveal-card.is-new{border-color:var(--neon);box-shadow:0 0 14px rgba(182,255,46,0.3);}
-.pack-reveal-card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;}
-.pack-reveal-card .prc-name{font-size:0.68rem;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pack-reveal-card .prc-tag{font-size:0.62rem;font-weight:800;margin-top:2px;}
-.pack-reveal-card.is-new .prc-tag{color:var(--neon);}
+.pack-card .pc-name{font-weight:800;font-size:1.05rem;font-family:var(--display);letter-spacing:0.03em;}
+.pack-card .pc-desc{font-size:0.78rem;color:var(--text-dim);margin-top:3px;}
+
+.pack-odds-panel{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
+.pack-odds-group{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;}
+.pack-odds-group-title{font-weight:800;font-size:0.85rem;margin-bottom:6px;}
+.pack-odds-row{display:flex;justify-content:space-between;font-size:0.8rem;padding:2px 0;}
+
+.pack-reveal{margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center;perspective:600px;}
+@keyframes cardFlipIn{0%{transform:rotateY(90deg) scale(0.8);opacity:0;}60%{transform:rotateY(-8deg) scale(1.04);opacity:1;}100%{transform:rotateY(0deg) scale(1);opacity:1;}}
+@keyframes rarityPulse{0%,100%{box-shadow:0 0 12px var(--rareza-glow,transparent);}50%{box-shadow:0 0 24px var(--rareza-glow,transparent);}}
+.pack-reveal-card{width:104px;background:linear-gradient(160deg,var(--card),var(--bg2));border:1.5px solid var(--line2);border-radius:12px;padding:10px;text-align:center;animation:cardFlipIn .5s cubic-bezier(.2,.8,.3,1.1) both;}
+.pack-reveal-card.is-new{border-color:var(--rareza-color,var(--neon));box-shadow:0 0 16px var(--rareza-glow,rgba(182,255,46,0.3));}
+.pack-reveal-card.rareza-leyenda.is-new{animation:cardFlipIn .5s cubic-bezier(.2,.8,.3,1.1) both,rarityPulse 1.4s ease-in-out .5s 2;}
+.pack-reveal-card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;}
+.pack-reveal-card .prc-name{font-size:0.68rem;font-weight:700;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pack-reveal-card .prc-tag{font-size:0.64rem;font-weight:800;margin-top:3px;}
+.pack-reveal-card.is-new .prc-tag{color:var(--rareza-color,var(--neon));}
 .pack-reveal-card:not(.is-new) .prc-tag{color:var(--text-dim);}
 
 /* ===== Invitación a sala recibida de un amigo ===== */

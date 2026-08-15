@@ -2047,6 +2047,23 @@ app.get('/album', async (req,res)=>{
     res.json({ ok:true, points:user?.points||0, catalog:ALBUM_CARDS, owned, total:ALBUM_CARDS.length, packs:SETTINGS.album.packs });
   }catch(e){ res.status(500).json({error:e.message}); }
 });
+// Álbum de un amigo, solo lectura (sin saldo de puntos — eso es privado).
+// Requiere que ambos ya sean amigos confirmados, igual que las invitaciones
+// a sala — nunca alcanza con mandar cualquier userId "de amigo".
+app.get('/album/:friendId', async (req,res)=>{
+  const uid = bearerUserId(req);
+  if(!uid) return res.status(401).json({error:'No autenticado.'});
+  if(!store.usingDb) return res.status(503).json({error:'El álbum necesita la base de datos conectada (DATABASE_URL).'});
+  if(!(await albumActiveFor(uid))) return res.status(403).json({error:'El álbum todavía no está disponible.'});
+  const friendId = Number(req.params.friendId);
+  try{
+    const ok = await store.areFriends(uid, friendId);
+    if(!ok) return res.status(403).json({error:'Esa persona no está en tu lista de amigos.'});
+    const [friend, owned] = await Promise.all([store.getUserById(friendId), store.getOwnedStickers(friendId)]);
+    if(!friend) return res.status(404).json({error:'not found'});
+    res.json({ ok:true, friendName:friend.displayName||friend.name, catalog:ALBUM_CARDS, owned, total:ALBUM_CARDS.length });
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
 app.post('/packs/open', express.json({limit:'1kb'}), async (req,res)=>{
   const uid = bearerUserId(req);
   if(!uid) return res.status(401).json({error:'No autenticado.'});

@@ -865,7 +865,10 @@ function renderFriends(){
           <div class="friend-name">${esc(f.name)}</div>
           <div class="friend-status"><span class="friend-status-dot${f.online?' online':''}" data-friend-dot="${f.id}"></span><span data-friend-status-label="${f.id}">${esc(f.online?t('friendsOnline'):t('friendsOffline'))}</span></div>
         </div>
-        <button class="chip-btn chip-danger friend-actions" data-remove-friend="${f.id}" title="${esc(t('friendsRemove'))}">✕</button>
+        <div class="friend-actions" style="display:flex;gap:6px;">
+          ${_albumActive ? `<button class="chip-btn" data-view-album="${f.id}" data-friend-name="${esc(f.name)}" title="${esc(t('albumViewFriendBtn'))}">📕</button>` : ''}
+          <button class="chip-btn chip-danger" data-remove-friend="${f.id}" title="${esc(t('friendsRemove'))}">✕</button>
+        </div>
       </div>`).join('');
   }
 }
@@ -909,6 +912,8 @@ $('friends-incoming-list').addEventListener('click', async e=>{
   }catch(e){ showToast(t('friendsError'), true); }
 });
 $('friends-list').addEventListener('click', async e=>{
+  const viewBtn = e.target.closest('[data-view-album]');
+  if(viewBtn){ $('friends-overlay').classList.add('hidden'); openFriendAlbum(viewBtn.dataset.viewAlbum, viewBtn.dataset.friendName); return; }
   const btn = e.target.closest('[data-remove-friend]'); if(!btn) return;
   if(!confirm(t('friendsRemoveConfirm'))) return;
   try{
@@ -933,6 +938,7 @@ document.addEventListener('langchange', ()=>{ if(!$('friends-overlay').classList
 /* ===== Álbum de estampas y sobres ===== */
 let _albumActive = false;
 let _albumData = { points:0, catalog:[], owned:[], total:0, packs:{} };
+let _albumViewingFriendId = null; // null = mi álbum; si no, el id del amigo que estoy viendo (solo lectura)
 async function loadAlbumStatus(){
   const tok = getAuthToken();
   if(!tok){ _albumActive=false; $('btn-album').classList.add('hidden'); return; }
@@ -960,12 +966,18 @@ function stickerImg(cardId, owned){
   return `/images/${owned?'reales':'siluetas'}/${encodeURIComponent(cardId.toLowerCase())}.png`;
 }
 function renderAlbumSummary(){
+  const viewingFriend = !!_albumViewingFriendId;
+  $('album-overlay-title').textContent = viewingFriend ? '📕 '+t('albumOfName',{name:_albumData.friendName||'?'}) : t('albumTitle');
+  $('album-points-text').classList.toggle('hidden', viewingFriend);
+  $('btn-open-packs').classList.toggle('hidden', viewingFriend);
+  $('btn-album-back').classList.toggle('hidden', !viewingFriend);
   const ownedSet = new Set(_albumData.owned);
   $('album-progress-text').textContent = `${ownedSet.size}/${_albumData.total}`;
+  $('album-progress-fill').style.width = (_albumData.total ? ownedSet.size/_albumData.total*100 : 0)+'%';
   $('album-points-text').textContent = '🪙 '+_albumData.points;
   $('album-grid').innerHTML = _albumData.catalog.map(c=>{
     const owned = ownedSet.has(c.id);
-    return `<div class="album-sticker${owned?'':' locked'}">
+    return `<div class="album-sticker rareza-${esc(c.rareza)}${owned?'':' locked'}">
       <img src="${esc(stickerImg(c.id, owned))}" alt="" loading="lazy"/>
       <div class="as-name">${owned ? esc(c.name) : '?'}</div>
     </div>`;
@@ -973,26 +985,62 @@ function renderAlbumSummary(){
 }
 function openAlbumOverlay(){
   if(!_albumActive) return;
+  _albumViewingFriendId = null;
   $('album-overlay').classList.remove('hidden');
   loadAlbum();
 }
+async function openFriendAlbum(friendId, friendName){
+  const tok = getAuthToken();
+  if(!tok || !_albumActive) return;
+  try{
+    const res = await fetch('/album/'+friendId, { headers:{ Authorization:'Bearer '+tok } });
+    const json = await res.json();
+    if(!res.ok || !json.ok){ showToast(json.error||t('friendsError'), true); return; }
+    _albumViewingFriendId = friendId;
+    _albumData = { points:0, catalog:json.catalog, owned:json.owned, total:json.total, packs:_albumData.packs, friendName:json.friendName||friendName };
+    renderAlbumSummary();
+    $('album-overlay').classList.remove('hidden');
+  }catch(e){ showToast(t('friendsError'), true); }
+}
 $('btn-album').addEventListener('click', openAlbumOverlay);
+$('btn-album-back').addEventListener('click', openAlbumOverlay);
 $('btn-album-close').addEventListener('click', ()=>$('album-overlay').classList.add('hidden'));
 $('album-overlay').addEventListener('click', e=>{ if(e.target===$('album-overlay'))$('album-overlay').classList.add('hidden'); });
 $('btn-open-packs').addEventListener('click', ()=>{
   $('album-overlay').classList.add('hidden');
   renderPacksList();
   $('pack-reveal').classList.add('hidden'); $('pack-reveal').innerHTML='';
+  $('pack-odds-panel').classList.add('hidden'); $('pack-odds-panel').innerHTML='';
   $('packs-overlay').classList.remove('hidden');
 });
 $('btn-packs-close').addEventListener('click', ()=>$('packs-overlay').classList.add('hidden'));
 $('packs-overlay').addEventListener('click', e=>{ if(e.target===$('packs-overlay'))$('packs-overlay').classList.add('hidden'); });
 const PACK_LABELS = { bronce:{icon:'🥉',name:'Bronce'}, plata:{icon:'🥈',name:'Plata'}, oro:{icon:'🥇',name:'Oro'} };
+const RAREZA_LABEL_COLORS = { mediano:'#999', top:'#4fc3f7', leyenda:'#ffd700' };
+const RAREZA_LABEL_NAMES = { mediano:'Mediano', top:'Top', leyenda:'Leyenda' };
+function renderPackOdds(){
+  const packs = _albumData.packs || {};
+  $('pack-odds-panel').innerHTML = Object.keys(packs).map(key=>{
+    const p = packs[key]; const meta = PACK_LABELS[key] || {icon:'🎁',name:key};
+    const total = Object.values(p.odds||{}).reduce((a,b)=>a+b,0) || 1;
+    const rows = Object.keys(p.odds||{}).map(r=>{
+      const pct = (p.odds[r]/total*100).toFixed(1);
+      return `<div class="pack-odds-row"><span style="color:${RAREZA_LABEL_COLORS[r]||'var(--ink)'}">${RAREZA_LABEL_NAMES[r]||r}</span><span>${pct}%</span></div>`;
+    }).join('');
+    return `<div class="pack-odds-group"><div class="pack-odds-group-title">${meta.icon} ${esc(meta.name)}</div>${rows}</div>`;
+  }).join('');
+}
+$('btn-pack-odds').addEventListener('click', ()=>{
+  const panel = $('pack-odds-panel');
+  const willShow = panel.classList.contains('hidden');
+  if(willShow) renderPackOdds();
+  panel.classList.toggle('hidden', !willShow);
+});
 function renderPacksList(){
   const packs = _albumData.packs || {};
   $('packs-list').innerHTML = Object.keys(packs).map(key=>{
     const p = packs[key]; const meta = PACK_LABELS[key] || {icon:'🎁',name:key};
-    return `<div class="pack-card">
+    return `<div class="pack-card" data-tier="${esc(key)}">
       <div class="pc-info">
         <div class="pc-name">${meta.icon} ${esc(meta.name)}</div>
         <div class="pc-desc">${t('packStickersDesc',{n:p.stickers})}</div>
@@ -1000,6 +1048,27 @@ function renderPacksList(){
       <button class="chip-btn" data-open-pack="${esc(key)}">🪙 ${p.cost}</button>
     </div>`;
   }).join('');
+}
+// Revela las estampas una por una (no todas de golpe), con su propio
+// sonido y color según rareza — se siente más a "abrir un sobre" que un
+// volcado instantáneo de resultados.
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+async function revealPackResults(results){
+  const revealEl = $('pack-reveal');
+  revealEl.classList.remove('hidden');
+  revealEl.innerHTML = '';
+  for(let i=0;i<results.length;i++){
+    const r = results[i];
+    if(i>0) await sleep(260);
+    const card = document.createElement('div');
+    card.className = `pack-reveal-card rareza-${esc(r.rareza)}${r.isNew?' is-new':''}`;
+    card.innerHTML = `
+      <img src="${esc(stickerImg(r.cardId, true))}" alt=""/>
+      <div class="prc-name">${esc(r.name)}</div>
+      <div class="prc-tag">${r.isNew ? t('packNewSticker') : '+'+r.scrapAwarded+' pts'}</div>`;
+    revealEl.appendChild(card);
+    if(r.isNew) sfx.newSticker(); else sfx.tick();
+  }
 }
 $('packs-list').addEventListener('click', async e=>{
   const btn = e.target.closest('[data-open-pack]'); if(!btn || btn.disabled) return;
@@ -1012,15 +1081,7 @@ $('packs-list').addEventListener('click', async e=>{
     _albumData.points = json.newBalance;
     $('album-points-badge').textContent = json.newBalance;
     sfx.packOpen();
-    const revealEl = $('pack-reveal');
-    revealEl.classList.remove('hidden');
-    revealEl.innerHTML = json.results.map(r=>`
-      <div class="pack-reveal-card${r.isNew?' is-new':''}">
-        <img src="${esc(stickerImg(r.cardId, true))}" alt=""/>
-        <div class="prc-name">${esc(r.name)}</div>
-        <div class="prc-tag">${r.isNew ? t('packNewSticker') : '+'+r.scrapAwarded+' pts'}</div>
-      </div>`).join('');
-    if(json.results.some(r=>r.isNew)) sfx.newSticker();
+    await revealPackResults(json.results);
   }catch(e){ showToast(t('friendsError'), true); }
   finally{ btn.disabled = false; }
 });

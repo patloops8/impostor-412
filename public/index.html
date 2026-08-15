@@ -233,14 +233,16 @@
 <div id="album-overlay" class="rules-overlay hidden" role="dialog" aria-modal="true">
   <div class="rules-box">
     <div class="rules-box-head">
-      <h2 class="rules-box-title" data-i18n="albumTitle">📕 Álbum de estampas</h2>
+      <h2 class="rules-box-title" id="album-overlay-title" data-i18n="albumTitle">📕 Álbum de estampas</h2>
       <button class="rules-close" id="btn-album-close" aria-label="Cerrar" data-i18n-aria="closeAria">✕</button>
     </div>
     <div class="rules-body">
       <div class="album-summary">
+        <button class="chip-btn hidden" id="btn-album-back" data-i18n="albumBackBtn">← Mi álbum</button>
         <span id="album-progress-text">0/0</span>
         <span id="album-points-text">🪙 0</span>
         <button class="chip-btn" id="btn-open-packs" data-i18n="albumOpenPacksBtn">🎁 Abrir sobres</button>
+        <div class="album-progress-bar"><div class="album-progress-fill" id="album-progress-fill"></div></div>
       </div>
       <div class="album-grid" id="album-grid"></div>
     </div>
@@ -256,6 +258,8 @@
     </div>
     <div class="rules-body">
       <div id="packs-list" class="packs-list"></div>
+      <button class="chip-btn" id="btn-pack-odds" data-i18n="packOddsBtn" style="margin-top:10px;width:100%;">📊 Ver probabilidades</button>
+      <div id="pack-odds-panel" class="pack-odds-panel hidden"></div>
       <div id="pack-reveal" class="pack-reveal hidden"></div>
     </div>
   </div>
