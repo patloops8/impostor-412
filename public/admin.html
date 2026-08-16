@@ -394,6 +394,12 @@
       <option value="troll">Troll</option>
       <option value="moments">Moments</option>
     </select>
+    <select id="filter-sub-sort">
+      <option value="">Orden original</option>
+      <option value="name_asc">Nombre A-Z</option>
+      <option value="media_asc">Media (menor a mayor)</option>
+      <option value="media_desc">Media (mayor a menor)</option>
+    </select>
     <span id="sub-filter-count" style="white-space:nowrap;color:var(--soft);font-size:13px;font-weight:600"></span>
   </div>
   <div id="sub-grid" class="sub-card-grid"></div>
@@ -895,6 +901,7 @@ let wavelengthSearch = '';
 let subastaSearch = '';
 let subastaPos = '';
 let subastaRar = '';
+let subastaSort = '';
 let imgStatus = { reales: new Set(), siluetas: new Set() };
 
 async function loadImgStatus(){
@@ -1218,6 +1225,9 @@ function renderSubasta(){
     (!subastaPos || c.position === subastaPos || (c.secondaryPositions||[]).includes(subastaPos)) &&
     (!subastaRar || c.rareza === subastaRar)
   );
+  if(subastaSort==='name_asc') list.sort((a,b)=>(a.c.label||a.c.name).localeCompare(b.c.label||b.c.name,'es'));
+  else if(subastaSort==='media_asc') list.sort((a,b)=>a.c.media-b.c.media);
+  else if(subastaSort==='media_desc') list.sort((a,b)=>b.c.media-a.c.media);
   _filteredIdxs = list.map(({i})=>i);
   const el = document.getElementById('sub-grid');
   document.getElementById('badge-subasta').textContent = DATA.subasta.length;
@@ -1501,6 +1511,7 @@ document.getElementById('save-subasta').addEventListener('click', ()=>doSave('su
 document.getElementById('search-subasta').addEventListener('input', e=>{ subastaSearch=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-pos').addEventListener('change', e=>{ subastaPos=e.target.value; renderSubasta(); });
 document.getElementById('filter-sub-rar').addEventListener('change', e=>{ subastaRar=e.target.value; renderSubasta(); });
+document.getElementById('filter-sub-sort').addEventListener('change', e=>{ subastaSort=e.target.value; renderSubasta(); });
 
 // ============================================================
 // CONFIG TAB
