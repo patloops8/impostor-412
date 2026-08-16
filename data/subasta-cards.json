@@ -1009,11 +1009,13 @@
   {
     "id": "mohamed_salah",
     "name": "Mohamed Salah",
-    "label": "Mohamed Salah (Liverpool)",
+    "label": "Mohamed Salah (Trabzonspor)",
     "position": "ED",
     "rareza": "top",
     "media": 86,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "ousmane_dembele",
@@ -1580,7 +1582,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 83,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "christopher_nkunku",
@@ -5674,6 +5681,111 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 80,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "ismael_saibari",
+    "name": "Ismael Saibari",
+    "label": "Ismael Saibari (Bayern de Múnich)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "bryan_mbeumo",
+    "name": "Bryan Mbeumo",
+    "label": "Bryan Mbeumo (Manchester United)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 86,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
+  },
+  {
+    "id": "jarrod_bowen",
+    "name": "Jarrod Bowen",
+    "label": "Jarrod Bowen (West Ham United)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "savinho",
+    "name": "Savinho",
+    "label": "Savinho (Manchester City)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "lionel_messi",
+    "name": "Lionel Messi",
+    "label": "Lionel Messi (Inter de Miami)",
+    "position": "ED",
+    "rareza": "top",
+    "media": 87,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
+  },
+  {
+    "id": "cristiano_ronaldo",
+    "name": "Cristiano Ronaldo",
+    "label": "Crstiano Ronaldo (Al-Nassr)",
+    "position": "DC",
+    "rareza": "mediano",
+    "media": 85,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "anthony_elanga",
+    "name": "Anthony Elanga",
+    "label": "Anthony Elanga (Newcastle United)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "mohammed_kudus",
+    "name": "Mohammed Kudus",
+    "label": "Mohammed Kudus (Tottenham)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "pedro_neto",
+    "name": "Pedro Neto",
+    "label": "Pedro Neto (Chelsea)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
