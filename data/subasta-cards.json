@@ -927,7 +927,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 83,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "bradley_barcola",
@@ -2487,7 +2492,12 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "luis_diaz",
@@ -5495,6 +5505,153 @@
     "position": "MCO",
     "rareza": "top",
     "media": 86,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "dominik_szoboszlai",
+    "name": "Dominik Szoboszlai",
+    "label": "Dominik Szoboszlai (Liverpool)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "dejan_kulusevski",
+    "name": "Dejan Kulusevski",
+    "label": "Dejan Kulusevski (Tottenham)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
+  },
+  {
+    "id": "eberechi_eze",
+    "name": "Eberechi Eze",
+    "label": "Eberechi Eze (Arsenal)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "rayan_cherki",
+    "name": "Rayan Cherki",
+    "label": "Rayan Cherki (Manchester City)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
+  },
+  {
+    "id": "emiliano_buendia",
+    "name": "Emiliano Buendía",
+    "label": "Emiliano Buendía",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 77,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
+  },
+  {
+    "id": "ademola_lookman",
+    "name": "Ademola Lookman",
+    "label": "Ademola Lookman (Atletico de Madird)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 84,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "giovani_lo_celso",
+    "name": "Giovani Lo Celso",
+    "label": "Giovani Lo Celso (Real Betis)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
+  },
+  {
+    "id": "thiago_almada",
+    "name": "Thiago Almada",
+    "label": "Thiago Almada (Atletico de Madird)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "alvaro_fidalgo_",
+    "name": "Alvaro Fidalgo",
+    "label": "Alvaro Fidalgo (Real Betis)",
+    "position": "MC",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "charles_de_ketelaere_",
+    "name": "Charles De Ketelaere",
+    "label": "Charles De Ketelaere (Atalanta)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "kenan_yldz",
+    "name": "Kenan Yıldız",
+    "label": "Kenan Yıldız (Juventus)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
+  },
+  {
+    "id": "nico_paz",
+    "name": "Nico Paz",
+    "label": "Nico Paz (Como)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
