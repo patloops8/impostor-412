@@ -1285,7 +1285,10 @@ function openCardModal(idx){
   _cmIdx = idx;
   const isNew = idx === -1;
   const c = isNew
-    ? {id:'',name:'',label:'',position:'DC',rareza:'mediano',media:80,troll:false}
+    // Si hay un filtro de posición activo, arranca ahí en vez de en DC
+    // siempre — evita el típico error de cargar un DFC como delantero
+    // porque quedó en la posición por defecto sin darse cuenta.
+    ? {id:'',name:'',label:'',position:subastaPos||'DC',rareza:'mediano',media:80,troll:false}
     : DATA.subasta[idx];
 
   document.getElementById('cm-title-display').textContent = isNew ? 'Nueva carta' : (c.label||c.name);
