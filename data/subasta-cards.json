@@ -5789,5 +5789,66 @@
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
+  },
+  {
+    "id": "yeremy_pino",
+    "name": "Yeremy Pino",
+    "label": "Yeremy Pino (Crystal Palace)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "estevao",
+    "name": "Estêvão",
+    "label": "Estêvão (Chelsea)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "iago_aspas_",
+    "name": "Iago Aspas",
+    "label": "Iago Aspas (Celta de Vigo)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
+  },
+  {
+    "id": "inaki_williams_",
+    "name": "Brahim Díaz",
+    "label": "Brahim Díaz (Real Madrid)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
+  },
+  {
+    "id": "takefusa_kubo",
+    "name": "Takefusa Kubo",
+    "label": "Takefusa Kubo (Real Sociedad)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   }
 ]
