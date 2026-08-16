@@ -168,7 +168,12 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LI"
+    ]
   },
   {
     "id": "jules_kounde",
@@ -177,7 +182,12 @@
     "position": "LD",
     "rareza": "top",
     "media": 86,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DFC"
+    ]
   },
   {
     "id": "philipp_lahm",
