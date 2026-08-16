@@ -1696,7 +1696,12 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 83,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "alan_shearer",
@@ -1750,7 +1755,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "arda_guler",
@@ -1759,7 +1769,12 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "arturo_vidal",
@@ -1768,7 +1783,12 @@
     "position": "MC",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "axel_witsel",
@@ -1777,7 +1797,12 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "benjamin_pavard",
@@ -1786,7 +1811,12 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LD"
+    ]
   },
   {
     "id": "bobby_charlton",
@@ -1795,7 +1825,9 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "bobby_moore",
@@ -1831,7 +1863,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "cesc_fabregas",
@@ -1840,7 +1877,12 @@
     "position": "MC",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "christensen",
@@ -1862,7 +1904,8 @@
     "imgPosY": 50,
     "imgFit": "contain",
     "secondaryPositions": [
-      "MCO"
+      "MCO",
+      "EI"
     ]
   },
   {
@@ -1872,7 +1915,12 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "ciro_immobile",
@@ -1890,7 +1938,12 @@
     "position": "MC",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "cody_gakpo",
@@ -1899,7 +1952,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "cuauhtemoc_blanco",
@@ -1908,7 +1966,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "cucurella",
@@ -1989,7 +2052,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 90,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "didier_deschamps",
@@ -2025,7 +2093,12 @@
     "position": "MCD",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "edinson_cavani",
@@ -2043,7 +2116,12 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 76,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DFC"
+    ]
   },
   {
     "id": "elias_figueroa",
@@ -2079,7 +2157,12 @@
     "position": "DC",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "erick_lira",
@@ -2088,7 +2171,12 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 81,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "eusebio",
@@ -2151,7 +2239,12 @@
     "position": "MCD",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "ferran_torres",
@@ -2160,7 +2253,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "franck_ribery",
@@ -2178,7 +2276,12 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "gabriel_batistuta",
@@ -2205,7 +2308,12 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 74,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "gennaro_gattuso",
@@ -2232,7 +2340,12 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 81,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LI"
+    ]
   },
   {
     "id": "gerard_pique",
@@ -2259,7 +2372,12 @@
     "position": "LD",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LI"
+    ]
   },
   {
     "id": "gilberto_mora",
@@ -2268,7 +2386,12 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "giovanni_di_lorenzo",
@@ -2322,7 +2445,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 75,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "hristo_stoichkov",
@@ -2331,7 +2459,12 @@
     "position": "DC",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "hugo_lloris",
@@ -2358,7 +2491,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 77,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "hector_herrera",
@@ -2403,7 +2541,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "ivan_rakitic",
@@ -2430,7 +2573,12 @@
     "position": "DFC",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LD"
+    ]
   },
   {
     "id": "ivan_zamorano",
@@ -2448,7 +2596,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 81,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "inigo_martinez",
@@ -2520,7 +2673,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 75,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "joan_garcia",
@@ -2538,7 +2696,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "johan_cruyff",
@@ -2547,7 +2710,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 95,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "john_terry",
@@ -2583,7 +2751,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "joao_felix",
@@ -2592,7 +2765,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "juan_cuadrado",
@@ -2601,7 +2779,12 @@
     "position": "LD",
     "rareza": "mediano",
     "media": 76,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "julian_brandt",
@@ -2619,7 +2802,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "just_fontaine",
@@ -2655,7 +2843,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "karim_benzema",
@@ -2700,7 +2893,12 @@
     "position": "DC",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "laurent_blanc",
@@ -2709,7 +2907,12 @@
     "position": "DFC",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "leon_goretzka",
@@ -2718,7 +2921,12 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "lilian_thuram",
@@ -2727,7 +2935,12 @@
     "position": "LD",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DFC"
+    ]
   },
   {
     "id": "lorenzo_insigne",
@@ -2736,7 +2949,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 76,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "lorenzo_pellegrini",
@@ -2754,7 +2972,12 @@
     "position": "MC",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "lucas_hernandez",
@@ -2816,7 +3039,12 @@
     "position": "DFC",
     "rareza": "mediano",
     "media": 81,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "LD"
+    ]
   },
   {
     "id": "manuel_neuer",
@@ -2834,7 +3062,12 @@
     "position": "MCD",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "marcel_desailly",
@@ -2843,7 +3076,12 @@
     "position": "DFC",
     "rareza": "leyenda",
     "media": 88,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "marco_asensio",
@@ -2852,7 +3090,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "marco_reus",
@@ -2861,7 +3104,12 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "marco_verratti",
@@ -2951,7 +3199,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "michael_ballack",
@@ -2960,7 +3213,12 @@
     "position": "MC",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "michael_carrick",
@@ -2987,7 +3245,12 @@
     "position": "DC",
     "rareza": "mediano",
     "media": 85,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "EI"
+    ]
   },
   {
     "id": "miroslav_klose",
@@ -3005,7 +3268,12 @@
     "position": "EI",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "niclas_fullkrug",
@@ -3068,7 +3336,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "patrice_evra",
@@ -3086,7 +3359,12 @@
     "position": "DC",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "paulo_dybala",
@@ -3095,7 +3373,12 @@
     "position": "MCO",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "pavel_nedved",
@@ -3104,7 +3387,12 @@
     "position": "EI",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "pep_guardiola",
@@ -3158,7 +3446,12 @@
     "position": "DFC",
     "rareza": "leyenda",
     "media": 89,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCD"
+    ]
   },
   {
     "id": "randal_kolo_muani",
@@ -3185,7 +3478,12 @@
     "position": "EI",
     "rareza": "top",
     "media": 87,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "ED"
+    ]
   },
   {
     "id": "raul_jimenez",
@@ -3221,7 +3519,12 @@
     "position": "EI",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MCO"
+    ]
   },
   {
     "id": "rivelino",
@@ -3302,7 +3605,12 @@
     "position": "MCO",
     "rareza": "leyenda",
     "media": 91,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "MC"
+    ]
   },
   {
     "id": "ruben_neves",
