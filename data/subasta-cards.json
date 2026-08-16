@@ -5655,5 +5655,27 @@
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
+  },
+  {
+    "id": "malik_tillman",
+    "name": "Malik Tillman",
+    "label": "Malik Tillman (Bayern Leverkusen)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "andrej_kramaric",
+    "name": "Andrej Kramarić",
+    "label": "Andrej Kramarić (Hoffenheim)",
+    "position": "MCO",
+    "rareza": "mediano",
+    "media": 80,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   }
 ]
