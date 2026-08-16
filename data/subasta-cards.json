@@ -986,7 +986,12 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain",
+    "secondaryPositions": [
+      "DC"
+    ]
   },
   {
     "id": "lamine_yamal",
@@ -5847,6 +5852,94 @@
     "position": "ED",
     "rareza": "mediano",
     "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "dodi_lukebakio",
+    "name": "Dodi Lukébakio",
+    "label": "Dodi Lukébakio (Benfica)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "giuliano_simeone",
+    "name": "Giuliano Simeone",
+    "label": "Giuliano Simeone (Atletico de Madird)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "nicolas_pepe",
+    "name": "Nicolas Pépé",
+    "label": "Nicolas Pépé (Villareal)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "leon_bailey",
+    "name": "Leon Bailey",
+    "label": "Leon Bailey (Aston Villa)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 79,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "francisco_conceicao",
+    "name": "Francisco Conceição",
+    "label": "Francisco Conceição (Juventus)",
+    "position": "ED",
+    "rareza": "mediano",
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "leandro_trossard",
+    "name": "Leandro Trossard",
+    "label": "Leandro Trossard (Arsenal)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 83,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "mitoma",
+    "name": "Mitoma",
+    "label": "Mitoma (Brighton)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 82,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "jeremy_doku",
+    "name": "Jérémy Doku",
+    "label": "Jérémy Doku (Manchester City)",
+    "position": "EI",
+    "rareza": "mediano",
+    "media": 84,
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
