@@ -3650,20 +3650,6 @@
     "troll": false
   },
   {
-    "id": "sandro_tonali",
-    "name": "Sandro Tonali",
-    "label": "Sandro Tonali (Tottenham)",
-    "position": "MCD",
-    "rareza": "mediano",
-    "media": 85,
-    "troll": false,
-    "imgPosY": 50,
-    "imgFit": "contain",
-    "secondaryPositions": [
-      "MC"
-    ]
-  },
-  {
     "id": "serge_gnabry",
     "name": "Serge Gnabry",
     "label": "Serge Gnabry",
@@ -6003,40 +5989,12 @@
     ]
   },
   {
-    "id": "bruno_guimaraes_",
-    "name": "Bruno Guimaraes",
-    "label": "Bruno Guimaraes (New Castle)",
-    "position": "MCD",
-    "rareza": "top",
-    "media": 86,
-    "troll": false,
-    "imgPosY": 50,
-    "imgFit": "contain",
-    "secondaryPositions": [
-      "MC"
-    ]
-  },
-  {
     "id": "sandro_tonali_",
     "name": "Sandro Tonali",
     "label": "Sandro Tonali (Tottenham)",
     "position": "MCD",
     "rareza": "top",
     "media": 86,
-    "troll": false,
-    "imgPosY": 50,
-    "imgFit": "contain",
-    "secondaryPositions": [
-      "MC"
-    ]
-  },
-  {
-    "id": "vitinha_",
-    "name": "Vitinha",
-    "label": "Vitinha (Paris Saint Germain)",
-    "position": "MCD",
-    "rareza": "top",
-    "media": 89,
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain",
