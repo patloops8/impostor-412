@@ -6821,5 +6821,27 @@
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
+  },
+  {
+    "id": "memo_ochcoa_",
+    "name": "Memo Ochcoa",
+    "label": "Memo Ochcoa (Mundial 2014)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 90,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "emiliano_martinez_",
+    "name": "Emiliano Martinez",
+    "label": "Emiliano Martinez (Atajada 120´)",
+    "position": "POR",
+    "rareza": "mediano",
+    "media": 93,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   }
 ]
