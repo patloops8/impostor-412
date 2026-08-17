@@ -6766,5 +6766,60 @@
     "troll": false,
     "imgPosY": 50,
     "imgFit": "contain"
+  },
+  {
+    "id": "vozinha_",
+    "name": "Vozinha",
+    "label": "Vozinha (Mundial 2026)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 90,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "iker_casillas_",
+    "name": "Iker Casillas",
+    "label": "Iker Casillas (Mundial 2010)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 94,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "manuel_neuer_",
+    "name": "Manuel Neuer",
+    "label": "Manuel Neuer(2014)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 94,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "peter_cech",
+    "name": "Peter Cech",
+    "label": "Petr Cech (Prime)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 92,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
+  },
+  {
+    "id": "thibaut_courtois_",
+    "name": "Thibaut Courtois",
+    "label": "Thibaut Courtois (2022)",
+    "position": "POR",
+    "rareza": "moments",
+    "media": 94,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   }
 ]
