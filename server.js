@@ -1525,11 +1525,11 @@ io.on('connection', socket => {
   // tiene a quién responsabilizar) y bloquean a quien tenga un veto activo.
   // Las salas privadas no pasan por acá — siguen funcionando como invitado.
   async function checkPublicGate(userId){
-    if(!userId) return { ok:false, error:'Necesitás iniciar sesión con Google o Discord para crear o unirte a salas públicas.' };
+    if(!userId) return { ok:false, error:'Necesitas iniciar sesión con Google o Discord para crear o unirte a salas públicas.' };
     try{
       const user = await store.getUserById(userId);
       if(user && user.bannedUntil && new Date(user.bannedUntil) > new Date()){
-        const until = new Date(user.bannedUntil).toLocaleDateString('es-AR');
+        const until = new Date(user.bannedUntil).toLocaleDateString('es-MX');
         return { ok:false, error:`Tu cuenta está vetada de las salas públicas hasta el ${until}.` };
       }
       return { ok:true };
