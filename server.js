@@ -307,6 +307,15 @@ async function checkAndGrantPeriodRewards(){
   }
 }
 
+// Comparación a tiempo constante para secretos cortos (ej. rejoinToken) —
+// evita filtrar por diferencias de tiempo igual que safeEqual del admin,
+// pero definida acá arriba porque hace falta fuera de ese bloque.
+function safeEqualStr(a, b){
+  const bufA = Buffer.from(String(a||'')), bufB = Buffer.from(String(b||''));
+  if(bufA.length !== bufB.length || bufA.length===0) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function genCode() {
   let c;
   do { c = ''; for (let i=0;i<4;i++) c += ROOM_CODE_CHARS[Math.floor(Math.random()*ROOM_CODE_CHARS.length)]; }
@@ -1553,10 +1562,11 @@ io.on('connection', socket => {
       // pueden ser desconocidos que ni se estén escuchando.
       room.mentirosoConfig.mode = 'texto';
     }
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken)});
+    const rejoinToken=crypto.randomBytes(16).toString('hex');
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken),rejoinToken});
     rooms.set(code,room);
     socket.join(code); socket.data.roomCode=code;
-    cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
+    cb({ok:true,code,playerId:socket.id,rejoinToken,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined',null,clientCountry); }
@@ -1575,9 +1585,10 @@ io.on('connection', socket => {
       const gate = await checkPublicGate(uid);
       if(!gate.ok){ cb({ok:false,error:gate.error}); return; }
     }
-    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken)});
+    const rejoinToken=crypto.randomBytes(16).toString('hex');
+    room.players.set(socket.id,{id:socket.id,name:trimmed,score:0,alive:true,connected:true,userId:uid,avatarUrl:avatarFromToken(authToken),rejoinToken});
     socket.join(room.code); socket.data.roomCode=room.code;
-    cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
+    cb({ok:true,code:room.code,playerId:socket.id,rejoinToken,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
     if(!room.isTest) trackEvent('player_joined',null,clientCountry);
@@ -1980,12 +1991,17 @@ io.on('connection', socket => {
     if(r.isPublic) broadcastPublicRooms(); // vuelve a listarse (lobby) o desaparece (arrancó directo)
   });
 
-  socket.on('player:rejoin', ({code,playerId}, cb) => {
-    // Permite reconectarse a una sala tras perder conexión
+  socket.on('player:rejoin', ({code,playerId,rejoinToken}, cb) => {
+    // Permite reconectarse a una sala tras perder conexión. playerId viaja
+    // en cada room:update a TODOS los jugadores de la sala (lo necesita la
+    // UI: votar, patear, etc.), así que NO alcanza como credencial — cualquier
+    // otro jugador podría usarlo para robarse la sesión de otro en plena
+    // partida. rejoinToken es secreto: solo se le manda al dueño de esa
+    // sesión (por callback privado), nunca se difunde a la sala.
     const r=rooms.get((code||'').toUpperCase());
     if(!r){cb&&cb({ok:false});return;}
     const existing=r.players.get(playerId);
-    if(existing){
+    if(existing && existing.rejoinToken && safeEqualStr(rejoinToken, existing.rejoinToken)){
       // reasignar el socket: el jugador vuelve con un socket.id nuevo, así que
       // hay que actualizar toda referencia a su id viejo en el estado de juego
       // (impostores, turnos, votos, pujas...), o "desaparece" de la partida.
@@ -1996,7 +2012,7 @@ io.on('connection', socket => {
       if(r.hostId===socket.id) clearHostTimer(r.code);
       r.players.set(socket.id,existing);
       socket.join(r.code); socket.data.roomCode=r.code;
-      cb&&cb({ok:true,code:r.code,playerId:socket.id,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(r)});
+      cb&&cb({ok:true,code:r.code,playerId:socket.id,rejoinToken:existing.rejoinToken,isHost:r.hostId===socket.id,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(r)});
       emitRoom(r);
       sendResumeState(r, socket);
     } else { cb&&cb({ok:false}); }

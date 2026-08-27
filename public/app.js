@@ -100,14 +100,14 @@ const socket = io({
 
 /* ===== Conexión + reconexión ===== */
 const connBanner = document.getElementById('conn-banner');
-let myId = null, roomCode = null, myStoredId = null, isHost = false, currentGame = null, tvLink = '';
+let myId = null, roomCode = null, myStoredId = null, myRejoinToken = null, isHost = false, currentGame = null, tvLink = '';
 
 // Persistimos sala + id en localStorage: si el celular recarga la página
 // (muy común al volver de segundo plano), podemos reintegrarnos solos en
 // vez de quedar bloqueados fuera de una partida ya empezada.
 const SESSION_KEY='412_session';
 const SESSION_MAX_AGE_MS = 4*60*60*1000; // 4 horas: cubre una junta larga, no "volví días después"
-function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({code:roomCode, playerId:myStoredId, savedAt:Date.now()})); }catch(e){} }
+function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({code:roomCode, playerId:myStoredId, rejoinToken:myRejoinToken, savedAt:Date.now()})); }catch(e){} }
 function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 (function hydrateSession(){
   try{
@@ -119,7 +119,7 @@ function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} 
     // el uso normal. Una sesión vieja se descarta calladita, sin intentar
     // reconectar ni avisar nada.
     if(saved && saved.code && saved.playerId && saved.savedAt && (Date.now()-saved.savedAt)<SESSION_MAX_AGE_MS){
-      roomCode=saved.code; myStoredId=saved.playerId;
+      roomCode=saved.code; myStoredId=saved.playerId; myRejoinToken=saved.rejoinToken||null;
     } else {
       clearSession();
     }
@@ -155,9 +155,9 @@ socket.on('connect', () => {
   loadAlbumStatus();
   // Reconexión: si ya teníamos sala (recién ahora, o recuperada de localStorage), reintegrarse
   if (roomCode && myStoredId) {
-    socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId }, (res) => {
+    socket.emit('player:rejoin', { code: roomCode, playerId: myStoredId, rejoinToken: myRejoinToken }, (res) => {
       if (res && res.ok) {
-        myId = res.playerId; myStoredId = res.playerId; isHost = res.isHost;
+        myId = res.playerId; myStoredId = res.playerId; myRejoinToken = res.rejoinToken||myRejoinToken; isHost = res.isHost;
         if(res.categories) ALL_CATEGORIES=res.categories;
         if(res.formations) ALL_FORMATIONS=res.formations;
         applyRoomCode(res.code);
@@ -166,7 +166,7 @@ socket.on('connect', () => {
       } else {
         // La sala ya no existe o el jugador no está: volver a home y avisar,
         // en vez de dejar a la persona congelada en una pantalla muerta.
-        clearSession(); roomCode=null; myStoredId=null;
+        clearSession(); roomCode=null; myStoredId=null; myRejoinToken=null;
         show('s-home');
         showHomeError(t('roomGoneMsg'));
         updateChatVisibility();
@@ -247,7 +247,7 @@ function onJoined(res){
   $('create-room-overlay').classList.add('hidden');
   closePublicRoomsOverlay();
   if(!res.ok){ showHomeError(res.error); return; }
-  myId=res.playerId; myStoredId=res.playerId; isHost=res.isHost;
+  myId=res.playerId; myStoredId=res.playerId; myRejoinToken=res.rejoinToken||null; isHost=res.isHost;
   ALL_CATEGORIES=res.categories||[]; ALL_FORMATIONS=res.formations||[];
   applyRoomCode(res.code);
   setChatHistory(res.chat);
