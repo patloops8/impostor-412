@@ -6,6 +6,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
+const geoip = require('geoip-lite');
 const store = require('./store');
 const auth = require('./auth');
 
@@ -1423,6 +1424,10 @@ io.on('connection', socket => {
   // ── Límite de conexiones por IP ────────────────────────
   const clientIp = (socket.handshake.headers['x-forwarded-for']||'').split(',')[0].trim()
                    || socket.handshake.address;
+  // País del visitante (geoip-lite, offline, sin llamadas externas) — solo
+  // para Analytics agregado ("de dónde son los jugadores" para mostrarle a
+  // anunciantes), nunca se guarda la IP en sí. null en local/LAN (127.0.0.1).
+  const clientCountry = geoip.lookup(clientIp)?.country || null;
   const ipCount = (IP_CONN.get(clientIp)||0) + 1;
   IP_CONN.set(clientIp, ipCount);
   if(ipCount > 20){
@@ -1538,7 +1543,7 @@ io.on('connection', socket => {
     cb({ok:true,code,playerId:socket.id,isHost:true,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
-    if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined'); }
+    if(!room.isTest){ trackEvent('room_created'); trackEvent('player_joined',null,clientCountry); }
   });
 
   socket.on('player:join_room', async ({ code, name, authToken }, cb) => {
@@ -1559,7 +1564,7 @@ io.on('connection', socket => {
     cb({ok:true,code:room.code,playerId:socket.id,isHost:false,categories:ALL_CATEGORIES,formations:allFormationNames(),chat:publicChat(room)});
     emitRoom(room);
     if(room.isPublic) broadcastPublicRooms();
-    if(!room.isTest) trackEvent('player_joined');
+    if(!room.isTest) trackEvent('player_joined',null,clientCountry);
   });
 
   // Chat en vivo de la sala: siempre prendido en públicas (es el único canal

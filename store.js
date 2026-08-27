@@ -28,8 +28,12 @@ let _fileFeedback = (() => {
   catch { return []; }
 })();
 let _fileAnalytics = (() => {
-  try { return JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8')); }
-  catch { return { roomsCreated: 0, playersJoined: 0, gamesCompleted: { impostor: 0, mentiroso: 0, subasta: 0, wavelength: 0, who: 0 }, daily: {} }; }
+  try {
+    const d = JSON.parse(fs.readFileSync(ANALYTICS_PATH, 'utf-8'));
+    d.geo = d.geo || {}; // archivos viejos de antes de agregar geolocalización
+    return d;
+  }
+  catch { return { roomsCreated: 0, playersJoined: 0, gamesCompleted: { impostor: 0, mentiroso: 0, subasta: 0, wavelength: 0, who: 0 }, daily: {}, geo: {} }; }
 })();
 function _saveFileFeedback() { fs.writeFileSync(FEEDBACK_PATH, JSON.stringify(_fileFeedback, null, 2), 'utf-8'); }
 let _fileAnalyticsDirty = false;
@@ -60,6 +64,15 @@ async function initStore() {
     CREATE TABLE IF NOT EXISTS analytics_totals (
       key TEXT PRIMARY KEY,
       value INT DEFAULT 0
+    )`);
+  // Ubicación geográfica de los visitantes (por país, vía geoip-lite a partir
+  // de la IP) — no guarda IPs ni nada identificable, solo el conteo agregado
+  // por país, para poder mostrarle a potenciales anunciantes de dónde son
+  // los jugadores.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS analytics_geo (
+      country TEXT PRIMARY KEY,
+      count INT DEFAULT 0
     )`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -284,7 +297,11 @@ async function deleteFeedback(id) {
 }
 
 /* ---- Analytics ---- */
-async function _trackEvent(type, gameType) {
+// country: código ISO de 2 letras (ej. 'MX'), solo se usa junto con
+// 'player_joined' — es el evento que ocurre una vez por visitante real
+// (tanto el que crea la sala como el que se une), así que es el punto
+// correcto para contar de dónde son sin duplicar ni pisar otros contadores.
+async function _trackEvent(type, gameType, country) {
   const today = new Date().toISOString().slice(0, 10);
   if (pool) {
     const col = type === 'room_created' ? 'rooms_created' : type === 'player_joined' ? 'players_joined' : 'games_completed';
@@ -293,6 +310,7 @@ async function _trackEvent(type, gameType) {
       await pool.query(`INSERT INTO analytics_totals(key,value) VALUES ('roomsCreated',1) ON CONFLICT (key) DO UPDATE SET value=analytics_totals.value+1`);
     } else if (type === 'player_joined') {
       await pool.query(`INSERT INTO analytics_totals(key,value) VALUES ('playersJoined',1) ON CONFLICT (key) DO UPDATE SET value=analytics_totals.value+1`);
+      if (country) await pool.query(`INSERT INTO analytics_geo(country,count) VALUES ($1,1) ON CONFLICT (country) DO UPDATE SET count=analytics_geo.count+1`, [country]);
     } else if (type === 'game_completed') {
       await pool.query(`INSERT INTO analytics_totals(key,value) VALUES ($1,1) ON CONFLICT (key) DO UPDATE SET value=analytics_totals.value+1`, ['games_' + gameType]);
     }
@@ -300,13 +318,16 @@ async function _trackEvent(type, gameType) {
   }
   _fileAnalytics.daily[today] = _fileAnalytics.daily[today] || { roomsCreated: 0, playersJoined: 0, gamesCompleted: 0 };
   if (type === 'room_created') { _fileAnalytics.roomsCreated++; _fileAnalytics.daily[today].roomsCreated++; }
-  else if (type === 'player_joined') { _fileAnalytics.playersJoined++; _fileAnalytics.daily[today].playersJoined++; }
+  else if (type === 'player_joined') {
+    _fileAnalytics.playersJoined++; _fileAnalytics.daily[today].playersJoined++;
+    if (country) _fileAnalytics.geo[country] = (_fileAnalytics.geo[country] || 0) + 1;
+  }
   else if (type === 'game_completed') { _fileAnalytics.gamesCompleted[gameType] = (_fileAnalytics.gamesCompleted[gameType] || 0) + 1; _fileAnalytics.daily[today].gamesCompleted++; }
   _fileAnalyticsDirty = true;
 }
 // Nunca debe tumbar el flujo del juego: si falla el tracking, solo se loguea.
-async function trackEvent(type, gameType) {
-  try { await _trackEvent(type, gameType); }
+async function trackEvent(type, gameType, country) {
+  try { await _trackEvent(type, gameType, country); }
   catch (e) { console.error('[store] trackEvent falló:', e.message); }
 }
 async function getAnalytics() {
@@ -316,7 +337,9 @@ async function getAnalytics() {
     const totalsMap = {}; totals.rows.forEach(r => { totalsMap[r.key] = r.value; });
     const gamesCompleted = {}; GAME_TYPES.forEach(g => { gamesCompleted[g] = totalsMap['games_' + g] || 0; });
     const dailyObj = {}; daily.rows.forEach(d => { dailyObj[d.day] = { roomsCreated: d.roomsCreated, playersJoined: d.playersJoined, gamesCompleted: d.gamesCompleted }; });
-    return { roomsCreated: totalsMap.roomsCreated || 0, playersJoined: totalsMap.playersJoined || 0, gamesCompleted, daily: dailyObj };
+      const geoRows = await pool.query(`SELECT country, count FROM analytics_geo`);
+    const geo = {}; geoRows.rows.forEach(g => { geo[g.country] = g.count; });
+    return { roomsCreated: totalsMap.roomsCreated || 0, playersJoined: totalsMap.playersJoined || 0, gamesCompleted, daily: dailyObj, geo };
   }
   return _fileAnalytics;
 }
@@ -324,10 +347,10 @@ async function getAnalytics() {
 // pruebas). Solo borra analytics, nunca feedback/cuentas/logros.
 async function resetAnalytics() {
   if (pool) {
-    await pool.query(`TRUNCATE analytics_daily, analytics_totals`);
+    await pool.query(`TRUNCATE analytics_daily, analytics_totals, analytics_geo`);
     return;
   }
-  _fileAnalytics = { roomsCreated: 0, playersJoined: 0, gamesCompleted: { impostor: 0, mentiroso: 0, subasta: 0, wavelength: 0, who: 0 }, daily: {} };
+  _fileAnalytics = { roomsCreated: 0, playersJoined: 0, gamesCompleted: { impostor: 0, mentiroso: 0, subasta: 0, wavelength: 0, who: 0 }, daily: {}, geo: {} };
   _fileAnalyticsDirty = true;
 }
 

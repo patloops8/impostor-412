@@ -2358,6 +2358,39 @@ function renderFeedbackList(){
 // ANALYTICS
 // ============================================================
 const GAME_NAMES = {impostor:'El Impostor', mentiroso:'Mentiroso Futbolero', subasta:'Subasta Futbolera', wavelength:'La Frecuencia', who:'¿Quién Soy?'};
+// Convierte un código ISO de país (ej. 'MX') en su emoji de bandera —
+// truco estándar: cada letra corresponde a un "regional indicator symbol"
+// en un rango de Unicode paralelo al alfabeto latino.
+function flagEmoji(cc){
+  if(!cc || cc.length!==2) return '🏳️';
+  return String.fromCodePoint(...[...cc.toUpperCase()].map(c=>127397+c.charCodeAt(0)));
+}
+let _regionNames = null;
+function countryName(cc){
+  if(!cc) return 'Desconocido / local';
+  try{
+    _regionNames = _regionNames || new Intl.DisplayNames(['es'], {type:'region'});
+    return _regionNames.of(cc) || cc;
+  }catch{ return cc; }
+}
+function renderGeoTable(geo){
+  const entries = Object.entries(geo).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return '<p style="color:var(--soft)">Todavía no hay datos de ubicación.</p>';
+  const total = entries.reduce((s,[,n])=>s+n,0);
+  return `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="text-align:left;color:var(--soft)"><th style="padding:6px 0">País</th><th>Visitantes</th><th>%</th><th></th></tr></thead>
+    <tbody>${entries.map(([cc,n])=>{
+      const pct = total ? Math.round(n/total*100) : 0;
+      const label = cc==='' || cc==null ? 'Desconocido / local' : `${flagEmoji(cc)} ${esc(countryName(cc))}`;
+      return `<tr>
+        <td style="padding:4px 0">${label}</td>
+        <td>${n}</td>
+        <td style="color:var(--soft)">${pct}%</td>
+        <td style="width:40%"><div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--accent,#5865f2)"></div></div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
 async function loadAnalytics(){
   const body = document.getElementById('analytics-body');
   body.innerHTML = '<p style="color:var(--soft)">Cargando...</p>';
@@ -2386,6 +2419,10 @@ async function loadAnalytics(){
           const pct = totalGames ? Math.round(n/totalGames*100) : 0;
           return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${label}</span><span style="color:var(--soft)">${n}</span></div><div style="background:var(--bg3);border-radius:6px;height:8px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--accent,#5865f2)"></div></div></div>`;
         }).join('')}
+      </div>
+      <div class="cfg-section">
+        <h3 class="cfg-title" style="margin-bottom:12px">Ubicación de los visitantes</h3>
+        ${renderGeoTable(a.geo||{})}
       </div>
       <div class="cfg-section">
         <h3 class="cfg-title" style="margin-bottom:12px">Últimos 14 días con actividad</h3>
