@@ -102,6 +102,22 @@ function feedbackRateOk(ip){
   arr.push(now); FEEDBACK_IP_LOG.set(ip,arr);
   return true;
 }
+// Bloqueo de fuerza bruta contra el panel admin: sin esto, ADMIN_PASS se
+// puede probar miles de veces por segundo desde una sola máquina (medido en
+// una revisión de seguridad). Solo cuenta intentos FALLIDOS — un admin real
+// tipeando mal una vez no se bloquea a sí mismo.
+const ADMIN_AUTH_FAILS = new Map();
+function adminAuthRateOk(ip){
+  const now=Date.now(), windowMs=10*60*1000;
+  const arr=(ADMIN_AUTH_FAILS.get(ip)||[]).filter(t=>now-t<windowMs);
+  ADMIN_AUTH_FAILS.set(ip,arr);
+  return arr.length<8;
+}
+function adminAuthRegisterFail(ip){
+  const arr=ADMIN_AUTH_FAILS.get(ip)||[];
+  arr.push(Date.now());
+  ADMIN_AUTH_FAILS.set(ip,arr);
+}
 
 const POSITION_ORDER = ['POR','LD','DFC','LI','MCD','MC','MCO','ED','EI','DC'];
 const POSITION_LABELS = {
@@ -2270,11 +2286,13 @@ app.post('/api/feedback', express.json({limit:'20kb'}), async (req,res)=>{
       if(!isLocal) return res.status(404).end();
       return next();
     }
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
+    if(!adminAuthRateOk(ip)) return res.status(429).json({error:'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.'});
     // Con ADMIN_PASS: aceptar la contraseña solo por header (no query param — logs de servidor).
     // El panel de admin ya manda X-Admin-Pass; el query param legacy solo sirve para la carga
     // inicial de la página /admin?pass=... pero las APIs usan el header.
     const provided = req.headers['x-admin-pass'] || req.query.pass || '';
-    if(!safeEqual(provided, envPass)) return res.status(401).json({error:'Contraseña incorrecta'});
+    if(!safeEqual(provided, envPass)){ adminAuthRegisterFail(ip); return res.status(401).json({error:'Contraseña incorrecta'}); }
     next();
   }
   // Comparación a tiempo constante: evita filtrar la contraseña por diferencias
