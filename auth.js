@@ -89,7 +89,7 @@ function registerAuthRoutes(app) {
     try {
       if (!googleEnabled()) return res.status(503).send('Login con Google no está configurado.');
       const { code, state } = req.query;
-      if (!code || !consumeState(state)) return res.status(400).send('Solicitud inválida o vencida. Volvé a intentar desde la app.');
+      if (!code || !consumeState(state)) return res.status(400).send('Solicitud inválida o vencida. Vuelve a intentar desde la app.');
       const redirectUri = `${baseUrl(req)}/auth/google/callback`;
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
@@ -128,7 +128,7 @@ function registerAuthRoutes(app) {
     try {
       if (!discordEnabled()) return res.status(503).send('Login con Discord no está configurado.');
       const { code, state } = req.query;
-      if (!code || !consumeState(state)) return res.status(400).send('Solicitud inválida o vencida. Volvé a intentar desde la app.');
+      if (!code || !consumeState(state)) return res.status(400).send('Solicitud inválida o vencida. Vuelve a intentar desde la app.');
       const redirectUri = `${baseUrl(req)}/auth/discord/callback`;
       const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
         method: 'POST',
