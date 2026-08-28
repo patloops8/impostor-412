@@ -6280,7 +6280,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "mikel_merino",
