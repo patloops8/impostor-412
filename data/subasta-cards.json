@@ -6236,7 +6236,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "jobe_bellingham",
@@ -6245,7 +6247,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 79,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "lucas_bergvall",
@@ -6254,7 +6258,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "valentin_barco",
@@ -6263,7 +6269,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 78,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "senny_mayulu",
