@@ -6131,7 +6131,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "alexis_mac_allister",
@@ -6168,16 +6170,20 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "tijjani_reijnders",
     "name": "Tijjani Reijnders",
-    "label": "Tijjani Reijnders (Manchester City)",
+    "label": "Tijjani Reijnders (Al-Qadsiah F. C.)",
     "position": "MC",
     "rareza": "mediano",
-    "media": 82,
-    "troll": false
+    "media": 81,
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "manu_kone",
@@ -6186,7 +6192,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "scott_mctominay",
@@ -6195,7 +6203,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 85,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "ederson_dos_santos",
@@ -6204,7 +6214,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 82,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "petar_sucic",
@@ -6213,7 +6225,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 80,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "yasin_ayari",
