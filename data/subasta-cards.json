@@ -6291,7 +6291,9 @@
     "position": "MC",
     "rareza": "mediano",
     "media": 84,
-    "troll": false
+    "troll": false,
+    "imgPosY": 50,
+    "imgFit": "contain"
   },
   {
     "id": "dani_olmo",
